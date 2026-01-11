@@ -1,4 +1,5 @@
 // src/engine/data.ts
+import type { TowerStats } from './types';
 
 export const ENEMY_TYPES = [
     { name: "Bug", hp: 30, speed: 1.0, reward: 15, color: "#f87171", icon: "🐛" }, // Fast, weak
