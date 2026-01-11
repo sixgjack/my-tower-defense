@@ -243,14 +243,21 @@ export class GameEngine {
     if (!this.path.length) return;
     
     const diff = Math.pow(1.1, this.wave); // Scaling difficulty
-    const typeIdx = (this.wave - 1) % ENEMY_TYPES.length;
-    const stats = ENEMY_TYPES[typeIdx];
     
-    // Boss Logic
-    const isBoss = this.wave % 5 === 0 && this.enemiesRemainingToSpawn === 0; // Boss is last
+    // Boss Logic - prefer boss types on boss waves
+    const isBossWave = this.wave % 5 === 0 && this.enemiesRemainingToSpawn === 0;
+    let availableTypes = isBossWave 
+      ? ENEMY_TYPES.filter(t => t.isBoss || Math.random() > 0.7) // Prefer boss types on boss waves
+      : ENEMY_TYPES.filter(t => !t.isBoss || Math.random() > 0.9); // Rare boss spawns on normal waves
     
-    const hp = (isBoss ? stats.hp * 5 : stats.hp) * diff;
-    const reward = (isBoss ? stats.reward * 5 : stats.reward);
+    if (availableTypes.length === 0) availableTypes = ENEMY_TYPES;
+    
+    const typeIdx = Math.floor(Math.random() * availableTypes.length);
+    const stats = availableTypes[typeIdx];
+    const isBoss = stats.isBoss || isBossWave;
+    
+    const hp = (isBoss ? stats.hp * (isBossWave ? 1 : 2) : stats.hp) * diff;
+    const reward = (isBoss ? stats.reward * (isBossWave ? 1 : 2) : stats.reward);
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
@@ -258,11 +265,23 @@ export class GameEngine {
         r: this.path[0].r, c: this.path[0].c, 
         hp, maxHp: hp, 
         baseSpeed: 0.05 * stats.speed, 
-        icon: isBoss ? "👹" : stats.icon, 
+        speedMultiplier: 1.0,
+        icon: isBoss && isBossWave ? "👹" : stats.icon, 
         color: stats.color, 
         reward: reward, 
         scale: isBoss ? 1.5 : 1.0, 
-        frozen: 0 
+        frozen: 0,
+        xOffset: 0,
+        yOffset: 0,
+        money: reward,
+        damage: 0,
+        abilities: stats.abilities ? [...stats.abilities] : [],
+        abilityCooldown: stats.abilityCooldown || 0,
+        lastAbilityUse: -999,
+        isInvisible: stats.abilities?.includes('invisible') || false,
+        isFlying: stats.abilities?.includes('fly') || false,
+        isBurrowed: stats.abilities?.includes('burrow') || false,
+        statusEffects: []
     });
   }
 
@@ -533,6 +552,160 @@ export class GameEngine {
               if (e.hp <= 0) this.killEnemy(e);
           }
       }
+  }
+
+  executeEnemyAbilities(enemy: any) {
+    if (!enemy.abilities || enemy.abilities.length === 0) return;
+    
+    const canUseAbility = !enemy.abilityCooldown || enemy.abilityCooldown <= 0;
+    if (!canUseAbility) return;
+    
+    enemy.abilities.forEach((ability: string) => {
+      const timeSinceLastUse = this.tickCount - (enemy.lastAbilityUse || -999);
+      
+      switch (ability) {
+        case 'teleport':
+          if (timeSinceLastUse > 300 && Math.random() > 0.95 && enemy.pathIndex < this.path.length - 2) {
+            // Teleport forward 20-40% of remaining path
+            const remaining = this.path.length - 1 - enemy.pathIndex;
+            const teleportDistance = Math.floor(remaining * (0.2 + Math.random() * 0.2));
+            enemy.pathIndex = Math.min(enemy.pathIndex + teleportDistance, this.path.length - 2);
+            enemy.progress = 0;
+            const newPos = this.path[enemy.pathIndex];
+            enemy.r = newPos.r;
+            enemy.c = newPos.c;
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 400;
+            this.addTextParticle(enemy.c, enemy.r, 'TELEPORT!', "#8b5cf6");
+            soundSystem.play('teleport');
+          }
+          break;
+          
+        case 'deactivate_towers':
+          if (timeSinceLastUse > 250 && Math.random() > 0.97) {
+            // Deactivate nearby towers for 3 seconds (180 ticks)
+            const nearbyTowers = this.towers.filter(t => {
+              const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
+              return dist <= 3;
+            });
+            
+            nearbyTowers.forEach(tower => {
+              if (!tower.statusEffects || !tower.statusEffects.find(e => e.effectId === 'stunned')) {
+                effectManager.applyEffectToTower(tower, 'stunned', 180);
+              }
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 300;
+            this.addTextParticle(enemy.c, enemy.r, 'DISABLE!', "#ef4444");
+            soundSystem.play('stun');
+          }
+          break;
+          
+        case 'heal_allies':
+          if (timeSinceLastUse > 120 && Math.random() > 0.92) {
+            // Heal nearby enemies
+            const nearbyEnemies = this.enemies.filter(e => {
+              if (e.id === enemy.id || e.hp <= 0) return false;
+              const dist = Math.sqrt((e.r - enemy.r)**2 + (e.c - enemy.c)**2);
+              return dist <= 4;
+            });
+            
+            nearbyEnemies.forEach(e => {
+              const heal = e.maxHp * 0.15; // Heal 15% max HP
+              e.hp = Math.min(e.hp + heal, e.maxHp);
+              this.addTextParticle(e.c, e.r, `+${Math.floor(heal)}`, "#10b981");
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 150;
+            this.addTextParticle(enemy.c, enemy.r, 'HEAL!', "#10b981");
+            soundSystem.play('heal');
+          }
+          break;
+          
+        case 'regenerate':
+          if (timeSinceLastUse > 60) {
+            // Regenerate 1% max HP per tick when below 50% health
+            if (enemy.hp < enemy.maxHp * 0.5) {
+              enemy.hp = Math.min(enemy.hp + enemy.maxHp * 0.01, enemy.maxHp);
+            }
+            enemy.lastAbilityUse = this.tickCount;
+          }
+          break;
+          
+        case 'explode':
+          if (enemy.hp <= enemy.maxHp * 0.1 && Math.random() > 0.98) {
+            // Explode when near death, dealing damage to nearby towers
+            this.towers.forEach(tower => {
+              const dist = Math.sqrt((tower.r - enemy.r)**2 + (tower.c - enemy.c)**2);
+              if (dist <= 2 && tower.hp) {
+                const damage = enemy.maxHp * 0.3;
+                tower.hp = Math.max(0, (tower.hp || tower.maxHp || 100) - damage);
+                if (tower.hp <= 0) {
+                  this.createExplosion(tower.c * 60 + 30, tower.r * 60 + 30, "#ef4444", 1.5, 'blast');
+                }
+              }
+            });
+            enemy.hp = 0; // Kill the bomber
+            this.createExplosion(enemy.c * 60 + 30, enemy.r * 60 + 30, enemy.color || "#ef4444", 2.0, 'blast');
+            soundSystem.play('explode');
+          }
+          break;
+          
+        case 'split':
+          if (enemy.hp <= enemy.maxHp * 0.3 && timeSinceLastUse > 500 && Math.random() > 0.96) {
+            // Split into 2 smaller enemies when below 30% HP
+            for (let i = 0; i < 2; i++) {
+              this.enemies.push({
+                id: Date.now() + Math.random() + i,
+                pathIndex: enemy.pathIndex,
+                progress: enemy.progress,
+                r: enemy.r, c: enemy.c,
+                hp: enemy.maxHp * 0.4,
+                maxHp: enemy.maxHp * 0.4,
+                baseSpeed: enemy.baseSpeed * 1.2,
+                speedMultiplier: 1.0,
+                icon: enemy.icon,
+                color: enemy.color,
+                reward: Math.floor(enemy.reward * 0.3),
+                scale: enemy.scale * 0.7,
+                frozen: 0,
+                xOffset: enemy.xOffset,
+                yOffset: enemy.yOffset,
+                money: Math.floor(enemy.reward * 0.3),
+                damage: 0,
+                statusEffects: []
+              });
+            }
+            enemy.hp = 0; // Remove original
+            enemy.lastAbilityUse = this.tickCount;
+            this.addTextParticle(enemy.c, enemy.r, 'SPLIT!', "#10b981");
+            soundSystem.play('split');
+          }
+          break;
+          
+        case 'charge':
+          if (timeSinceLastUse > 200 && Math.random() > 0.94) {
+            // Charge forward quickly
+            enemy.progress += 0.5; // Move forward 50% of a tile instantly
+            if (enemy.progress >= 1.0) {
+              enemy.pathIndex++;
+              enemy.progress = 0;
+              if (enemy.pathIndex < this.path.length - 1) {
+                const current = this.path[enemy.pathIndex];
+                enemy.r = current.r;
+                enemy.c = current.c;
+              }
+            }
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 250;
+            this.addTextParticle(enemy.c, enemy.r, 'CHARGE!', "#f59e0b");
+            soundSystem.play('charge');
+          }
+          break;
+      }
+    });
   }
 
   killEnemy(e: any) {

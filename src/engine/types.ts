@@ -39,6 +39,8 @@ export interface Particle {
 }
 
 // --- ENEMIES ---
+export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible';
+
 export interface Enemy {
     id: number;
     r: number;
@@ -58,6 +60,12 @@ export interface Enemy {
     damage: number;
     statusEffects?: ActiveStatusEffect[]; // Status effects currently applied
     shieldHp?: number; // Shield health (from Resistance effect)
+    abilities?: EnemyAbility[]; // Special abilities
+    abilityCooldown?: number; // Ability cooldown timer
+    lastAbilityUse?: number; // Tick when ability was last used
+    isInvisible?: boolean; // For camouflage ability
+    isFlying?: boolean; // For fly ability
+    isBurrowed?: boolean; // For burrow ability
 }
 
 // --- TOWERS ---

@@ -82,7 +82,7 @@ class SoundSystem {
     }
   }
 
-  play(type: 'shoot' | 'hit' | 'build' | 'upgrade' | 'sell' | 'gameover' | 'freeze' | 'weakness' | 'buff' | 'debuff' | 'surge' | 'growth' | 'stun' | 'rage' | 'boss' | 'hit_base') {
+  play(type: 'shoot' | 'hit' | 'build' | 'upgrade' | 'sell' | 'gameover' | 'freeze' | 'weakness' | 'buff' | 'debuff' | 'surge' | 'growth' | 'stun' | 'rage' | 'boss' | 'hit_base' | 'teleport' | 'heal' | 'explode' | 'split' | 'charge') {
     if (!this.ctx || this.isMuted) return;
 
     const osc = this.ctx.createOscillator();
@@ -227,6 +227,56 @@ class SoundSystem {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(400, now);
         osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+        break;
+        
+      case 'teleport': // Teleport Sound
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+        break;
+        
+      case 'heal': // Heal Sound
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+        break;
+        
+      case 'explode': // Explode Sound
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        break;
+        
+      case 'split': // Split Sound
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(150, now + 0.2);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+        break;
+        
+      case 'charge': // Charge Sound
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(400, now + 0.15);
         gain.gain.setValueAtTime(0.05, now);
         gain.gain.linearRampToValueAtTime(0, now + 0.15);
         osc.start(now);

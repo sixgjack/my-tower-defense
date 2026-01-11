@@ -1,12 +1,93 @@
 // src/engine/data.ts
 import type { TowerStats } from './types';
 
-export const ENEMY_TYPES = [
-    { name: "Bug", hp: 30, speed: 1.0, reward: 15, color: "#f87171", icon: "🐛" }, // Fast, weak
-    { name: "Glitch", hp: 80, speed: 0.7, reward: 25, color: "#c084fc", icon: "👾" }, // Balanced
-    { name: "Virus", hp: 200, speed: 0.4, reward: 50, color: "#4ade80", icon: "🦠" }, // Tank
-    { name: "Trojan", hp: 400, speed: 0.3, reward: 100, color: "#fbbf24", icon: "🐴" }, // Boss-like
-    { name: "Worm", hp: 60, speed: 1.2, reward: 20, color: "#f472b6", icon: "🪱" }, // Very fast
+export interface EnemyType {
+    name: string;
+    hp: number;
+    speed: number;
+    reward: number;
+    color: string;
+    icon: string;
+    abilities?: string[]; // Special abilities
+    abilityCooldown?: number; // Cooldown in ticks
+    isBoss?: boolean; // Mark as boss type
+}
+
+export const ENEMY_TYPES: EnemyType[] = [
+    // Basic Enemies (Fast & Weak)
+    { name: "Bug", hp: 30, speed: 1.0, reward: 15, color: "#f87171", icon: "🐛" },
+    { name: "Spider", hp: 25, speed: 1.3, reward: 12, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'] },
+    { name: "Mite", hp: 20, speed: 1.5, reward: 10, color: "#ef4444", icon: "🪲" },
+    { name: "Fly", hp: 15, speed: 1.8, reward: 8, color: "#f97316", icon: "🪰", abilities: ['fly'] },
+    
+    // Balanced Enemies
+    { name: "Glitch", hp: 80, speed: 0.7, reward: 25, color: "#c084fc", icon: "👾" },
+    { name: "Drone", hp: 75, speed: 0.8, reward: 22, color: "#a855f7", icon: "🤖", abilities: ['fly'] },
+    { name: "Hacker", hp: 85, speed: 0.65, reward: 28, color: "#9333ea", icon: "👤", abilities: ['deactivate_towers'], abilityCooldown: 300 },
+    { name: "Crawler", hp: 70, speed: 0.75, reward: 20, color: "#7c3aed", icon: "🕸️" },
+    
+    // Tank Enemies
+    { name: "Virus", hp: 200, speed: 0.4, reward: 50, color: "#4ade80", icon: "🦠" },
+    { name: "Malware", hp: 220, speed: 0.35, reward: 55, color: "#22c55e", icon: "🪳", abilities: ['shield'] },
+    { name: "Tank", hp: 250, speed: 0.3, reward: 60, color: "#16a34a", icon: "🛡️", abilities: ['damage_reflect'] },
+    { name: "Brute", hp: 300, speed: 0.25, reward: 70, color: "#15803d", icon: "💪", abilities: ['regenerate'] },
+    { name: "Guardian", hp: 350, speed: 0.2, reward: 80, color: "#166534", icon: "🛡️", abilities: ['shield', 'heal_allies'], abilityCooldown: 200 },
+    
+    // Fast Enemies
+    { name: "Worm", hp: 60, speed: 1.2, reward: 20, color: "#f472b6", icon: "🪱" },
+    { name: "Snake", hp: 55, speed: 1.4, reward: 18, color: "#ec4899", icon: "🐍", abilities: ['poison_aura'] },
+    { name: "Swift", hp: 50, speed: 1.6, reward: 16, color: "#db2777", icon: "⚡", abilities: ['charge'] },
+    { name: "Ghost", hp: 45, speed: 1.5, reward: 14, color: "#be185d", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 400 },
+    
+    // Special Ability Enemies
+    { name: "Teleporter", hp: 100, speed: 0.6, reward: 30, color: "#6366f1", icon: "🌀", abilities: ['teleport'], abilityCooldown: 250 },
+    { name: "Healer", hp: 90, speed: 0.65, reward: 28, color: "#8b5cf6", icon: "💚", abilities: ['heal_allies'], abilityCooldown: 150 },
+    { name: "Saboteur", hp: 120, speed: 0.5, reward: 35, color: "#ef4444", icon: "🔧", abilities: ['deactivate_towers'], abilityCooldown: 300 },
+    { name: "Summoner", hp: 150, speed: 0.45, reward: 40, color: "#a855f7", icon: "🔮", abilities: ['spawn_minions'], abilityCooldown: 500 },
+    { name: "Berserker", hp: 180, speed: 0.8, reward: 45, color: "#dc2626", icon: "😡", abilities: ['berserk'] },
+    { name: "Freezer", hp: 110, speed: 0.55, reward: 32, color: "#06b6d4", icon: "❄️", abilities: ['freeze_aura'] },
+    { name: "Bomber", hp: 70, speed: 0.7, reward: 25, color: "#f59e0b", icon: "💣", abilities: ['explode'] },
+    { name: "Splitter", hp: 130, speed: 0.5, reward: 38, color: "#10b981", icon: "🔀", abilities: ['split'] },
+    { name: "Burrower", hp: 95, speed: 0.6, reward: 27, color: "#78716c", icon: "🕳️", abilities: ['burrow'] },
+    { name: "Retreater", hp: 85, speed: 1.0, reward: 23, color: "#64748b", icon: "🏃", abilities: ['retreat'] },
+    { name: "Stunner", hp: 105, speed: 0.58, reward: 30, color: "#facc15", icon: "⚡", abilities: ['stun_attack'], abilityCooldown: 350 },
+    
+    // Boss-like Enemies (Higher HP)
+    { name: "Trojan", hp: 400, speed: 0.3, reward: 100, color: "#fbbf24", icon: "🐴" },
+    { name: "Titan", hp: 500, speed: 0.25, reward: 120, color: "#f59e0b", icon: "👹", isBoss: true, abilities: ['shield', 'charge'] },
+    { name: "Behemoth", hp: 600, speed: 0.2, reward: 140, color: "#dc2626", icon: "👺", isBoss: true, abilities: ['regenerate', 'berserk'] },
+    { name: "Warlord", hp: 450, speed: 0.28, reward: 110, color: "#7c2d12", icon: "⚔️", isBoss: true, abilities: ['damage_reflect', 'heal_allies'], abilityCooldown: 200 },
+    
+    // Advanced Enemies
+    { name: "Necromancer", hp: 320, speed: 0.35, reward: 85, color: "#581c87", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 400 },
+    { name: "Phantom", hp: 140, speed: 0.9, reward: 42, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300 },
+    { name: "Archmage", hp: 280, speed: 0.4, reward: 75, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350 },
+    { name: "Golem", hp: 550, speed: 0.15, reward: 130, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'] },
+    { name: "Dragon", hp: 700, speed: 0.18, reward: 160, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'] },
+    { name: "Kraken", hp: 650, speed: 0.22, reward: 150, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'] },
+    { name: "Hydra", hp: 580, speed: 0.26, reward: 135, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'] },
+    { name: "Colossus", hp: 800, speed: 0.12, reward: 180, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250 },
+    { name: "Tyrant", hp: 750, speed: 0.16, reward: 170, color: "#991b1b", icon: "👑", isBoss: true, abilities: ['berserk', 'damage_reflect', 'charge'] },
+    { name: "Demon", hp: 680, speed: 0.2, reward: 155, color: "#7c2d12", icon: "😈", isBoss: true, abilities: ['teleport', 'poison_aura', 'explode'] },
+    
+    // Elite Enemies
+    { name: "Assassin", hp: 160, speed: 1.1, reward: 48, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 400 },
+    { name: "Paladin", hp: 420, speed: 0.32, reward: 105, color: "#fbbf24", icon: "⚔️", abilities: ['shield', 'heal_allies'], abilityCooldown: 180 },
+    { name: "Vampire", hp: 380, speed: 0.38, reward: 95, color: "#be123c", icon: "🧛", abilities: ['regenerate', 'teleport'], abilityCooldown: 320 },
+    { name: "Shaman", hp: 260, speed: 0.42, reward: 70, color: "#9333ea", icon: "🔮", abilities: ['spawn_minions', 'freeze_aura', 'poison_aura'], abilityCooldown: 450 },
+    { name: "Wraith", hp: 200, speed: 0.85, reward: 52, color: "#6366f1", icon: "👤", abilities: ['invisible', 'fly', 'teleport'], abilityCooldown: 350 },
+    { name: "Revenant", hp: 440, speed: 0.3, reward: 108, color: "#4338ca", icon: "💀", isBoss: true, abilities: ['spawn_minions', 'regenerate', 'damage_reflect'] },
+    { name: "Leviathan", hp: 720, speed: 0.14, reward: 165, color: "#0c4a6e", icon: "🌊", isBoss: true, abilities: ['split', 'freeze_aura', 'charge'] },
+    { name: "Phoenix", hp: 600, speed: 0.5, reward: 145, color: "#ea580c", icon: "🔥", isBoss: true, abilities: ['fly', 'regenerate', 'explode'] },
+    { name: "Cerberus", hp: 620, speed: 0.24, reward: 148, color: "#1f2937", icon: "🐕", isBoss: true, abilities: ['split', 'charge', 'stun_attack'] },
+    { name: "Manticore", hp: 640, speed: 0.21, reward: 152, color: "#78350f", icon: "🦂", isBoss: true, abilities: ['fly', 'poison_aura', 'teleport'], abilityCooldown: 400 },
+    
+    // Special Bosses
+    { name: "Overlord", hp: 900, speed: 0.1, reward: 200, color: "#1e1e1e", icon: "👑", isBoss: true, abilities: ['deactivate_towers', 'spawn_minions', 'shield', 'heal_allies'], abilityCooldown: 180 },
+    { name: "Cthulhu", hp: 850, speed: 0.13, reward: 190, color: "#0f172a", icon: "🐙", isBoss: true, abilities: ['teleport', 'split', 'poison_aura', 'stun_attack'], abilityCooldown: 220 },
+    { name: "Archon", hp: 920, speed: 0.11, reward: 205, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200 },
+    { name: "Abomination", hp: 880, speed: 0.14, reward: 195, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'] },
+    { name: "World Eater", hp: 1000, speed: 0.08, reward: 220, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150 },
 ];
 
 // Add 'obstacleChar' to your THEMES
