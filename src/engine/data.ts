@@ -430,20 +430,20 @@ export const TOWERS: Record<string, TowerStats> = {
     projectileStyle: 'fire'
   },
   'MORTAR': {
-    name: 'Artillery Battery', cost: 350, damage: 120, range: 6, cooldown: 200,
+    name: 'Artillery Battery', cost: 350, damage: 105, range: 5.5, cooldown: 200,
     type: 'area', color: '#475569', icon: '🎯',
     description: 'Long-range heavy shells. Massive damage but slow reload.',
     areaRadius: 2.5,
     projectileStyle: 'arc'
   },
   'AIR_DEFENSE': {
-    name: 'SAM Launcher', cost: 180, damage: 80, range: 5, cooldown: 40,
+    name: 'SAM Launcher', cost: 180, damage: 70, range: 4.5, cooldown: 40,
     type: 'projectile', color: '#ef4444', icon: '🚀',
     description: 'Surface-to-air missiles with high single-target damage.',
     projectileStyle: 'missile'
   },
   'TESLA': {
-    name: 'Shock Generator', cost: 250, damage: 90, range: 2.5, cooldown: 55,
+    name: 'Shock Generator', cost: 250, damage: 80, range: 2.3, cooldown: 55,
     type: 'projectile', color: '#facc15', icon: '⚡',
     description: 'Hidden until enemies approach. Instant electric discharge.',
     projectileStyle: 'lightning'
