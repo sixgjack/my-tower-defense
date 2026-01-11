@@ -90,39 +90,315 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "World Eater", hp: 1000, speed: 0.08, reward: 220, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150 },
 ];
 
-// Add 'obstacleChar' to your THEMES
-export const THEMES = [
+export interface Theme {
+  name: string;
+  bg: string;
+  grid: string;
+  path: string;
+  obstacle: string;
+  obstacleColor: string;
+  // Environmental Effects
+  towerCooldownMultiplier?: number; // 1.0 = normal, >1.0 = slower, <1.0 = faster
+  towerRangeMultiplier?: number; // 1.0 = normal
+  towerDamageMultiplier?: number; // 1.0 = normal
+  enemySpeedMultiplier?: number; // 1.0 = normal, >1.0 = faster, <1.0 = slower
+  enemyHpMultiplier?: number; // 1.0 = normal
+  moneyBonus?: number; // Additional money per kill (0 = no bonus)
+}
+
+// 20+ Themes with Special Environmental Effects
+export const THEMES: Theme[] = [
   { 
     name: 'Cyber City', 
     bg: 'bg-slate-900', 
     grid: 'border-cyan-900/30', 
     path: 'bg-cyan-900/20', 
-    obstacle: '🧱', // Firewall/Block
-    obstacleColor: '#0891b2'
+    obstacle: '🧱',
+    obstacleColor: '#0891b2',
+    // Tech advantage: Faster towers
+    towerCooldownMultiplier: 0.9
+  },
+  { 
+    name: 'Frosty Tundra', 
+    bg: 'bg-cyan-950', 
+    grid: 'border-cyan-800/30', 
+    path: 'bg-sky-900/30', 
+    obstacle: '❄️',
+    obstacleColor: '#0ea5e9',
+    // Cold slows towers and enemies
+    towerCooldownMultiplier: 1.3,
+    enemySpeedMultiplier: 0.7
   },
   { 
     name: 'Forest Ruin', 
     bg: 'bg-emerald-950', 
     grid: 'border-emerald-800/30', 
     path: 'bg-stone-800/40', 
-    obstacle: '🌲', // Tree
-    obstacleColor: '#059669'
+    obstacle: '🌲',
+    obstacleColor: '#059669',
+    // Nature bonus: More money
+    moneyBonus: 2
+  },
+  { 
+    name: 'Desert Storm', 
+    bg: 'bg-amber-950', 
+    grid: 'border-amber-800/30', 
+    path: 'bg-yellow-900/30', 
+    obstacle: '🌵',
+    obstacleColor: '#d97706',
+    // Heat reduces range but increases damage
+    towerRangeMultiplier: 0.85,
+    towerDamageMultiplier: 1.15,
+    enemySpeedMultiplier: 1.2
   },
   { 
     name: 'Mars Base', 
     bg: 'bg-orange-950', 
     grid: 'border-orange-900/30', 
     path: 'bg-red-900/20', 
-    obstacle: '🪨', // Rock
-    obstacleColor: '#7c2d12'
+    obstacle: '🪨',
+    obstacleColor: '#7c2d12',
+    // Low gravity: Faster projectiles but lower damage
+    towerCooldownMultiplier: 0.95,
+    towerDamageMultiplier: 0.9
   },
   { 
     name: 'Deep Space', 
     bg: 'bg-indigo-950', 
     grid: 'border-indigo-800/30', 
     path: 'bg-violet-900/20', 
-    obstacle: '☄️', // Meteor
-    obstacleColor: '#4c1d95'
+    obstacle: '☄️',
+    obstacleColor: '#4c1d95',
+    // Zero gravity: Slower everything
+    towerCooldownMultiplier: 1.2,
+    enemySpeedMultiplier: 0.8
+  },
+  { 
+    name: 'Volcanic Lava', 
+    bg: 'bg-red-950', 
+    grid: 'border-red-900/30', 
+    path: 'bg-orange-900/40', 
+    obstacle: '🌋',
+    obstacleColor: '#dc2626',
+    // Extreme heat: High damage but slow towers
+    towerDamageMultiplier: 1.25,
+    towerCooldownMultiplier: 1.4,
+    enemyHpMultiplier: 0.85
+  },
+  { 
+    name: 'Arctic Wasteland', 
+    bg: 'bg-blue-950', 
+    grid: 'border-blue-700/30', 
+    path: 'bg-cyan-800/30', 
+    obstacle: '🧊',
+    obstacleColor: '#0284c7',
+    // Extreme cold: Very slow towers, slow enemies
+    towerCooldownMultiplier: 1.5,
+    enemySpeedMultiplier: 0.6,
+    towerRangeMultiplier: 0.9
+  },
+  { 
+    name: 'Toxic Swamp', 
+    bg: 'bg-green-950', 
+    grid: 'border-green-800/30', 
+    path: 'bg-lime-900/40', 
+    obstacle: '🪷',
+    obstacleColor: '#65a30d',
+    // Poison: Enemies take extra damage, slower
+    enemySpeedMultiplier: 0.8,
+    towerDamageMultiplier: 1.1,
+    moneyBonus: 1
+  },
+  { 
+    name: 'Crystal Cavern', 
+    bg: 'bg-purple-950', 
+    grid: 'border-purple-800/30', 
+    path: 'bg-violet-800/30', 
+    obstacle: '💎',
+    obstacleColor: '#7c3aed',
+    // Crystals amplify: Better range and damage
+    towerRangeMultiplier: 1.15,
+    towerDamageMultiplier: 1.1
+  },
+  { 
+    name: 'Stormy Wasteland', 
+    bg: 'bg-gray-900', 
+    grid: 'border-gray-700/30', 
+    path: 'bg-gray-800/40', 
+    obstacle: '⚡',
+    obstacleColor: '#facc15',
+    // Lightning storms: Random effects
+    towerCooldownMultiplier: 1.1,
+    enemySpeedMultiplier: 1.1,
+    moneyBonus: 3
+  },
+  { 
+    name: 'Jungle Temple', 
+    bg: 'bg-emerald-900', 
+    grid: 'border-green-700/30', 
+    path: 'bg-yellow-800/30', 
+    obstacle: '🏛️',
+    obstacleColor: '#16a34a',
+    // Ancient power: Balanced boost
+    towerRangeMultiplier: 1.1,
+    towerDamageMultiplier: 1.1,
+    towerCooldownMultiplier: 0.95
+  },
+  { 
+    name: 'Underwater Depths', 
+    bg: 'bg-teal-950', 
+    grid: 'border-teal-800/30', 
+    path: 'bg-cyan-700/30', 
+    obstacle: '🐚',
+    obstacleColor: '#14b8a6',
+    // Water resistance: Slower everything
+    towerCooldownMultiplier: 1.3,
+    enemySpeedMultiplier: 0.75,
+    towerRangeMultiplier: 0.85
+  },
+  { 
+    name: 'Molten Core', 
+    bg: 'bg-rose-950', 
+    grid: 'border-rose-900/30', 
+    path: 'bg-red-800/40', 
+    obstacle: '🔥',
+    obstacleColor: '#ef4444',
+    // Extreme heat: Damage boost, very slow towers
+    towerDamageMultiplier: 1.3,
+    towerCooldownMultiplier: 1.6,
+    enemyHpMultiplier: 0.8
+  },
+  { 
+    name: 'Cloud City', 
+    bg: 'bg-sky-950', 
+    grid: 'border-sky-700/30', 
+    path: 'bg-blue-600/30', 
+    obstacle: '☁️',
+    obstacleColor: '#0ea5e9',
+    // High altitude: Better range
+    towerRangeMultiplier: 1.2,
+    towerDamageMultiplier: 0.95
+  },
+  { 
+    name: 'Shadow Realm', 
+    bg: 'bg-zinc-950', 
+    grid: 'border-zinc-700/30', 
+    path: 'bg-gray-700/30', 
+    obstacle: '👁️',
+    obstacleColor: '#52525b',
+    // Darkness: Reduced range, faster towers
+    towerRangeMultiplier: 0.8,
+    towerCooldownMultiplier: 0.85,
+    enemySpeedMultiplier: 1.15
+  },
+  { 
+    name: 'Neon Night', 
+    bg: 'bg-indigo-950', 
+    grid: 'border-purple-700/30', 
+    path: 'bg-pink-700/30', 
+    obstacle: '💡',
+    obstacleColor: '#a855f7',
+    // Neon power: Faster everything
+    towerCooldownMultiplier: 0.8,
+    enemySpeedMultiplier: 1.2
+  },
+  { 
+    name: 'Aurora Fields', 
+    bg: 'bg-violet-950', 
+    grid: 'border-violet-700/30', 
+    path: 'bg-fuchsia-700/30', 
+    obstacle: '🌌',
+    obstacleColor: '#9333ea',
+    // Aurora magic: Balanced boost
+    towerRangeMultiplier: 1.1,
+    towerDamageMultiplier: 1.1,
+    moneyBonus: 2
+  },
+  { 
+    name: 'Rusty Factory', 
+    bg: 'bg-orange-950', 
+    grid: 'border-amber-700/30', 
+    path: 'bg-yellow-800/30', 
+    obstacle: '⚙️',
+    obstacleColor: '#f59e0b',
+    // Rust slows: Slower towers, weaker enemies
+    towerCooldownMultiplier: 1.2,
+    enemyHpMultiplier: 0.9,
+    enemySpeedMultiplier: 0.9
+  },
+  { 
+    name: 'Mystic Garden', 
+    bg: 'bg-green-950', 
+    grid: 'border-emerald-700/30', 
+    path: 'bg-teal-700/30', 
+    obstacle: '🌺',
+    obstacleColor: '#10b981',
+    // Nature blessing: Healing bonus
+    towerRangeMultiplier: 1.05,
+    towerDamageMultiplier: 1.05,
+    moneyBonus: 1
+  },
+  { 
+    name: 'Quantum Void', 
+    bg: 'bg-slate-950', 
+    grid: 'border-gray-700/30', 
+    path: 'bg-indigo-700/30', 
+    obstacle: '🌀',
+    obstacleColor: '#6366f1',
+    // Quantum effects: Random everything
+    towerCooldownMultiplier: 1.1,
+    towerRangeMultiplier: 1.1,
+    towerDamageMultiplier: 1.1,
+    enemySpeedMultiplier: 1.1,
+    moneyBonus: 5
+  },
+  { 
+    name: 'Cursed Graveyard', 
+    bg: 'bg-zinc-900', 
+    grid: 'border-neutral-700/30', 
+    path: 'bg-gray-600/30', 
+    obstacle: '🪦',
+    obstacleColor: '#52525b',
+    // Undead curse: Weaker towers, stronger enemies
+    towerDamageMultiplier: 0.9,
+    enemyHpMultiplier: 1.2,
+    moneyBonus: 3
+  },
+  { 
+    name: 'Solar Flare', 
+    bg: 'bg-yellow-950', 
+    grid: 'border-yellow-700/30', 
+    path: 'bg-amber-700/30', 
+    obstacle: '☀️',
+    obstacleColor: '#facc15',
+    // Solar power: Fast towers, fast enemies
+    towerCooldownMultiplier: 0.85,
+    enemySpeedMultiplier: 1.25,
+    towerDamageMultiplier: 1.15
+  },
+  { 
+    name: 'Abandoned Mine', 
+    bg: 'bg-stone-950', 
+    grid: 'border-stone-700/30', 
+    path: 'bg-slate-700/30', 
+    obstacle: '⛏️',
+    obstacleColor: '#78716c',
+    // Mining bonus: More money
+    moneyBonus: 4,
+    towerRangeMultiplier: 0.95
+  },
+  { 
+    name: 'Heavenly Clouds', 
+    bg: 'bg-blue-50', 
+    grid: 'border-sky-200/30', 
+    path: 'bg-cyan-200/30', 
+    obstacle: '✨',
+    obstacleColor: '#38bdf8',
+    // Heavenly blessing: All bonuses
+    towerRangeMultiplier: 1.15,
+    towerDamageMultiplier: 1.15,
+    towerCooldownMultiplier: 0.9,
+    moneyBonus: 3
   }
 ];
 

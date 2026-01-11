@@ -37,6 +37,9 @@ export class GameEngine {
   totalMoneyEarned: number = 0;
   totalEnemiesKilled: number = 0;
   
+  // Current Theme (for environmental effects)
+  currentTheme: any = null;
+  
   // --- AUTO-WAVE & LOGIC INTERNALS ---
   speedAccumulator: number = 0;
   tickCount: number = 0;
