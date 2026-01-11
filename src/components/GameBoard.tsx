@@ -6,6 +6,7 @@ import { ROWS, COLS } from '../engine/MapGenerator';
 import { QuestionModal } from './QuestionModal';
 import { soundSystem } from '../engine/SoundSystem';
 import { effectManager } from '../engine/EffectManager';
+import { i18n } from '../utils/i18n';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
 
@@ -32,6 +33,15 @@ export const GameBoard: React.FC = () => {
   const [hitOpacity, setHitOpacity] = useState(0);
   const [waveCountdown, setWaveCountdown] = useState(game.waveCountdown);
   const [waveInProgress, setWaveInProgress] = useState(game.waveInProgress);
+  
+  // Language State
+  const [language, setLanguage] = useState<'en' | 'zh'>(i18n.getLanguage());
+  
+  const toggleLanguage = () => {
+    const newLang = language === 'en' ? 'zh' : 'en';
+    setLanguage(newLang);
+    i18n.setLanguage(newLang);
+  };
 
   // --- PERFORMANCE OPTIMIZATION: REFS ---
   // We store direct DOM references to enemies to bypass React's render cycle for movement
@@ -263,10 +273,19 @@ export const GameBoard: React.FC = () => {
       {/* --- SIDEBAR --- */}
       <div className="w-64 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-900/95 z-20 shadow-xl">
         <div className="p-4 border-b border-slate-700 bg-slate-950">
-           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Code Defense</h1>
+           <div className="flex items-center justify-between mb-2">
+             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{i18n.t('game.title')}</h1>
+             <button 
+               onClick={toggleLanguage}
+               className="px-2 py-1 text-xs rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-colors"
+               title={i18n.t('game.language')}
+             >
+               {language === 'en' ? '中' : 'EN'}
+             </button>
+           </div>
            <div className="flex justify-between items-center mt-1 opacity-70 text-xs">
-               <span>Theme: {currentTheme.name}</span>
-               {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">Next: {(waveCountdown/60).toFixed(1)}s</span>}
+               <span>{i18n.t('game.wave')}: {currentTheme.name}</span>
+               {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">{i18n.t('game.nextWaveIn')}: {(waveCountdown/60).toFixed(1)}s</span>}
            </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -303,7 +322,7 @@ export const GameBoard: React.FC = () => {
           <div className="flex items-center gap-2 pointer-events-auto">
              <div className="flex flex-col items-center justify-center bg-indigo-600 px-4 py-1 rounded shadow-lg border border-indigo-400 mr-4 min-w-[100px]">
                  <span className="text-[10px] uppercase font-bold text-indigo-200">
-                    {waveInProgress ? 'Current Wave' : 'Next Wave In'}
+                    {waveInProgress ? i18n.t('game.currentWave') : i18n.t('game.nextWaveIn')}
                  </span>
                  <span className={`text-2xl font-black ${waveInProgress ? 'text-white' : 'text-yellow-300 animate-pulse'}`}>
                     {waveInProgress ? wave : (waveCountdown/60).toFixed(1) + 's'}
@@ -311,7 +330,7 @@ export const GameBoard: React.FC = () => {
              </div>
 
              <button onClick={() => game.toggleTacticalMode()} className={`px-4 py-2 rounded font-bold border transition-all ${isTactical ? 'bg-amber-600 border-amber-400 text-white animate-pulse' : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'}`}>
-                {isTactical ? '⏸ PAUSED' : '▶ PLAY'}
+                {isTactical ? `⏸ ${i18n.t('game.paused')}` : `▶ ${i18n.t('game.play')}`}
              </button>
 
              <div className="flex bg-slate-900 rounded border border-slate-700 overflow-hidden">
@@ -391,9 +410,9 @@ export const GameBoard: React.FC = () => {
                      </div>
                      {isSelected && (
                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-32 animate-in fade-in zoom-in duration-100">
-                             <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">Range: {Math.floor(t.range)} | Dmg: {t.damage}</div>
-                             <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">UPGRADE (${upgradeCost})</button>
-                             <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">SELL (+${sellPrice})</button>
+                             <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
+                             <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">{i18n.t('game.upgrade')} (${upgradeCost})</button>
+                             <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>
                          </div>
                      )}
                      {isSelected && <div className="absolute rounded-full border border-white/30 bg-white/5 pointer-events-none" style={{ width: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), height: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), top: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), left: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), zIndex: -1 }} /> }

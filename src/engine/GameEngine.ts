@@ -504,6 +504,7 @@ export class GameEngine {
     // Allow placement on empty (0) or path (1), but not on Start/Base/Obstacle
     const cell = this.map[r][c];
     if (cell === 'S' || cell === 'B' || cell === 'X') {
+        // Text will be translated in the UI layer if needed
         this.addTextParticle(c, r, "Blocked!", "#ef4444");
         return;
     }

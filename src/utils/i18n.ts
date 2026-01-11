@@ -42,10 +42,11 @@ const translations: Record<Language, Record<string, string>> = {
     'game.lang.zh': '中文',
     
     // Notifications
-    'notif.boss': 'BOSS INCOMING',
+    'notif.boss': '⚠️ BOSS INCOMING ⚠️',
     'notif.gameOver': 'GAME OVER',
     'notif.blocked': 'Blocked!',
     'notif.needFunds': 'Need Funds!',
+    'notif.wave': 'WAVE',
     
     // Towers
     'tower.range': 'Range',
@@ -68,10 +69,11 @@ const translations: Record<Language, Record<string, string>> = {
     'game.lang.zh': '中文',
     
     // Notifications
-    'notif.boss': 'BOSS来袭',
+    'notif.boss': '⚠️ BOSS来袭 ⚠️',
     'notif.gameOver': '游戏结束',
     'notif.blocked': '无法放置！',
     'notif.needFunds': '资金不足！',
+    'notif.wave': '波次',
     
     // Towers
     'tower.range': '范围',
