@@ -296,6 +296,11 @@ export class GameEngine {
         // Calculate effective speed based on status effects
         let currentSpeed = effectManager.getEffectiveEnemySpeed(enemy, enemy.baseSpeed);
         
+        // Apply theme environmental effects to enemy speed
+        if (this.currentTheme && this.currentTheme.enemySpeedMultiplier) {
+          currentSpeed *= this.currentTheme.enemySpeedMultiplier;
+        }
+        
         // Move along path
         enemy.progress += currentSpeed;
         if (enemy.progress >= 1.0) {
@@ -352,8 +357,21 @@ export class GameEngine {
         effectManager.updateTowerEffects(tower);
         
         // Recalculate effective stats based on status effects
-        tower.damage = effectManager.getEffectiveTowerDamage(tower);
-        tower.range = effectManager.getEffectiveTowerRange(tower);
+        let effectiveDamage = effectManager.getEffectiveTowerDamage(tower);
+        let effectiveRange = effectManager.getEffectiveTowerRange(tower);
+        
+        // Apply theme environmental effects
+        if (this.currentTheme) {
+          if (this.currentTheme.towerDamageMultiplier) {
+            effectiveDamage *= this.currentTheme.towerDamageMultiplier;
+          }
+          if (this.currentTheme.towerRangeMultiplier) {
+            effectiveRange *= this.currentTheme.towerRangeMultiplier;
+          }
+        }
+        
+        tower.damage = effectiveDamage;
+        tower.range = effectiveRange;
         
         // 1. Eco Tower Logic (if we add eco type later)
         if (false) { // Eco towers not implemented yet
@@ -379,7 +397,13 @@ export class GameEngine {
 
         // 3. Attack Logic (use effective cooldown)
         const baseCooldown = tower.baseCooldown || stats.cooldown;
-        const effectiveCooldown = effectManager.getEffectiveTowerCooldown(tower, baseCooldown);
+        let effectiveCooldown = effectManager.getEffectiveTowerCooldown(tower, baseCooldown);
+        
+        // Apply theme environmental effects to cooldown
+        if (this.currentTheme && this.currentTheme.towerCooldownMultiplier) {
+          effectiveCooldown *= this.currentTheme.towerCooldownMultiplier;
+        }
+        
         if (tower.cooldown > 0) tower.cooldown--;
         
         if (target) {
@@ -593,7 +617,7 @@ export class GameEngine {
             });
             
             nearbyTowers.forEach(tower => {
-              if (!tower.statusEffects || !tower.statusEffects.find(e => e.effectId === 'stunned')) {
+              if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'stunned')) {
                 effectManager.applyEffectToTower(tower, 'stunned', 180);
               }
             });
