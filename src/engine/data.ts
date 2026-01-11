@@ -13,6 +13,7 @@ export interface EnemyType {
     isBoss?: boolean; // Mark as boss type
     description?: string; // Clash Royale-style description
     minWave?: number; // Minimum wave to spawn (for difficulty scaling)
+    moneyBonus?: number; // Extra money bonus multiplier for bosses
 }
 
 export const ENEMY_TYPES: EnemyType[] = [
@@ -64,13 +65,13 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Necromancer", hp: 320, speed: 0.35, reward: 85, color: "#581c87", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 400 },
     { name: "Phantom", hp: 140, speed: 0.9, reward: 42, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300 },
     { name: "Archmage", hp: 280, speed: 0.4, reward: 75, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350 },
-    { name: "Golem", hp: 550, speed: 0.15, reward: 130, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'] },
-    { name: "Dragon", hp: 700, speed: 0.18, reward: 160, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'] },
-    { name: "Kraken", hp: 650, speed: 0.22, reward: 150, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'] },
-    { name: "Hydra", hp: 580, speed: 0.26, reward: 135, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'] },
-    { name: "Colossus", hp: 800, speed: 0.12, reward: 180, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250 },
-    { name: "Tyrant", hp: 750, speed: 0.16, reward: 170, color: "#991b1b", icon: "👑", isBoss: true, abilities: ['berserk', 'damage_reflect', 'charge'] },
-    { name: "Demon", hp: 680, speed: 0.2, reward: 155, color: "#7c2d12", icon: "😈", isBoss: true, abilities: ['teleport', 'poison_aura', 'explode'] },
+    { name: "Golem", hp: 550, speed: 0.15, reward: 130, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'], moneyBonus: 3.0 },
+    { name: "Dragon", hp: 700, speed: 0.18, reward: 160, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], moneyBonus: 3.0 },
+    { name: "Kraken", hp: 650, speed: 0.22, reward: 150, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'], moneyBonus: 3.0 },
+    { name: "Hydra", hp: 580, speed: 0.26, reward: 135, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'], moneyBonus: 3.0 },
+    { name: "Colossus", hp: 800, speed: 0.12, reward: 180, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250, moneyBonus: 3.5 },
+    { name: "Tyrant", hp: 750, speed: 0.16, reward: 170, color: "#991b1b", icon: "👑", isBoss: true, abilities: ['berserk', 'damage_reflect', 'charge'], moneyBonus: 3.5 },
+    { name: "Demon", hp: 680, speed: 0.2, reward: 155, color: "#7c2d12", icon: "😈", isBoss: true, abilities: ['teleport', 'poison_aura', 'explode'], moneyBonus: 3.0 },
     
     // Elite Enemies
     { name: "Assassin", hp: 160, speed: 1.1, reward: 48, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 400 },
@@ -78,18 +79,18 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Vampire", hp: 380, speed: 0.38, reward: 95, color: "#be123c", icon: "🧛", abilities: ['regenerate', 'teleport'], abilityCooldown: 320 },
     { name: "Shaman", hp: 260, speed: 0.42, reward: 70, color: "#9333ea", icon: "🔮", abilities: ['spawn_minions', 'freeze_aura', 'poison_aura'], abilityCooldown: 450 },
     { name: "Wraith", hp: 200, speed: 0.85, reward: 52, color: "#6366f1", icon: "👤", abilities: ['invisible', 'fly', 'teleport'], abilityCooldown: 350 },
-    { name: "Revenant", hp: 440, speed: 0.3, reward: 108, color: "#4338ca", icon: "💀", isBoss: true, abilities: ['spawn_minions', 'regenerate', 'damage_reflect'] },
-    { name: "Leviathan", hp: 720, speed: 0.14, reward: 165, color: "#0c4a6e", icon: "🌊", isBoss: true, abilities: ['split', 'freeze_aura', 'charge'] },
-    { name: "Phoenix", hp: 600, speed: 0.5, reward: 145, color: "#ea580c", icon: "🔥", isBoss: true, abilities: ['fly', 'regenerate', 'explode'] },
-    { name: "Cerberus", hp: 620, speed: 0.24, reward: 148, color: "#1f2937", icon: "🐕", isBoss: true, abilities: ['split', 'charge', 'stun_attack'] },
-    { name: "Manticore", hp: 640, speed: 0.21, reward: 152, color: "#78350f", icon: "🦂", isBoss: true, abilities: ['fly', 'poison_aura', 'teleport'], abilityCooldown: 400 },
+    { name: "Revenant", hp: 440, speed: 0.3, reward: 108, color: "#4338ca", icon: "💀", isBoss: true, abilities: ['spawn_minions', 'regenerate', 'damage_reflect'], moneyBonus: 3.5 },
+    { name: "Leviathan", hp: 720, speed: 0.14, reward: 165, color: "#0c4a6e", icon: "🌊", isBoss: true, abilities: ['split', 'freeze_aura', 'charge'], moneyBonus: 4.0 },
+    { name: "Phoenix", hp: 600, speed: 0.5, reward: 145, color: "#ea580c", icon: "🔥", isBoss: true, abilities: ['fly', 'regenerate', 'explode'], moneyBonus: 3.5 },
+    { name: "Cerberus", hp: 620, speed: 0.24, reward: 148, color: "#1f2937", icon: "🐕", isBoss: true, abilities: ['split', 'charge', 'stun_attack'], moneyBonus: 3.5 },
+    { name: "Manticore", hp: 640, speed: 0.21, reward: 152, color: "#78350f", icon: "🦂", isBoss: true, abilities: ['fly', 'poison_aura', 'teleport'], abilityCooldown: 400, moneyBonus: 3.5 },
     
     // Special Bosses
-    { name: "Overlord", hp: 900, speed: 0.1, reward: 200, color: "#1e1e1e", icon: "👑", isBoss: true, abilities: ['deactivate_towers', 'spawn_minions', 'shield', 'heal_allies'], abilityCooldown: 180 },
-    { name: "Cthulhu", hp: 850, speed: 0.13, reward: 190, color: "#0f172a", icon: "🐙", isBoss: true, abilities: ['teleport', 'split', 'poison_aura', 'stun_attack'], abilityCooldown: 220 },
-    { name: "Archon", hp: 920, speed: 0.11, reward: 205, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200 },
-    { name: "Abomination", hp: 880, speed: 0.14, reward: 195, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'] },
-    { name: "World Eater", hp: 1000, speed: 0.08, reward: 220, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150 },
+    { name: "Overlord", hp: 900, speed: 0.1, reward: 200, color: "#1e1e1e", icon: "👑", isBoss: true, abilities: ['deactivate_towers', 'spawn_minions', 'shield', 'heal_allies'], abilityCooldown: 180, moneyBonus: 5.0 },
+    { name: "Cthulhu", hp: 850, speed: 0.13, reward: 190, color: "#0f172a", icon: "🐙", isBoss: true, abilities: ['teleport', 'split', 'poison_aura', 'stun_attack'], abilityCooldown: 220, moneyBonus: 5.0 },
+    { name: "Archon", hp: 920, speed: 0.11, reward: 205, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200, moneyBonus: 5.0 },
+    { name: "Abomination", hp: 880, speed: 0.14, reward: 195, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'], moneyBonus: 4.5 },
+    { name: "World Eater", hp: 1000, speed: 0.08, reward: 220, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150, moneyBonus: 6.0 },
 ];
 
 export interface Theme {

@@ -261,31 +261,46 @@ export class GameEngine {
     const isMiniBossWave = this.wave % 5 === 0 && this.wave % 10 !== 0 && this.enemiesRemainingToSpawn === 0;
     const isBossWave = isBigBossWave || isMiniBossWave;
     
-    // Filter enemies based on wave difficulty (first 10 waves = easier enemies)
-    let availableTypes = ENEMY_TYPES.filter(t => {
-      // First 10 waves: no hard enemies (no special abilities except basic ones)
-      if (this.wave <= 10) {
-        // Only allow basic enemies without powerful abilities
-        const hardAbilities = ['deactivate_towers', 'slow_towers', 'teleport', 'heal_allies', 'spawn_minions', 'split'];
-        if (t.abilities && t.abilities.some(a => hardAbilities.includes(a))) {
-          return false; // Exclude enemies with hard abilities in first 10 waves
+    // Boss spawning logic:
+    // - Mini-bosses ONLY on waves 5, 15, 25... (5n waves, not 10n)
+    // - Big bosses ONLY on waves 10, 20, 30... (10n waves)
+    // - On non-boss waves, regular enemies only (no bosses)
+    // - At higher waves (wave > 20), previous bosses may randomly appear with low chance (5%)
+    
+    let availableTypes: typeof ENEMY_TYPES;
+    
+    if (isBossWave) {
+      // Boss waves: only spawn the appropriate boss type
+      if (isBigBossWave) {
+        // Big boss wave: only big boss types (wave 10, 20, 30...)
+        availableTypes = ENEMY_TYPES.filter(t => t.isBoss === true);
+      } else {
+        // Mini-boss wave: only mini-boss types (wave 5, 15, 25...)
+        // For now, use all boss types (can be refined later to distinguish mini vs big)
+        availableTypes = ENEMY_TYPES.filter(t => t.isBoss === true);
+      }
+    } else {
+      // Non-boss waves: regular enemies only
+      // At wave > 20, 5% chance for a previous boss to randomly appear
+      const allowRandomBoss = this.wave > 20 && Math.random() < 0.05;
+      
+      availableTypes = ENEMY_TYPES.filter(t => {
+        // Exclude bosses on regular waves (unless random boss spawn)
+        if (t.isBoss && !allowRandomBoss) return false;
+        
+        // First 10 waves: no hard enemies
+        if (this.wave <= 10) {
+          const hardAbilities = ['deactivate_towers', 'slow_towers', 'teleport', 'heal_allies', 'spawn_minions', 'split'];
+          if (t.abilities && t.abilities.some(a => hardAbilities.includes(a))) {
+            return false;
+          }
         }
-        // Exclude boss types in first 10 waves (except if it's a boss wave)
-        if (t.isBoss && !isBossWave) return false;
+        
         // Check minWave requirement
         if (t.minWave && t.minWave > this.wave) return false;
-      } else {
-        // After wave 10: all enemies available
-        if (t.minWave && t.minWave > this.wave) return false;
-      }
-      return true;
-    });
-    
-    // Boss wave logic
-    if (isBossWave) {
-      availableTypes = availableTypes.filter(t => t.isBoss || Math.random() > 0.7); // Prefer boss types on boss waves
-    } else {
-      availableTypes = availableTypes.filter(t => !t.isBoss || Math.random() > 0.9); // Rare boss spawns on normal waves
+        
+        return true;
+      });
     }
     
     if (availableTypes.length === 0) availableTypes = ENEMY_TYPES.filter(t => !t.minWave || t.minWave <= this.wave);
@@ -297,7 +312,10 @@ export class GameEngine {
     // Boss HP multipliers: mini-boss = 3x, big boss = 8x
     const bossHpMultiplier = isBigBossWave ? 8 : (isMiniBossWave ? 3 : 1);
     let hp = (isBoss ? stats.hp * bossHpMultiplier : stats.hp) * diff;
-    const reward = (isBoss ? stats.reward * bossHpMultiplier : stats.reward);
+    // Boss money bonus: base reward * boss multiplier * moneyBonus (if exists)
+    const baseReward = (isBoss ? stats.reward * bossHpMultiplier : stats.reward);
+    const moneyBonus = (isBoss && stats.moneyBonus) ? stats.moneyBonus : 1.0;
+    const reward = baseReward * moneyBonus;
     
     // Apply theme environmental effects to enemy HP
     if (this.currentTheme && this.currentTheme.enemyHpMultiplier) {
