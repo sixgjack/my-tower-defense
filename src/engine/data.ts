@@ -106,7 +106,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'area', color: '#fff', icon: '🛰️',
     description: 'Satellite-guided missile strikes anywhere on the battlefield.',
     areaRadius: 3,
-    projectileStyle: 'arc'
+    projectileStyle: 'arc',
+    specialAbility: 'aoe',
+    maxHp: 250
   },
   'SCATTERSHOT': {
     name: 'Shotgun Turret', cost: 550, damage: 40, range: 3, cooldown: 90,
@@ -120,7 +122,10 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#020617', icon: '⚫',
     description: 'Electromagnetic projectile pierces through enemies with burn effect.',
     burnDamage: 20,
-    projectileStyle: 'fire'
+    projectileStyle: 'fire',
+    specialAbility: 'aoe',
+    areaRadius: 1.0,
+    maxHp: 300
   },
   'SPELL_TOWER': {
     name: 'Command Center', cost: 300, damage: 0, range: 3, cooldown: 1000,
@@ -162,7 +167,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#cbd5e1', icon: '❄️',
     description: 'Freezing projectiles slow enemy movement speed.',
     slowFactor: 0.5,
-    projectileStyle: 'ice'
+    projectileStyle: 'ice',
+    specialAbility: 'slow',
+    maxHp: 120
   },
   'SKYBOX': {
     name: 'Anti-Air Platform', cost: 450, damage: 65, range: 5, cooldown: 55,
@@ -180,14 +187,18 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Anchoring Trap', cost: 580, damage: 110, range: 5, cooldown: 160,
     type: 'pull', color: '#fff', icon: '⚓',
     description: 'Launches anchors that immobilize heavy enemies in place.',
-    stunDuration: 30
+    stunDuration: 30,
+    specialAbility: 'stun',
+    maxHp: 150
   },
   'W': {
     name: 'Timed Explosive', cost: 600, damage: 200, range: 4, cooldown: 120,
     type: 'area', color: '#dc2626', icon: '💥',
     description: 'Delayed detonation grenades. Massive area damage on explosion.',
     areaRadius: 2.0,
-    projectileStyle: 'grenade'
+    projectileStyle: 'grenade',
+    specialAbility: 'aoe',
+    maxHp: 180
   },
 
   // ==========================================
@@ -351,7 +362,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'pull', color: '#1e3a8a', icon: '⚓',
     description: 'Pulls distant enemies closer into combat range.',
     pullStrength: 1.5,
-    projectileStyle: 'vortex'
+    projectileStyle: 'vortex',
+    specialAbility: 'pull',
+    maxHp: 140
   },
   'WEEDY': {
     name: 'Ice Cannon', cost: 450, damage: 60, range: 3, cooldown: 100,
@@ -389,7 +402,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'aura', color: '#fef08a', icon: '🦊',
     description: 'Massive area slow effect. Significantly reduces enemy speed.',
     slowFactor: 0.4,
-    projectileStyle: 'fire'
+    projectileStyle: 'fire',
+    specialAbility: 'slow',
+    maxHp: 130
   },
 
   // ==========================================

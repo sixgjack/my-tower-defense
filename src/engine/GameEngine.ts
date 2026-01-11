@@ -293,6 +293,9 @@ export class GameEngine {
     // Remove dead/escaped
     this.enemies = this.enemies.filter(e => e.hp > 0 && !e.escaped);
     
+    // Remove destroyed towers
+    this.towers = this.towers.filter(t => (t.hp || t.maxHp || 100) > 0);
+    
     if (this.lives <= 0) {
         this.showNotification("GAME OVER", 'boss');
         this.isTacticalMode = true; // Pause game
@@ -343,6 +346,11 @@ export class GameEngine {
         if (tower.cooldown > 0) tower.cooldown--;
         
         if (target) {
+            // Calculate tower rotation angle to face target
+            const dx = (target.c + (target.xOffset || 0)) - tower.c;
+            const dy = (target.r + (target.yOffset || 0)) - tower.r;
+            tower.angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90) % 360; // Convert to degrees, adjust for sprite orientation
+            
             if (stats.type === 'beam') {
                 // Continuous Laser
                 tower.targetId = target.id;
@@ -396,6 +404,28 @@ export class GameEngine {
                     // Use tower color for muzzle flash instead of white, with reduced intensity for fast-firing towers
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
+                }
+                
+                // Apply special abilities
+                if (stats.specialAbility) {
+                    if (stats.specialAbility === 'stun' && stats.stunDuration) {
+                        effectManager.applyEffectToEnemy(target, 'stunned');
+                    } else if (stats.specialAbility === 'slow' && stats.slowFactor) {
+                        effectManager.applyEffectToEnemy(target, 'frostbite');
+                    } else if (stats.specialAbility === 'pull' && stats.pullStrength) {
+                        // Pull effect handled in updateEnemies via status effects
+                        effectManager.applyEffectToEnemy(target, 'battle_surge'); // Use existing effect or create new
+                    } else if (stats.specialAbility === 'aoe' && stats.areaRadius) {
+                        // AOE damage to nearby enemies
+                        for (const e of this.enemies) {
+                            if (e.id === target.id) continue;
+                            const dist = Math.sqrt((e.r - target.r)**2 + (e.c - target.c)**2);
+                            if (dist <= stats.areaRadius) {
+                                e.hp -= tower.damage * 0.5; // 50% splash damage
+                                if (e.hp <= 0) this.killEnemy(e);
+                            }
+                        }
+                    }
                 }
             }
         } else {
@@ -537,6 +567,7 @@ export class GameEngine {
         const { r, c, towerKey } = this.pendingAction;
         const stats = TOWERS[towerKey];
         this.money -= stats.cost;
+        const maxHp = stats.maxHp || 100;
         const newTower: Tower = { 
             id: Date.now(), 
             r, 
@@ -550,7 +581,10 @@ export class GameEngine {
             damageCharge: 0,
             baseDamage: stats.damage,
             baseRange: stats.range,
-            baseCooldown: stats.cooldown
+            baseCooldown: stats.cooldown,
+            hp: maxHp,
+            maxHp: maxHp,
+            angle: 0
         };
         this.towers.push(newTower);
         soundSystem.play('build');

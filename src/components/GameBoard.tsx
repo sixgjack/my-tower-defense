@@ -456,8 +456,23 @@ export const GameBoard: React.FC = () => {
                               }}
                          />
                      )}
-                     <div onClick={() => setSelectedTowerId(isSelected ? null : t.id)} 
-                          className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}>
+                     {/* Health Bar */}
+                     {t.maxHp && t.maxHp > 0 && (
+                         <div className="absolute -top-1 left-0 right-0 h-1 bg-slate-700 rounded-full overflow-hidden z-10">
+                             <div 
+                                 className="h-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-100"
+                                 style={{ width: `${Math.max(0, Math.min(100, ((t.hp || t.maxHp) / t.maxHp) * 100))}%` }}
+                             />
+                         </div>
+                     )}
+                     <div 
+                         onClick={() => setSelectedTowerId(isSelected ? null : t.id)} 
+                         className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}
+                         style={{ 
+                             transform: t.angle !== undefined ? `rotate(${t.angle}deg)` : 'none',
+                             transformOrigin: 'center'
+                         }}
+                     >
                           {stats.icon}
                           {t.level > 1 && <div className="absolute -top-1 -right-1 bg-blue-600 text-[8px] px-1 rounded-full text-white border border-blue-400">{t.level}</div>}
                      </div>

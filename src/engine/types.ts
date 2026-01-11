@@ -75,6 +75,7 @@ export interface TowerStats {
     color: string;
     icon: string;
     description: string;
+    maxHp?: number;         // Tower health (default: 100)
     slowFactor?: number;   
     stunDuration?: number; 
     burnDamage?: number;   
@@ -82,7 +83,8 @@ export interface TowerStats {
     beamRamp?: number;     
     projectileSpeed?: number;
     areaRadius?: number;   
-    multiTarget?: number;  
+    multiTarget?: number;
+    specialAbility?: 'stun' | 'slow' | 'pull' | 'block' | 'aoe' | 'drag'; // Special abilities
     projectileStyle?: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
 }
 
@@ -102,6 +104,9 @@ export interface Tower {
     baseDamage?: number; // Store base damage for effect calculations
     baseRange?: number; // Store base range for effect calculations
     baseCooldown?: number; // Store base cooldown for effect calculations
+    hp?: number; // Current health
+    maxHp?: number; // Maximum health
+    angle?: number; // Rotation angle in degrees (0 = right, 90 = down)
 }
 
 // --- PROJECTILES ---
