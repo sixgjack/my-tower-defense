@@ -1,5 +1,5 @@
 // src/utils/i18n.ts
-// Internationalization support (English/Chinese)
+// Internationalization support (English/Traditional Chinese)
 
 export type Language = 'en' | 'zh';
 
@@ -53,31 +53,31 @@ const translations: Record<Language, Record<string, string>> = {
     'tower.damage': 'Dmg',
   },
   zh: {
-    // UI Elements
-    'game.title': '代码防御',
-    'game.money': '金钱',
+    // UI Elements - Traditional Chinese (繁體中文)
+    'game.title': '代碼防禦',
+    'game.money': '金錢',
     'game.lives': '生命',
     'game.wave': '波次',
-    'game.currentWave': '当前波次',
+    'game.currentWave': '當前波次',
     'game.nextWaveIn': '下一波',
-    'game.paused': '暂停',
-    'game.play': '继续',
-    'game.upgrade': '升级',
+    'game.paused': '暫停',
+    'game.play': '繼續',
+    'game.upgrade': '升級',
     'game.sell': '出售',
-    'game.language': '语言',
+    'game.language': '語言',
     'game.lang.en': 'English',
-    'game.lang.zh': '中文',
+    'game.lang.zh': '繁體中文',
     
     // Notifications
-    'notif.boss': '⚠️ BOSS来袭 ⚠️',
-    'notif.gameOver': '游戏结束',
-    'notif.blocked': '无法放置！',
-    'notif.needFunds': '资金不足！',
+    'notif.boss': '⚠️ BOSS來襲 ⚠️',
+    'notif.gameOver': '遊戲結束',
+    'notif.blocked': '無法放置！',
+    'notif.needFunds': '資金不足！',
     'notif.wave': '波次',
     
     // Towers
-    'tower.range': '范围',
-    'tower.damage': '伤害',
+    'tower.range': '範圍',
+    'tower.damage': '傷害',
   }
 };
 

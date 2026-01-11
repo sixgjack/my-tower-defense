@@ -371,6 +371,59 @@ export const GameBoard: React.FC = () => {
               }))}
           </div>
 
+          {/* Path Visualization - Animated Dotted Arrows */}
+          {game.path.length > 1 && (
+            <svg className="absolute inset-0 pointer-events-none w-full h-full z-5 overflow-visible" style={{ opacity: 0.4 }}>
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="10"
+                  refX="9"
+                  refY="3"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <path d="M0,0 L0,6 L9,3 z" fill="#60a5fa" opacity="0.6" />
+                </marker>
+              </defs>
+              {game.path.slice(0, -1).map((point, idx) => {
+                if (idx >= game.path.length - 1) return null;
+                const nextPoint = game.path[idx + 1];
+                const x1 = point.c * TILE_SIZE + TILE_SIZE / 2;
+                const y1 = point.r * TILE_SIZE + TILE_SIZE / 2;
+                const x2 = nextPoint.c * TILE_SIZE + TILE_SIZE / 2;
+                const y2 = nextPoint.r * TILE_SIZE + TILE_SIZE / 2;
+                
+                return (
+                  <line
+                    key={`path-${idx}`}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#60a5fa"
+                    strokeWidth="3"
+                    strokeDasharray="8 4"
+                    markerEnd="url(#arrowhead)"
+                    opacity="0.5"
+                    style={{
+                      strokeDashoffset: (tick * 4) % 12,
+                      animation: 'pathDash 0.5s linear infinite'
+                    }}
+                  />
+                );
+              })}
+              <style>{`
+                @keyframes pathDash {
+                  to {
+                    stroke-dashoffset: -12;
+                  }
+                }
+              `}</style>
+            </svg>
+          )}
+
           {/* 2. Ghost */}
           {ghost && (
              <div className="absolute pointer-events-none z-40 transition-all duration-75" 
