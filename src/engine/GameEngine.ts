@@ -611,7 +611,7 @@ export class GameEngine {
               return dist <= 4;
             });
             
-            nearbyEnemies.forEach(e => {
+            nearbyEnemies.forEach((e: any) => {
               const heal = e.maxHp * 0.15; // Heal 15% max HP
               e.hp = Math.min(e.hp + heal, e.maxHp);
               this.addTextParticle(e.c, e.r, `+${Math.floor(heal)}`, "#10b981");
