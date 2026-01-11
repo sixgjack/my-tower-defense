@@ -6,7 +6,7 @@ import { ROWS, COLS } from '../engine/MapGenerator';
 import { QuestionModal } from './QuestionModal';
 import { soundSystem } from '../engine/SoundSystem';
 import { effectManager } from '../engine/EffectManager';
-import { i18n } from '../utils/i18n';
+import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
 
@@ -296,7 +296,7 @@ export const GameBoard: React.FC = () => {
                 className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
                 <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform">{tower.icon}</div>
                 <div className="flex-1">
-                    <div className="font-bold text-sm text-slate-200">{tower.name}</div>
+                    <div className="font-bold text-sm text-slate-200">{getTowerName(key)}</div>
                     <div className="flex justify-between items-center"><span className="text-xs text-emerald-400 font-mono">${tower.cost}</span></div>
                 </div>
                 </div>
@@ -462,7 +462,9 @@ export const GameBoard: React.FC = () => {
                           {t.level > 1 && <div className="absolute -top-1 -right-1 bg-blue-600 text-[8px] px-1 rounded-full text-white border border-blue-400">{t.level}</div>}
                      </div>
                      {isSelected && (
-                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-32 animate-in fade-in zoom-in duration-100">
+                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-40 animate-in fade-in zoom-in duration-100">
+                             <div className="text-xs font-bold text-slate-100 mb-1 border-b border-slate-600 pb-1 text-center">{getTowerName(t.key)}</div>
+                             <div className="text-[10px] text-slate-400 mb-1 text-center leading-tight">{getTowerDescription(t.key)}</div>
                              <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
                              <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">{i18n.t('game.upgrade')} (${upgradeCost})</button>
                              <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>

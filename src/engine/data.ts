@@ -48,381 +48,381 @@ export const THEMES = [
 
 export const TOWERS: Record<string, TowerStats> = {
   // ==========================================
-  // CLASSIC DEFENSE (Clash/Generic)
+  // BASIC OUTPUT & LOGGING (Entry Level)
   // ==========================================
   'ARCHER': {
-    name: 'Archer Tower', cost: 50, damage: 12, range: 3.5, cooldown: 50,
-    type: 'projectile', color: '#fbbf24', icon: '🏹',
-    description: 'Basic rapid fire unit. Cheap and reliable.',
+    name: 'Console.log', cost: 50, damage: 12, range: 3.5, cooldown: 50,
+    type: 'projectile', color: '#fbbf24', icon: '💬',
+    description: 'Basic debug output. Cheap and reliable.',
     projectileStyle: 'dot'
   },
   'CANNON': {
-    name: 'Cannon', cost: 120, damage: 45, range: 4, cooldown: 100,
-    type: 'area', color: '#1e293b', icon: '💣',
-    description: 'Deals splash damage to grouped enemies.', areaRadius: 1.5,
+    name: 'Print Statement', cost: 120, damage: 45, range: 4, cooldown: 100,
+    type: 'area', color: '#1e293b', icon: '📝',
+    description: 'Standard output with splash formatting.', areaRadius: 1.5,
     projectileStyle: 'arc'
   },
   'WIZARD': {
-    name: 'Wizard Tower', cost: 200, damage: 30, range: 3, cooldown: 60,
-    type: 'area', color: '#8b5cf6', icon: '🧙‍♂️',
-    description: 'Magical splash damage.', areaRadius: 2.0,
+    name: 'Error Handler', cost: 200, damage: 30, range: 3, cooldown: 60,
+    type: 'area', color: '#8b5cf6', icon: '⚠️',
+    description: 'Catches and processes multiple errors.', areaRadius: 2.0,
     projectileStyle: 'fire'
   },
   'MORTAR': {
-    name: 'Mortar', cost: 350, damage: 120, range: 6, cooldown: 200,
-    type: 'area', color: '#475569', icon: '🧨',
-    description: 'Huge damage, long range, blind spot nearby.', areaRadius: 2.5,
+    name: 'Logger Framework', cost: 350, damage: 120, range: 6, cooldown: 200,
+    type: 'area', color: '#475569', icon: '📊',
+    description: 'Enterprise logging with long range.', areaRadius: 2.5,
     projectileStyle: 'arc'
   },
   'AIR_DEFENSE': {
-    name: 'Air Defense', cost: 180, damage: 80, range: 5, cooldown: 40,
-    type: 'projectile', color: '#ef4444', icon: '🚀',
-    description: 'High damage single target rockets.',
+    name: 'HTTP Request', cost: 180, damage: 80, range: 5, cooldown: 40,
+    type: 'projectile', color: '#ef4444', icon: '🌐',
+    description: 'High-speed network requests.',
     projectileStyle: 'missile'
   },
   'TESLA': {
-    name: 'Hidden Tesla', cost: 250, damage: 90, range: 2.5, cooldown: 55,
-    type: 'projectile', color: '#facc15', icon: '⚡',
-    description: 'Hidden until enemies are close. Fast shock.',
+    name: 'Event Listener', cost: 250, damage: 90, range: 2.5, cooldown: 55,
+    type: 'projectile', color: '#facc15', icon: '👂',
+    description: 'Reactive trigger when threats detected.',
     projectileStyle: 'lightning'
   },
   'X_BOW': {
-    name: 'X-Bow', cost: 500, damage: 8, range: 7, cooldown: 6,
-    type: 'projectile', color: '#ec4899', icon: '⚔️',
-    description: 'Insanely fast fire rate.', projectileSpeed: 0.25,
+    name: 'Microservice', cost: 500, damage: 8, range: 7, cooldown: 6,
+    type: 'projectile', color: '#ec4899', icon: '⚡',
+    description: 'Extremely fast API calls.', projectileSpeed: 0.25,
     projectileStyle: 'arrow_classic'
   },
   'INFERNO': {
-    name: 'Inferno Tower', cost: 600, damage: 5, range: 4.5, cooldown: 5,
-    type: 'beam', color: '#ef4444', icon: '🔥',
-    description: 'Melts high HP tanks. Damage ramps up over time.', beamRamp: 0.8
+    name: 'Database Query', cost: 600, damage: 5, range: 4.5, cooldown: 5,
+    type: 'beam', color: '#ef4444', icon: '💾',
+    description: 'Continuous query execution. Damage ramps up over time.', beamRamp: 0.8
   },
   'EAGLE': {
-    name: 'Eagle Artillery', cost: 1000, damage: 300, range: 99, cooldown: 350,
-    type: 'area', color: '#fff', icon: '🦅',
-    description: 'Map-wide range artillery strike.', areaRadius: 3,
+    name: 'Cloud Server', cost: 1000, damage: 300, range: 99, cooldown: 350,
+    type: 'area', color: '#fff', icon: '☁️',
+    description: 'Global distributed processing.', areaRadius: 3,
     projectileStyle: 'arc'
   },
   'SCATTERSHOT': {
-    name: 'Scattershot', cost: 550, damage: 40, range: 3, cooldown: 90,
-    type: 'spread', color: '#d97706', icon: '🌂',
-    description: 'Fires a cone of stones.', multiTarget: 3,
+    name: 'Array.map()', cost: 550, damage: 40, range: 3, cooldown: 90,
+    type: 'spread', color: '#d97706', icon: '📋',
+    description: 'Processes multiple targets simultaneously.', multiTarget: 3,
     projectileStyle: 'shotgun'
   },
   'MONOLITH': {
-    name: 'Monolith', cost: 1500, damage: 500, range: 5, cooldown: 150,
-    type: 'projectile', color: '#020617', icon: '⬛',
-    description: 'Dark energy that decimates tanks.', burnDamage: 20,
+    name: 'Deep Learning', cost: 1500, damage: 500, range: 5, cooldown: 150,
+    type: 'projectile', color: '#020617', icon: '🧠',
+    description: 'Neural network inference with burn effect.', burnDamage: 20,
     projectileStyle: 'fire'
   },
   'SPELL_TOWER': {
-    name: 'Spell Tower', cost: 300, damage: 0, range: 3, cooldown: 1000,
-    type: 'aura', color: '#db2777', icon: '📜',
-    description: 'Support tower (Coming Soon).',
+    name: 'Middleware', cost: 300, damage: 0, range: 3, cooldown: 1000,
+    type: 'aura', color: '#db2777', icon: '🔗',
+    description: 'Intercepts and processes requests (Coming Soon).',
     projectileStyle: 'magic'
   },
   'BUILDER': {
-    name: 'Builder Hut', cost: 2000, damage: 20, range: 2, cooldown: 30,
-    type: 'projectile', color: '#a3e635', icon: '🔨',
-    description: 'Fast repair (combat stats for now).',
+    name: 'CI/CD Pipeline', cost: 2000, damage: 20, range: 2, cooldown: 30,
+    type: 'projectile', color: '#a3e635', icon: '🔄',
+    description: 'Automated build and deployment.',
     projectileStyle: 'bullet'
   },
 
   // ==========================================
-  // ARKNIGHTS / ANIME - SNIPERS & RANGED
+  // API & SERVICES (Intermediate)
   // ==========================================
   'EXUSIAI': {
-    name: 'Exusiai', cost: 550, damage: 15, range: 4, cooldown: 8,
-    type: 'projectile', color: '#ef4444', icon: '😇',
-    description: 'Vector: Extreme attack speed barrage.', projectileSpeed: 0.9,
+    name: 'REST API', cost: 550, damage: 15, range: 4, cooldown: 8,
+    type: 'projectile', color: '#ef4444', icon: '🌐',
+    description: 'Rapid HTTP endpoint calls.', projectileSpeed: 0.9,
     projectileStyle: 'dot'
   },
   'SCHWARZ': {
-    name: 'Schwarz', cost: 650, damage: 400, range: 3, cooldown: 150,
-    type: 'projectile', color: '#1e1e1e', icon: '♟️',
-    description: 'Final Tactic: Massive armor piercing shot.',
+    name: 'GraphQL', cost: 650, damage: 400, range: 3, cooldown: 150,
+    type: 'projectile', color: '#1e1e1e', icon: '📊',
+    description: 'Precise data query with high damage.',
     projectileStyle: 'sniper'
   },
   'LEMUEN': {
-    name: 'Lemuen', cost: 600, damage: 180, range: 6, cooldown: 140,
-    type: 'projectile', color: '#fcd34d', icon: '🎯',
-    description: 'Target priority: Lowest DEF.',
+    name: 'WebSocket', cost: 600, damage: 180, range: 6, cooldown: 140,
+    type: 'projectile', color: '#fcd34d', icon: '🔌',
+    description: 'Real-time bidirectional connection.',
     projectileStyle: 'sniper'
   },
   'SNOW_HUNTER': {
-    name: 'Snow Hunter', cost: 320, damage: 90, range: 4, cooldown: 100,
+    name: 'Cache Layer', cost: 320, damage: 90, range: 4, cooldown: 100,
     type: 'projectile', color: '#cbd5e1', icon: '❄️',
-    description: 'Freezes enemies on hit.', slowFactor: 0.5,
+    description: 'Freezes enemy data access.', slowFactor: 0.5,
     projectileStyle: 'ice'
   },
   'SKYBOX': {
-    name: 'Skybox', cost: 450, damage: 65, range: 5, cooldown: 55,
-    type: 'area', color: '#0ea5e9', icon: '✈️',
-    description: 'Deployable anti-air platform.',
+    name: 'Load Balancer', cost: 450, damage: 65, range: 5, cooldown: 55,
+    type: 'area', color: '#0ea5e9', icon: '⚖️',
+    description: 'Distributes requests across servers.',
     projectileStyle: 'rocket'
   },
   'BRIGID': {
-    name: 'Brigid', cost: 380, damage: 55, range: 3.5, cooldown: 45,
+    name: 'Webhook', cost: 380, damage: 55, range: 3.5, cooldown: 45,
     type: 'projectile', color: '#f0abfc', icon: '🪃',
-    description: 'Boomerang projectile returns.',
+    description: 'Callback mechanism that returns data.',
     projectileStyle: 'boomerang'
   },
   'ROSA': {
-    name: 'Rosa', cost: 580, damage: 110, range: 5, cooldown: 160,
-    type: 'pull', color: '#fff', icon: '⚓',
-    description: 'Binds heavy targets in place.', stunDuration: 30
+    name: 'Rate Limiter', cost: 580, damage: 110, range: 5, cooldown: 160,
+    type: 'pull', color: '#fff', icon: '🚦',
+    description: 'Throttles and binds heavy traffic.', stunDuration: 30
   },
   'W': {
-    name: 'W', cost: 600, damage: 200, range: 4, cooldown: 120,
-    type: 'area', color: '#dc2626', icon: '🧨',
-    description: 'D12: Massive delayed explosion.', areaRadius: 2.0,
+    name: 'Message Queue', cost: 600, damage: 200, range: 4, cooldown: 120,
+    type: 'area', color: '#dc2626', icon: '📬',
+    description: 'Delayed processing with massive burst.', areaRadius: 2.0,
     projectileStyle: 'grenade'
   },
 
   // ==========================================
-  // ARKNIGHTS - CASTERS & ARTS
+  // FRAMEWORKS & LIBRARIES (Advanced)
   // ==========================================
   'TITI': {
-    name: 'Titi', cost: 300, damage: 45, range: 3.5, cooldown: 60,
-    type: 'projectile', color: '#8b5cf6', icon: '💉',
-    description: 'Heals allies (Concept: Magic Dmg for now).',
+    name: 'React Component', cost: 300, damage: 45, range: 3.5, cooldown: 60,
+    type: 'projectile', color: '#8b5cf6', icon: '⚛️',
+    description: 'Reusable UI module with state management.',
     projectileStyle: 'needle'
   },
   'AKKORD': {
-    name: 'Akkord', cost: 700, damage: 95, range: 8, cooldown: 180,
-    type: 'area', color: '#f472b6', icon: '🎼',
-    description: 'Global range bombardment.',
+    name: 'Express Server', cost: 700, damage: 95, range: 8, cooldown: 180,
+    type: 'area', color: '#f472b6', icon: '🚂',
+    description: 'Full-stack server framework.',
     projectileStyle: 'arc'
   },
   'IFRIT': {
-    name: 'Ifrit', cost: 750, damage: 120, range: 5, cooldown: 50,
+    name: 'Firebase', cost: 750, damage: 120, range: 5, cooldown: 50,
     type: 'line', color: '#ff5722', icon: '🔥',
-    description: 'Burns a straight line of tiles.', burnDamage: 10
+    description: 'Real-time database with burn damage.', burnDamage: 10
   },
   'MANTRA': {
-    name: 'Mantra', cost: 350, damage: 35, range: 4, cooldown: 50,
-    type: 'projectile', color: '#14b8a6', icon: '🐍',
-    description: 'Elemental Arts damage.',
+    name: 'Vue.js', cost: 350, damage: 35, range: 4, cooldown: 50,
+    type: 'projectile', color: '#14b8a6', icon: '💚',
+    description: 'Progressive framework with reactivity.',
     projectileStyle: 'poison'
   },
   'CEOBE': {
-    name: 'Ceobe', cost: 400, damage: 50, range: 3.5, cooldown: 35,
-    type: 'projectile', color: '#fb923c', icon: '🪓',
-    description: 'Very Real Axe: Throws weapons rapidly.',
+    name: 'Webpack', cost: 400, damage: 50, range: 3.5, cooldown: 35,
+    type: 'projectile', color: '#fb923c', icon: '📦',
+    description: 'Bundles and optimizes code rapidly.',
     projectileStyle: 'blade'
   },
   'GOLDENGOLOW': {
-    name: 'Goldenglow', cost: 450, damage: 20, range: 99, cooldown: 20,
-    type: 'projectile', color: '#f9a8d4', icon: '⚡',
-    description: 'Drone seeks enemies anywhere.',
+    name: 'Docker', cost: 450, damage: 20, range: 99, cooldown: 20,
+    type: 'projectile', color: '#f9a8d4', icon: '🐳',
+    description: 'Containerized deployment anywhere.',
     projectileStyle: 'lightning'
   },
   'NECRASS': {
-    name: 'Necrass', cost: 520, damage: 70, range: 3, cooldown: 80,
-    type: 'summon', color: '#4c1d95', icon: '👻',
-    description: 'Summons spirits from defeated enemies.',
+    name: 'Kubernetes', cost: 520, damage: 70, range: 3, cooldown: 80,
+    type: 'summon', color: '#4c1d95', icon: '☸️',
+    description: 'Orchestrates container clusters.',
   },
   'TRAGODIA': {
-    name: 'Tragodia', cost: 310, damage: 40, range: 3, cooldown: 55,
-    type: 'projectile', color: '#7e22ce', icon: '🎭',
-    description: 'Arts damage with mental corruption.',
+    name: 'TypeScript', cost: 310, damage: 40, range: 3, cooldown: 55,
+    type: 'projectile', color: '#7e22ce', icon: '📘',
+    description: 'Type-safe JavaScript with compilation.',
     projectileStyle: 'shadow'
   },
 
   // ==========================================
-  // ARKNIGHTS - DEFENDERS (High Block/Aura)
+  // DATABASES & STORAGE (Defensive)
   // ==========================================
   'HOSHIGUMA': {
-    name: 'Hoshiguma', cost: 550, damage: 60, range: 1.5, cooldown: 30,
-    type: 'aura', color: '#22c55e', icon: '🟢',
-    description: 'Sawblade: Shreds all enemies in melee range.',
+    name: 'Redis Cache', cost: 550, damage: 60, range: 1.5, cooldown: 30,
+    type: 'aura', color: '#22c55e', icon: '🗄️',
+    description: 'In-memory cache shreds nearby requests.',
     projectileStyle: 'saw'
   },
   'MUDROCK': {
-    name: 'Mudrock', cost: 900, damage: 350, range: 1.5, cooldown: 180,
-    type: 'area', color: '#57534e', icon: '🔨',
-    description: 'Sledgehammer: Massive AoE spin.', areaRadius: 2.0,
+    name: 'PostgreSQL', cost: 900, damage: 350, range: 1.5, cooldown: 180,
+    type: 'area', color: '#57534e', icon: '🐘',
+    description: 'Robust relational database with massive queries.', areaRadius: 2.0,
     projectileStyle: 'cannonball'
   },
   'NIAN': {
-    name: 'Nian', cost: 600, damage: 80, range: 1.5, cooldown: 60,
-    type: 'aura', color: '#ef4444', icon: '🏮',
-    description: 'Heat aura burns nearby enemies.', burnDamage: 15,
+    name: 'MongoDB', cost: 600, damage: 80, range: 1.5, cooldown: 60,
+    type: 'aura', color: '#ef4444', icon: '🍃',
+    description: 'NoSQL document store with heat map.', burnDamage: 15,
     projectileStyle: 'fire'
   },
   'PENANCE': {
-    name: 'Penance', cost: 620, damage: 140, range: 1.5, cooldown: 90,
-    type: 'projectile', color: '#9f1239', icon: '⚖️',
-    description: 'Reflects damage.',
+    name: 'Elasticsearch', cost: 620, damage: 140, range: 1.5, cooldown: 90,
+    type: 'projectile', color: '#9f1239', icon: '🔍',
+    description: 'Full-text search engine with reflection.',
     projectileStyle: 'orb'
   },
   'YU': {
-    name: 'Yu', cost: 700, damage: 100, range: 1.5, cooldown: 70,
-    type: 'aura', color: '#b91c1c', icon: '🐉',
-    description: 'Dragon aura defense.',
+    name: 'Blockchain', cost: 700, damage: 100, range: 1.5, cooldown: 70,
+    type: 'aura', color: '#b91c1c', icon: '⛓️',
+    description: 'Distributed ledger with immutable defense.',
     projectileStyle: 'fire'
   },
   'CAIRN': {
-    name: 'Cairn', cost: 480, damage: 50, range: 1.5, cooldown: 50,
-    type: 'projectile', color: '#64748b', icon: '🛡️',
-    description: 'Solid defense.',
+    name: 'CDN', cost: 480, damage: 50, range: 1.5, cooldown: 50,
+    type: 'projectile', color: '#64748b', icon: '🌍',
+    description: 'Content delivery network shield.',
     projectileStyle: 'disc'
   },
   'VETOCHKI': {
-    name: 'Vetochki', cost: 510, damage: 65, range: 1.5, cooldown: 60,
-    type: 'projectile', color: '#334155', icon: '🪵',
-    description: 'Unstoppable force.',
+    name: 'Backup System', cost: 510, damage: 65, range: 1.5, cooldown: 60,
+    type: 'projectile', color: '#334155', icon: '💿',
+    description: 'Data persistence mechanism.',
     projectileStyle: 'spike'
   },
 
   // ==========================================
-  // ARKNIGHTS - GUARDS (Melee DPS)
+  // ALGORITHMS & LOGIC (High DPS)
   // ==========================================
   'SILVERASH': {
-    name: 'SilverAsh', cost: 1000, damage: 220, range: 3.5, cooldown: 70,
-    type: 'area', color: '#cbd5e1', icon: '🗡️',
-    description: 'True Silver Slash: Wide area massive damage.',
+    name: 'Sorting Algo', cost: 1000, damage: 220, range: 3.5, cooldown: 70,
+    type: 'area', color: '#cbd5e1', icon: '🔀',
+    description: 'Efficient algorithm processes wide area.',
     projectileStyle: 'blade'
   },
   'SURTR': {
-    name: 'Surtr', cost: 900, damage: 400, range: 2.5, cooldown: 40,
-    type: 'beam', color: '#f59e0b', icon: '👿',
-    description: 'Twilight: Massive damage, drains own HP.', beamRamp: 2.0
+    name: 'Machine Learning', cost: 900, damage: 400, range: 2.5, cooldown: 40,
+    type: 'beam', color: '#f59e0b', icon: '🤖',
+    description: 'AI model training with exponential damage.', beamRamp: 2.0
   },
   'THORNS': {
-    name: 'Thorns', cost: 550, damage: 70, range: 3, cooldown: 45,
-    type: 'projectile', color: '#d97706', icon: '🌵',
-    description: 'Destreza: Poisonous ranged attacks.', burnDamage: 10,
+    name: 'Regex Engine', cost: 550, damage: 70, range: 3, cooldown: 45,
+    type: 'projectile', color: '#d97706', icon: '🔤',
+    description: 'Pattern matching with DOT effect.', burnDamage: 10,
     projectileStyle: 'poison'
   },
   'BLAZE': {
-    name: 'Blaze', cost: 600, damage: 110, range: 2, cooldown: 20,
-    type: 'aura', color: '#ea580c', icon: '🔥',
-    description: 'Chainsaw module: Constant area damage.',
+    name: 'Event Loop', cost: 600, damage: 110, range: 2, cooldown: 20,
+    type: 'aura', color: '#ea580c', icon: '♻️',
+    description: 'Asynchronous processing aura.',
     projectileStyle: 'fire'
   },
   'VARKARIS': {
-    name: 'Varkaris', cost: 450, damage: 90, range: 1.5, cooldown: 50,
-    type: 'area', color: '#94a3b8', icon: '🐮',
-    description: 'Minos warrior. Hits multiple enemies.',
+    name: 'Thread Pool', cost: 450, damage: 90, range: 1.5, cooldown: 50,
+    type: 'area', color: '#94a3b8', icon: '🧵',
+    description: 'Concurrent execution hits multiple targets.',
     projectileStyle: 'bullet'
   },
   'NASTI': {
-    name: 'Nasti', cost: 400, damage: 60, range: 1.5, cooldown: 55,
-    type: 'projectile', color: '#475569', icon: '🔧',
-    description: 'Artificer support.',
+    name: 'Compiler', cost: 400, damage: 60, range: 1.5, cooldown: 55,
+    type: 'projectile', color: '#475569', icon: '⚙️',
+    description: 'Code transformation and optimization.',
     projectileStyle: 'needle'
   },
   'HADIYA': {
-    name: 'Hadiya', cost: 380, damage: 55, range: 1.5, cooldown: 45,
-    type: 'projectile', color: '#a8a29e', icon: '⚔️',
-    description: 'Mercenary strikes.',
+    name: 'Parser', cost: 380, damage: 55, range: 1.5, cooldown: 45,
+    type: 'projectile', color: '#a8a29e', icon: '📖',
+    description: 'Syntax analysis and tokenization.',
     projectileStyle: 'arrow'
   },
 
   // ==========================================
-  // SPECIALISTS & SUPPORTERS (Crowd Control)
+  // SECURITY & OPTIMIZATION (CC)
   // ==========================================
   'ANGELINA': {
-    name: 'Angelina', cost: 400, damage: 25, range: 4, cooldown: 20,
-    type: 'projectile', color: '#818cf8', icon: '💫',
-    description: 'Anti-Gravity: Makes enemies lighter (slower).', slowFactor: 0.7,
+    name: 'Code Linter', cost: 400, damage: 25, range: 4, cooldown: 20,
+    type: 'projectile', color: '#818cf8', icon: '🔍',
+    description: 'Analyzes and slows problematic code.', slowFactor: 0.7,
     projectileStyle: 'vortex'
   },
   'GLADIITR': {
-    name: 'Gladiia', cost: 500, damage: 80, range: 3.5, cooldown: 90,
-    type: 'pull', color: '#1e3a8a', icon: '⚓',
-    description: 'Drags distant enemies into a vortex.', pullStrength: 1.5,
+    name: 'Firewall', cost: 500, damage: 80, range: 3.5, cooldown: 90,
+    type: 'pull', color: '#1e3a8a', icon: '🛡️',
+    description: 'Filters and redirects malicious traffic.', pullStrength: 1.5,
     projectileStyle: 'vortex'
   },
   'WEEDY': {
-    name: 'Weedy', cost: 450, damage: 60, range: 3, cooldown: 100,
-    type: 'pull', color: '#2dd4bf', icon: '🌊',
-    description: 'Liquid Nitrogen Cannon: Pushes enemies back.', pullStrength: -2.0,
+    name: 'Debounce', cost: 450, damage: 60, range: 3, cooldown: 100,
+    type: 'pull', color: '#2dd4bf', icon: '⏱️',
+    description: 'Throttles rapid requests back.', pullStrength: -2.0,
     projectileStyle: 'ice'
   },
   'PHANTOM': {
-    name: 'Phantom', cost: 300, damage: 80, range: 2, cooldown: 40,
-    type: 'projectile', color: '#111827', icon: '🐱',
-    description: 'Fast redeploy assassin.',
+    name: 'Git Hook', cost: 300, damage: 80, range: 2, cooldown: 40,
+    type: 'projectile', color: '#111827', icon: '🪝',
+    description: 'Pre-commit script automation.',
     projectileStyle: 'kunai'
   },
   'SURFER': {
-    name: 'Surfer', cost: 250, damage: 45, range: 1.5, cooldown: 30,
-    type: 'projectile', color: '#0ea5e9', icon: '🏄‍♀️',
-    description: 'Fast redeploy water strike.',
+    name: 'SSR Renderer', cost: 250, damage: 45, range: 1.5, cooldown: 30,
+    type: 'projectile', color: '#0ea5e9', icon: '🌊',
+    description: 'Server-side rendering optimization.',
     projectileStyle: 'ice'
   },
   'PRAMANIX': {
-    name: 'Pramanix', cost: 350, damage: 30, range: 3.5, cooldown: 60,
-    type: 'aura', color: '#fff', icon: '🔔',
-    description: 'Weakens enemy defense.',
+    name: 'Vulnerability Scanner', cost: 350, damage: 30, range: 3.5, cooldown: 60,
+    type: 'aura', color: '#fff', icon: '🔒',
+    description: 'Weakens enemy security defenses.',
     projectileStyle: 'holy'
   },
   'ASTGENNE': {
-    name: 'Astgenne', cost: 380, damage: 40, range: 3, cooldown: 50,
-    type: 'projectile', color: '#facc15', icon: '🌟',
-    description: 'Star-light arts.',
+    name: 'Performance Monitor', cost: 380, damage: 40, range: 3, cooldown: 50,
+    type: 'projectile', color: '#facc15', icon: '📈',
+    description: 'Real-time metrics collection.',
     projectileStyle: 'star'
   },
   'SUZURAN': {
-    name: 'Suzuran', cost: 500, damage: 10, range: 4, cooldown: 10,
-    type: 'aura', color: '#fef08a', icon: '🦊',
-    description: 'Foxfire: Massive area slow.', slowFactor: 0.4,
+    name: 'Rate Limiter Aura', cost: 500, damage: 10, range: 4, cooldown: 10,
+    type: 'aura', color: '#fef08a', icon: '🚦',
+    description: 'Massive area request throttling.', slowFactor: 0.4,
     projectileStyle: 'fire'
   },
 
   // ==========================================
-  // AVE MUJICA (Collab)
+  // AI & AUTOMATION (Special)
   // ==========================================
   'TOGAWA': {
-    name: 'Sakiko', cost: 420, damage: 95, range: 3, cooldown: 60,
-    type: 'beam', color: '#4c1d95', icon: '🎹',
-    description: 'Melancholic melody drains HP.', beamRamp: 0.6
+    name: 'Neural Network', cost: 420, damage: 95, range: 3, cooldown: 60,
+    type: 'beam', color: '#4c1d95', icon: '🧠',
+    description: 'Deep learning model inference.', beamRamp: 0.6
   },
   'UMIRI': {
-    name: 'Umiri', cost: 380, damage: 110, range: 1.5, cooldown: 45,
-    type: 'aura', color: '#be185d', icon: '🎸',
-    description: 'Bass shockwaves.',
+    name: 'GPT API', cost: 380, damage: 110, range: 1.5, cooldown: 45,
+    type: 'aura', color: '#be185d', icon: '🤖',
+    description: 'AI-powered processing waves.',
   },
   'MISUMI': {
-    name: 'Uika', cost: 300, damage: 0, range: 3, cooldown: 60,
-    type: 'aura', color: '#fcd34d', icon: '🎤',
-    description: 'Idol aura heals/buffs (Concept).',
+    name: 'Automation Bot', cost: 300, damage: 0, range: 3, cooldown: 60,
+    type: 'aura', color: '#fcd34d', icon: '🤖',
+    description: 'Automated support system (Concept).',
   },
   'WAKABA': {
-    name: 'Mutsumi', cost: 400, damage: 85, range: 1.5, cooldown: 40,
-    type: 'projectile', color: '#10b981', icon: '🥒',
-    description: 'Puppet master strike.',
+    name: 'Scraper Bot', cost: 400, damage: 85, range: 1.5, cooldown: 40,
+    type: 'projectile', color: '#10b981', icon: '🕷️',
+    description: 'Automated data extraction.',
   },
   'YUTENJI': {
-    name: 'Nyamu', cost: 450, damage: 130, range: 1.5, cooldown: 80,
-    type: 'area', color: '#fca5a5', icon: '🥁',
-    description: 'Earthshaker drums.',
+    name: 'Test Runner', cost: 450, damage: 130, range: 1.5, cooldown: 80,
+    type: 'area', color: '#fca5a5', icon: '🧪',
+    description: 'Automated test execution suite.',
   },
 
   // ==========================================
-  // OTHERS (User List Completers)
+  // TOOLS & UTILITIES (Support)
   // ==========================================
-  'PERFUMER': { name: 'Perfumer', cost: 200, damage: 10, range: 3, cooldown: 60, type: 'projectile', color: '#bef264', icon: '🧴', description: 'Global regen (Concept).' },
-  'HARUKA': { name: 'Haruka', cost: 220, damage: 20, range: 3, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Support arts.' },
-  'KICHISEI': { name: 'Kichisei', cost: 480, damage: 60, range: 2.5, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Scattergun blasts.' },
-  'MATSUKIRI': { name: 'Matsukiri', cost: 350, damage: 45, range: 1.5, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Tactical strikes.' },
-  'RAIDIAN': { name: 'Raidian', cost: 300, damage: 35, range: 3, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🤖', description: 'Summons drones.' },
-  'LEIZI': { name: 'Leizi', cost: 580, damage: 70, range: 3.5, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Chain lightning.' },
-  'RECORD_KEEPER': { name: 'Recorder', cost: 200, damage: 15, range: 3, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Medic support.' },
-  'TIPPI': { name: 'Tippi', cost: 360, damage: 50, range: 3, cooldown: 50, type: 'projectile', color: '#86efac', icon: '🐦', description: 'Aerial scout.' },
-  'MISS_CHRISTINE': { name: 'Christine', cost: 280, damage: 40, range: 3, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '🐈', description: 'Elegant arts.' },
-  'SANKTA': { name: 'Sankta Mixer', cost: 600, damage: 80, range: 1.5, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🥛', description: 'Heavy defender.' },
-  'GRACEBEARER': { name: 'Gracebearer', cost: 550, damage: 90, range: 1.5, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '⚔️', description: 'Standard bearer.' },
-  'CONFESS_47': { name: 'Confess-47', cost: 100, damage: 20, range: 1.5, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '🤖', description: 'Robot assist.' },
-  'MON3TR': { name: 'Mon3tr', cost: 400, damage: 200, range: 2, cooldown: 60, type: 'projectile', color: '#10b981', icon: '👾', description: 'Kal\'tsit\'s summon.' },
-  'ALANNA': { name: 'Alanna', cost: 350, damage: 50, range: 1.5, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🛠️', description: 'Craftsman.' },
-  'WINDSCOOT': { name: 'Windscoot', cost: 400, damage: 80, range: 1.5, cooldown: 40, type: 'projectile', color: '#bae6fd', icon: '🌬️', description: 'Wind slash.' },
-  'WULFENITE': { name: 'Wulfenite', cost: 320, damage: 40, range: 3, cooldown: 45, type: 'projectile', color: '#fde047', icon: '🪤', description: 'Trap master.' },
-  'ENTELECHIA': { name: 'Entelechia', cost: 600, damage: 100, range: 1.5, cooldown: 60, type: 'area', color: '#1e293b', icon: '🌾', description: 'Reaper guard.' },
-  'NOWELL': { name: 'Nowell', cost: 250, damage: 20, range: 3, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '⚕️', description: 'Medic.' },
-  'XINGZHU': { name: 'Xingzhu', cost: 300, damage: 30, range: 3, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🥢', description: 'Supporter.' },
-  'TECNO': { name: 'Tecno', cost: 350, damage: 40, range: 3, cooldown: 50, type: 'summon', color: '#a5f3fc', icon: '💻', description: 'Techno summoner.' },
-  'ROSE_SALT': { name: 'Rose Salt', cost: 280, damage: 15, range: 3, cooldown: 60, type: 'projectile', color: '#fbcfe8', icon: '🧂', description: 'Multi-healer.' },
+  'PERFUMER': { name: 'Health Check', cost: 200, damage: 10, range: 3, cooldown: 60, type: 'projectile', color: '#bef264', icon: '💚', description: 'System monitoring (Concept).' },
+  'HARUKA': { name: 'API Gateway', cost: 220, damage: 20, range: 3, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🚪', description: 'Routes requests to services.' },
+  'KICHISEI': { name: 'Package Manager', cost: 480, damage: 60, range: 2.5, cooldown: 80, type: 'spread', color: '#fdba74', icon: '📦', description: 'Installs multiple dependencies.' },
+  'MATSUKIRI': { name: 'Debugger', cost: 350, damage: 45, range: 1.5, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐛', description: 'Code inspection tool.' },
+  'RAIDIAN': { name: 'Task Scheduler', cost: 300, damage: 35, range: 3, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '⏰', description: 'Cron job automation.' },
+  'LEIZI': { name: 'Chain Promise', cost: 580, damage: 70, range: 3.5, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Asynchronous promise chain.' },
+  'RECORD_KEEPER': { name: 'Logger', cost: 200, damage: 15, range: 3, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Event logging system.' },
+  'TIPPI': { name: 'Watch Mode', cost: 360, damage: 50, range: 3, cooldown: 50, type: 'projectile', color: '#86efac', icon: '👁️', description: 'File system monitoring.' },
+  'MISS_CHRISTINE': { name: 'Code Formatter', cost: 280, damage: 40, range: 3, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '✨', description: 'Automated code styling.' },
+  'SANKTA': { name: 'Build Tool', cost: 600, damage: 80, range: 1.5, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🔨', description: 'Production build system.' },
+  'GRACEBEARER': { name: 'Version Control', cost: 550, damage: 90, range: 1.5, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '📚', description: 'Git repository manager.' },
+  'CONFESS_47': { name: 'CLI Tool', cost: 100, damage: 20, range: 1.5, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '⌨️', description: 'Command line interface.' },
+  'MON3TR': { name: 'Virtual Machine', cost: 400, damage: 200, range: 2, cooldown: 60, type: 'projectile', color: '#10b981', icon: '🖥️', description: 'Isolated execution environment.' },
+  'ALANNA': { name: 'Code Generator', cost: 350, damage: 50, range: 1.5, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🏭', description: 'Automated code generation.' },
+  'WINDSCOOT': { name: 'Web Worker', cost: 400, damage: 80, range: 1.5, cooldown: 40, type: 'projectile', color: '#bae6fd', icon: '💨', description: 'Background thread processing.' },
+  'WULFENITE': { name: 'Exception Handler', cost: 320, damage: 40, range: 3, cooldown: 45, type: 'projectile', color: '#fde047', icon: '🪤', description: 'Try-catch error trapping.' },
+  'ENTELECHIA': { name: 'Garbage Collector', cost: 600, damage: 100, range: 1.5, cooldown: 60, type: 'area', color: '#1e293b', icon: '🗑️', description: 'Memory management system.' },
+  'NOWELL': { name: 'Validator', cost: 250, damage: 20, range: 3, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '✅', description: 'Input validation system.' },
+  'XINGZHU': { name: 'Serializer', cost: 300, damage: 30, range: 3, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🔄', description: 'Data format conversion.' },
+  'TECNO': { name: 'Service Worker', cost: 350, damage: 40, range: 3, cooldown: 50, type: 'summon', color: '#a5f3fc', icon: '👷', description: 'Background service process.' },
+  'ROSE_SALT': { name: 'Health Monitor', cost: 280, damage: 15, range: 3, cooldown: 60, type: 'projectile', color: '#fbcfe8', icon: '💓', description: 'Multi-service health checks.' },
 };
