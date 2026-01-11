@@ -66,9 +66,12 @@ export class GameEngine {
     this.waveInProgress = false;
     this.waveCountdown = 180;
     this.isGameOver = false;
-    this.isGameOver = false;
     this.totalMoneyEarned = 0;
     this.totalEnemiesKilled = 0;
+    
+    // Initialize theme
+    const themeIndex = Math.floor((this.wave - 1) / 10) % THEMES.length;
+    this.currentTheme = THEMES[themeIndex];
     
     // Generate Initial Map
     this.map = generateMap(this.wave);
@@ -144,7 +147,8 @@ export class GameEngine {
       if (this.wave > 1 && (this.wave - 1) % 10 === 0) {
           this.changeMap();
           const themeIndex = Math.floor((this.wave - 1) / 10) % THEMES.length;
-          this.showNotification(`SECTOR ${Math.ceil(this.wave/10)}: ${THEMES[themeIndex].name}`, 'alert');
+          this.currentTheme = THEMES[themeIndex];
+          this.showNotification(`SECTOR ${Math.ceil(this.wave/10)}: ${this.currentTheme.name}`, 'alert');
       } 
       else {
           const isBoss = this.wave % 5 === 0;
@@ -739,7 +743,13 @@ export class GameEngine {
       if(e.dead) return;
       e.dead = true; 
       e.hp = 0;
-      const reward = e.reward || 10;
+      let reward = e.reward || 10;
+      
+      // Apply theme money bonus
+      if (this.currentTheme && this.currentTheme.moneyBonus) {
+        reward += this.currentTheme.moneyBonus;
+      }
+      
       this.money += reward;
       this.totalMoneyEarned += reward;
       this.totalEnemiesKilled++;
