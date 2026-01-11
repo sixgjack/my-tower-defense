@@ -515,14 +515,20 @@ export const GameBoard: React.FC = () => {
               <div 
                   key={e.id} 
                   ref={(el) => {
-                      if (el) enemyRefs.current.set(e.id, el);
-                      else enemyRefs.current.delete(e.id);
+                      if (el) {
+                          enemyRefs.current.set(e.id, el);
+                          // Set initial position immediately via DOM
+                          const x = (e.c + (e.xOffset||0)) * TILE_SIZE;
+                          const y = (e.r + (e.yOffset||0)) * TILE_SIZE;
+                          el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${e.scale})`;
+                      } else {
+                          enemyRefs.current.delete(e.id);
+                      }
                   }}
                   className="absolute pointer-events-none flex flex-col items-center justify-center z-20 will-change-transform"
                   style={{ 
-                      // Initial Position Only. Direct DOM manipulation handles movement updates.
-                      left: 0, top: 0, width: TILE_SIZE, height: TILE_SIZE,
-                      transform: `translate3d(${(e.c + (e.xOffset||0)) * TILE_SIZE}px, ${(e.r + (e.yOffset||0)) * TILE_SIZE}px, 0)` 
+                      // No transform here - handled entirely by direct DOM manipulation for smooth animation
+                      left: 0, top: 0, width: TILE_SIZE, height: TILE_SIZE
                   }}
               >
                   {/* Status Effect Aura */}

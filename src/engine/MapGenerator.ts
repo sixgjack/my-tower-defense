@@ -20,7 +20,7 @@ export function generateMap(level: number = 1, pathLengthMultiplier: number = 1.
 
   switch (pattern) {
     case 'linear':
-      generateLinearMap(map, level);
+      generateLinearMap(map, level, _pathLengthMultiplier);
       break;
     case 'spiral':
       generateSpiralMap(map, level);
