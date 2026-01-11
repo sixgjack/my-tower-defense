@@ -32,6 +32,11 @@ export class GameEngine {
   gameSpeed: number = 1;
   isTacticalMode: boolean = false;
   
+  // Game Over Stats
+  isGameOver: boolean = false;
+  totalMoneyEarned: number = 0;
+  totalEnemiesKilled: number = 0;
+  
   // --- AUTO-WAVE & LOGIC INTERNALS ---
   speedAccumulator: number = 0;
   tickCount: number = 0;
@@ -57,6 +62,10 @@ export class GameEngine {
     this.particles = [];
     this.waveInProgress = false;
     this.waveCountdown = 180;
+    this.isGameOver = false;
+    this.isGameOver = false;
+    this.totalMoneyEarned = 0;
+    this.totalEnemiesKilled = 0;
     
     // Generate Initial Map
     this.map = generateMap(this.wave);
@@ -300,9 +309,11 @@ export class GameEngine {
     // Remove destroyed towers
     this.towers = this.towers.filter(t => (t.hp || t.maxHp || 100) > 0);
     
-    if (this.lives <= 0) {
-        this.showNotification("GAME OVER", 'boss');
+    if (this.lives <= 0 && !this.isGameOver) {
+        this.isGameOver = true;
         this.isTacticalMode = true; // Pause game
+        this.showNotification("GAME OVER", 'boss');
+        soundSystem.play('gameover');
     }
   }
 
@@ -530,6 +541,8 @@ export class GameEngine {
       e.hp = 0;
       const reward = e.reward || 10;
       this.money += reward;
+      this.totalMoneyEarned += reward;
+      this.totalEnemiesKilled++;
       if(Math.random() > 0.5) this.addTextParticle(e.c, e.r, `+$${reward}`, "#fbbf24");
       this.createExplosion(e.c * 60 + 30 + (e.xOffset*40), e.r * 60 + 30 + (e.yOffset*40), e.color, 1);
   }

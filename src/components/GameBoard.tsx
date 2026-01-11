@@ -4,6 +4,7 @@ import { game } from '../engine/GameEngine';
 import { TOWERS, THEMES } from '../engine/data';
 import { ROWS, COLS } from '../engine/MapGenerator';
 import { QuestionModal } from './QuestionModal';
+import { GameOverModal } from './GameOverModal';
 import { soundSystem } from '../engine/SoundSystem';
 import { effectManager } from '../engine/EffectManager';
 import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
@@ -33,6 +34,7 @@ export const GameBoard: React.FC = () => {
   const [hitOpacity, setHitOpacity] = useState(0);
   const [waveCountdown, setWaveCountdown] = useState(game.waveCountdown);
   const [waveInProgress, setWaveInProgress] = useState(game.waveInProgress);
+  const [isGameOver, setIsGameOver] = useState(game.isGameOver);
   
   // Language State
   const [language, setLanguage] = useState<'en' | 'zh'>(i18n.getLanguage());
@@ -101,6 +103,8 @@ export const GameBoard: React.FC = () => {
       setWaveCountdown(game.waveCountdown);
       setWaveInProgress(game.waveInProgress);
       
+      if (game.isGameOver !== isGameOver) setIsGameOver(game.isGameOver);
+      
       if (game.pendingAction && !isModalOpen) setIsModalOpen(true);
       
       // We still tick React to render projectiles/particles and handle spawn/death
@@ -109,7 +113,7 @@ export const GameBoard: React.FC = () => {
     };
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
-  }, [money, lives, wave, gameSpeed, isTactical, isModalOpen, hitOpacity]);
+  }, [money, lives, wave, gameSpeed, isTactical, isModalOpen, hitOpacity, isGameOver]);
 
   // --- HANDLERS ---
   const handleDrop = (e: React.DragEvent) => {
@@ -269,6 +273,20 @@ export const GameBoard: React.FC = () => {
       )}
 
       <QuestionModal isOpen={isModalOpen} onSuccess={() => { game.confirmAction(); setIsModalOpen(false); }} onClose={() => { game.cancelAction(); setIsModalOpen(false); }} theme={currentTheme.name} />
+      
+      <GameOverModal 
+        isOpen={isGameOver}
+        onRestart={() => {
+          game.startNewGame();
+          setIsGameOver(false);
+        }}
+        stats={{
+          wave: game.wave,
+          towersBuilt: game.towers.length,
+          enemiesKilled: game.totalEnemiesKilled,
+          moneyEarned: game.totalMoneyEarned
+        }}
+      />
 
       {/* --- SIDEBAR --- */}
       <div className="w-64 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-900/95 z-20 shadow-xl">

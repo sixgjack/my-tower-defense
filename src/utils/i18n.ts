@@ -58,6 +58,15 @@ const translations: Record<Language, Record<string, string>> = {
     'notif.needFunds': 'Need Funds!',
     'notif.wave': 'WAVE',
     
+    // Game Over
+    'gameOver.title': 'GAME OVER',
+    'gameOver.subtitle': 'Your defense has been breached!',
+    'gameOver.waveReached': 'Wave Reached',
+    'gameOver.towersBuilt': 'Towers Built',
+    'gameOver.enemiesKilled': 'Enemies Killed',
+    'gameOver.totalEarned': 'Total Earned',
+    'gameOver.restart': 'RESTART',
+    
     // Towers
     'tower.range': 'Range',
     'tower.damage': 'Dmg',
@@ -254,6 +263,15 @@ const translations: Record<Language, Record<string, string>> = {
     'notif.blocked': '無法放置！',
     'notif.needFunds': '資金不足！',
     'notif.wave': '波次',
+    
+    // Game Over
+    'gameOver.title': '遊戲結束',
+    'gameOver.subtitle': '您的防禦已被突破！',
+    'gameOver.waveReached': '到達波次',
+    'gameOver.towersBuilt': '建造砲塔',
+    'gameOver.enemiesKilled': '擊殺敵人',
+    'gameOver.totalEarned': '總收入',
+    'gameOver.restart': '重新開始',
     
     // Towers
     'tower.range': '範圍',
