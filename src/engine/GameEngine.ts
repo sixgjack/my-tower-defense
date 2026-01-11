@@ -284,7 +284,12 @@ export class GameEngine {
       // At wave > 20, 5% chance for a previous boss to randomly appear
       const allowRandomBoss = this.wave > 20 && Math.random() < 0.05;
       
-      availableTypes = ENEMY_TYPES.filter(t => {
+      // Progressive enemy unlocking by theme
+      // Theme 0 (waves 1-10): 5 types, Theme 1 (waves 11-20): 10 types, Theme 2 (waves 21-30): 15 types, etc.
+      const themeIndex = Math.floor((this.wave - 1) / 10);
+      const maxEnemyTypes = 5 * (themeIndex + 1); // 5, 10, 15, 20...
+      
+      const nonBossTypes = ENEMY_TYPES.filter(t => {
         // Exclude bosses on regular waves (unless random boss spawn)
         if (t.isBoss && !allowRandomBoss) return false;
         
@@ -301,6 +306,9 @@ export class GameEngine {
         
         return true;
       });
+      
+      // Limit to first maxEnemyTypes enemies (unlock progressively)
+      availableTypes = nonBossTypes.slice(0, Math.min(maxEnemyTypes, nonBossTypes.length));
     }
     
     if (availableTypes.length === 0) availableTypes = ENEMY_TYPES.filter(t => !t.minWave || t.minWave <= this.wave);
@@ -345,8 +353,8 @@ export class GameEngine {
     
     // Boss speed multiplier (bosses move slower)
     const bossSpeedMultiplier = isBigBossWave ? 0.5 : (isMiniBossWave ? 0.7 : 1.0);
-    // Overall speed reduction: enemies move slower (reduced from 0.05 to 0.03)
-    const baseSpeed = 0.03 * stats.speed * bossSpeedMultiplier;
+    // Overall speed: slightly increased for better pacing (0.035)
+    const baseSpeed = 0.035 * stats.speed * bossSpeedMultiplier;
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
@@ -358,7 +366,7 @@ export class GameEngine {
         icon: isBossWave ? (isBigBossWave ? "👹" : "👺") : stats.icon, 
         color: stats.color, 
         reward: reward, 
-        scale: isBigBossWave ? 2.0 : (isMiniBossWave ? 1.5 : 1.0), 
+        scale: isBigBossWave ? 2.5 : (isMiniBossWave ? 2.0 : 1.0), 
         frozen: 0,
         xOffset: 0,
         yOffset: 0,
