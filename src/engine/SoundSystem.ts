@@ -82,7 +82,7 @@ class SoundSystem {
     }
   }
 
-  play(type: 'shoot' | 'hit' | 'build' | 'upgrade' | 'sell' | 'gameover' | 'freeze' | 'weakness' | 'buff' | 'debuff' | 'surge' | 'growth' | 'stun' | 'rage') {
+  play(type: 'shoot' | 'hit' | 'build' | 'upgrade' | 'sell' | 'gameover' | 'freeze' | 'weakness' | 'buff' | 'debuff' | 'surge' | 'growth' | 'stun' | 'rage' | 'boss' | 'hit_base') {
     if (!this.ctx || this.isMuted) return;
 
     const osc = this.ctx.createOscillator();

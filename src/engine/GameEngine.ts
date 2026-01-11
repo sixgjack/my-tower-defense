@@ -3,7 +3,11 @@ import { generateMap, ROWS, COLS } from './MapGenerator';
 import { TOWERS, ENEMY_TYPES, THEMES } from './data';
 import { soundSystem } from './SoundSystem';
 import { effectManager } from './EffectManager';
-import type { Particle, ActionType, Projectile, Tower, Enemy } from './types'; 
+import type { Particle, Projectile, Tower } from './types';
+
+type ActionType = { type: 'BUILD', r: number, c: number, towerKey: string } 
+  | { type: 'UPGRADE', towerId: number, cost: number } 
+  | { type: 'EARN_MONEY' }; 
 
 interface Point { r: number; c: number; }
 
