@@ -322,8 +322,8 @@ export class GameEngine {
         tower.damage = effectManager.getEffectiveTowerDamage(tower);
         tower.range = effectManager.getEffectiveTowerRange(tower);
         
-        // 1. Eco Tower Logic
-        if (stats.type === 'eco') {
+        // 1. Eco Tower Logic (if we add eco type later)
+        if (false) { // Eco towers not implemented yet
              if (tower.cooldown > 0) tower.cooldown--;
              else {
                  const amount = 20 * tower.level;
@@ -359,7 +359,8 @@ export class GameEngine {
                 // Continuous Laser
                 tower.targetId = target.id;
                 target.hp -= (tower.damage * 0.1);
-                if(stats.effect === 'freeze') {
+                // Apply freeze effect for ice/beam towers
+                if (stats.projectileStyle === 'ice' || stats.projectileStyle === 'lightning') {
                     effectManager.applyEffectToEnemy(target, 'frostbite');
                 }
                 if (target.hp <= 0) this.killEnemy(target);
@@ -367,7 +368,8 @@ export class GameEngine {
                 // Shoot (reset cooldown to effective cooldown)
                 tower.cooldown = effectiveCooldown;
                 
-                if (stats.type === 'instant') {
+                // Instant hit for sniper/lightning projectiles
+                if (stats.projectileStyle === 'sniper' || stats.projectileStyle === 'lightning') {
                     // Instant Hit (Lightning/Sniper)
                     target.hp -= tower.damage;
                     if (stats.projectileStyle === 'lightning') {
