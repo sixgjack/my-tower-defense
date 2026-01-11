@@ -2,6 +2,7 @@
 import { generateMap, ROWS, COLS } from './MapGenerator';
 import { TOWERS, ENEMY_TYPES, THEMES } from './data';
 import { soundSystem } from './SoundSystem';
+import { effectManager } from './EffectManager';
 import type { Particle, ActionType, Projectile, Tower, Enemy } from './types'; 
 
 interface Point { r: number; c: number; }
@@ -254,8 +255,11 @@ export class GameEngine {
 
   updateEnemies() {
      this.enemies.forEach(enemy => {
-        let currentSpeed = enemy.baseSpeed;
-        if (enemy.frozen > 0) { enemy.frozen--; currentSpeed *= 0.5; }
+        // Update status effects (decrease duration, apply tick damage/healing)
+        effectManager.updateEnemyEffects(enemy);
+        
+        // Calculate effective speed based on status effects
+        let currentSpeed = effectManager.getEffectiveEnemySpeed(enemy, enemy.baseSpeed);
         
         // Move along path
         enemy.progress += currentSpeed;
@@ -299,6 +303,18 @@ export class GameEngine {
     this.towers.forEach(tower => {
         const stats = TOWERS[tower.key];
         
+        // Initialize base stats if not set (for existing towers)
+        if (!tower.baseDamage) tower.baseDamage = tower.damage;
+        if (!tower.baseRange) tower.baseRange = tower.range;
+        if (!tower.baseCooldown) tower.baseCooldown = stats.cooldown;
+        
+        // Update status effects (decrease duration, call callbacks)
+        effectManager.updateTowerEffects(tower);
+        
+        // Recalculate effective stats based on status effects
+        tower.damage = effectManager.getEffectiveTowerDamage(tower);
+        tower.range = effectManager.getEffectiveTowerRange(tower);
+        
         // 1. Eco Tower Logic
         if (stats.type === 'eco') {
              if (tower.cooldown > 0) tower.cooldown--;
@@ -311,7 +327,7 @@ export class GameEngine {
              return;
         }
         
-        // 2. Target Finding
+        // 2. Target Finding (use effective range)
         let target = null;
         let minD = Infinity;
         for (const e of this.enemies) {
@@ -321,7 +337,9 @@ export class GameEngine {
             }
         }
 
-        // 3. Attack Logic
+        // 3. Attack Logic (use effective cooldown)
+        const baseCooldown = tower.baseCooldown || stats.cooldown;
+        const effectiveCooldown = effectManager.getEffectiveTowerCooldown(tower, baseCooldown);
         if (tower.cooldown > 0) tower.cooldown--;
         
         if (target) {
@@ -329,11 +347,13 @@ export class GameEngine {
                 // Continuous Laser
                 tower.targetId = target.id;
                 target.hp -= (tower.damage * 0.1);
-                if(stats.effect === 'freeze') target.frozen = 5;
+                if(stats.effect === 'freeze') {
+                    effectManager.applyEffectToEnemy(target, 'frostbite');
+                }
                 if (target.hp <= 0) this.killEnemy(target);
             } else if (tower.cooldown <= 0) {
-                // Shoot
-                tower.cooldown = stats.cooldown / (1 + (tower.level * 0.1));
+                // Shoot (reset cooldown to effective cooldown)
+                tower.cooldown = effectiveCooldown;
                 
                 if (stats.type === 'instant') {
                     // Instant Hit (Lightning/Sniper)
@@ -514,7 +534,22 @@ export class GameEngine {
         const { r, c, towerKey } = this.pendingAction;
         const stats = TOWERS[towerKey];
         this.money -= stats.cost;
-        this.towers.push({ id: Date.now(), r, c, key: towerKey, cooldown: 0, level: 1, damage: stats.damage, range: stats.range });
+        const newTower: Tower = { 
+            id: Date.now(), 
+            r, 
+            c, 
+            key: towerKey, 
+            cooldown: 0, 
+            level: 1, 
+            damage: stats.damage, 
+            range: stats.range,
+            targetId: null,
+            damageCharge: 0,
+            baseDamage: stats.damage,
+            baseRange: stats.range,
+            baseCooldown: stats.cooldown
+        };
+        this.towers.push(newTower);
         soundSystem.play('build');
     } else if (this.pendingAction.type === 'UPGRADE') {
         const { towerId, cost } = this.pendingAction;
@@ -524,8 +559,12 @@ export class GameEngine {
             tower.level++;
             // Update damage and range to reflect new level
             const baseStats = TOWERS[tower.key];
-            tower.damage = baseStats.damage * tower.level;
-            tower.range = baseStats.range * (1 + (tower.level - 1) * 0.1);
+            tower.baseDamage = baseStats.damage * tower.level;
+            tower.baseRange = baseStats.range * (1 + (tower.level - 1) * 0.1);
+            tower.baseCooldown = baseStats.cooldown / (1 + (tower.level - 1) * 0.1);
+            // Recalculate effective stats with status effects
+            tower.damage = effectManager.getEffectiveTowerDamage(tower);
+            tower.range = effectManager.getEffectiveTowerRange(tower);
             soundSystem.play('upgrade'); 
         }
     } else if (this.pendingAction.type === 'EARN_MONEY') {
