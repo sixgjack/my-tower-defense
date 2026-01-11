@@ -263,8 +263,13 @@ export class GameEngine {
     const stats = availableTypes[typeIdx];
     const isBoss = stats.isBoss || isBossWave;
     
-    const hp = (isBoss ? stats.hp * (isBossWave ? 1 : 2) : stats.hp) * diff;
+    let hp = (isBoss ? stats.hp * (isBossWave ? 1 : 2) : stats.hp) * diff;
     const reward = (isBoss ? stats.reward * (isBossWave ? 1 : 2) : stats.reward);
+    
+    // Apply theme environmental effects to enemy HP
+    if (this.currentTheme && this.currentTheme.enemyHpMultiplier) {
+      hp *= this.currentTheme.enemyHpMultiplier;
+    }
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
