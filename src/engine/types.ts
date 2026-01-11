@@ -39,7 +39,9 @@ export interface Particle {
 }
 
 // --- ENEMIES ---
-export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible';
+export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield';
+
+export type BossType = 'mini' | 'big';
 
 export interface Enemy {
     id: number;
@@ -66,6 +68,8 @@ export interface Enemy {
     isInvisible?: boolean; // For camouflage ability
     isFlying?: boolean; // For fly ability
     isBurrowed?: boolean; // For burrow ability
+    bossType?: BossType; // 'mini' or 'big' for bosses
+    bossShieldHp?: number; // Shield HP for boss shield ability
 }
 
 // --- TOWERS ---

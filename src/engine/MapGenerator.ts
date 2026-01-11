@@ -9,7 +9,7 @@ export type MapGrid = (0 | 1 | 'S' | 'B' | 'X')[][];
 // Map generation patterns
 type MapPattern = 'linear' | 'spiral' | 'square_ring' | 'zigzag' | 'u_turn' | 'maze';
 
-export function generateMap(level: number = 1): MapGrid {
+export function generateMap(level: number = 1, pathLengthMultiplier: number = 1.0): MapGrid {
   // 1. Initialize empty board
   let map: MapGrid = Array(ROWS).fill(0).map(() => Array(COLS).fill(0));
 
@@ -53,7 +53,7 @@ export function generateMap(level: number = 1): MapGrid {
 }
 
 // Linear path (original, but start/end can vary)
-function generateLinearMap(map: MapGrid, level: number) {
+function generateLinearMap(map: MapGrid, level: number, pathLengthMultiplier: number = 1.0) {
   const side = level % 4; // 0=left, 1=top, 2=right, 3=bottom
   let startR, startC, endR, endC;
 
@@ -67,7 +67,7 @@ function generateLinearMap(map: MapGrid, level: number) {
     // Top to Bottom
     startR = 0;
     startC = Math.floor(COLS / 2) + (level % 3) - 1;
-    endR = ROWS - 1;
+    endR = Math.min(ROWS - 1, Math.floor((ROWS - 1) * pathLengthMultiplier));
     endC = Math.floor(COLS / 2) + ((level + 1) % 3) - 1;
   } else if (side === 2) {
     // Right to Left
@@ -107,7 +107,7 @@ function generateLinearMap(map: MapGrid, level: number) {
 }
 
 // Spiral pattern (start outside, spiral inward)
-function generateSpiralMap(map: MapGrid, level: number) {
+function generateSpiralMap(map: MapGrid, _level: number) {
   const startR = 1;
   const startC = 1;
   const centerR = Math.floor(ROWS / 2);
@@ -144,7 +144,7 @@ function generateSpiralMap(map: MapGrid, level: number) {
 }
 
 // 回字型 - Square within square (like Chinese character 回)
-function generateSquareRingMap(map: MapGrid, level: number) {
+function generateSquareRingMap(map: MapGrid, _level: number) {
   const margin = 2;
   
   // Outer square path (clockwise)
@@ -217,7 +217,7 @@ function generateSquareRingMap(map: MapGrid, level: number) {
 }
 
 // Zigzag pattern
-function generateZigZagMap(map: MapGrid, level: number) {
+function generateZigZagMap(map: MapGrid, _level: number) {
   const startR = 1;
   const startC = 1;
   const endR = ROWS - 2;
@@ -252,7 +252,7 @@ function generateZigZagMap(map: MapGrid, level: number) {
 }
 
 // U-turn pattern
-function generateUTurnMap(map: MapGrid, level: number) {
+function generateUTurnMap(map: MapGrid, _level: number) {
   const startR = 1;
   const startC = 1;
   const endR = ROWS - 2;
@@ -284,7 +284,7 @@ function generateUTurnMap(map: MapGrid, level: number) {
 }
 
 // Maze-like pattern (simplified)
-function generateMazeMap(map: MapGrid, level: number) {
+function generateMazeMap(map: MapGrid, _level: number) {
   const startR = 1;
   const startC = 1;
   const endR = ROWS - 2;

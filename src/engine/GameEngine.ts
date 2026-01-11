@@ -3,6 +3,7 @@ import { generateMap, ROWS, COLS } from './MapGenerator';
 import { TOWERS, ENEMY_TYPES, THEMES } from './data';
 import { soundSystem } from './SoundSystem';
 import { effectManager } from './EffectManager';
+import { applyDamageToEnemy } from './BossAbilities';
 import type { Particle, Projectile, Tower } from './types';
 
 type ActionType = { type: 'BUILD', r: number, c: number, towerKey: string } 
@@ -74,7 +75,7 @@ export class GameEngine {
     this.currentTheme = THEMES[themeIndex];
     
     // Generate Initial Map
-    this.map = generateMap(this.wave);
+    this.map = generateMap(this.wave, 1.0);
     this.recalculatePath(); 
   }
 
@@ -151,10 +152,14 @@ export class GameEngine {
           this.showNotification(`SECTOR ${Math.ceil(this.wave/10)}: ${this.currentTheme.name}`, 'alert');
       } 
       else {
-          const isBoss = this.wave % 5 === 0;
-          if (isBoss) {
-              this.showNotification("⚠️ BOSS INCOMING ⚠️", 'boss');
-              soundSystem.play('boss'); // Assuming sound exists
+          const isBigBoss = this.wave % 10 === 0;
+          const isMiniBoss = this.wave % 5 === 0 && !isBigBoss;
+          if (isBigBoss) {
+              this.showNotification("⚠️ BIG BOSS INCOMING ⚠️", 'boss');
+              soundSystem.play('boss');
+          } else if (isMiniBoss) {
+              this.showNotification("⚠️ MINI BOSS INCOMING ⚠️", 'boss');
+              soundSystem.play('boss');
           } else {
               this.showNotification(`WAVE ${this.wave}`, 'wave');
           }
@@ -251,8 +256,11 @@ export class GameEngine {
     
     const diff = Math.pow(1.1, this.wave); // Scaling difficulty
     
-    // Boss Logic - prefer boss types on boss waves
-    const isBossWave = this.wave % 5 === 0 && this.enemiesRemainingToSpawn === 0;
+    // Boss Logic - mini-boss every 5 waves, big boss every 10 waves
+    const isBigBossWave = this.wave % 10 === 0 && this.enemiesRemainingToSpawn === 0;
+    const isMiniBossWave = this.wave % 5 === 0 && this.wave % 10 !== 0 && this.enemiesRemainingToSpawn === 0;
+    const isBossWave = isBigBossWave || isMiniBossWave;
+    
     let availableTypes = isBossWave 
       ? ENEMY_TYPES.filter(t => t.isBoss || Math.random() > 0.7) // Prefer boss types on boss waves
       : ENEMY_TYPES.filter(t => !t.isBoss || Math.random() > 0.9); // Rare boss spawns on normal waves
@@ -263,36 +271,65 @@ export class GameEngine {
     const stats = availableTypes[typeIdx];
     const isBoss = stats.isBoss || isBossWave;
     
-    let hp = (isBoss ? stats.hp * (isBossWave ? 1 : 2) : stats.hp) * diff;
-    const reward = (isBoss ? stats.reward * (isBossWave ? 1 : 2) : stats.reward);
+    // Boss HP multipliers: mini-boss = 3x, big boss = 8x
+    const bossHpMultiplier = isBigBossWave ? 8 : (isMiniBossWave ? 3 : 1);
+    let hp = (isBoss ? stats.hp * bossHpMultiplier : stats.hp) * diff;
+    const reward = (isBoss ? stats.reward * bossHpMultiplier : stats.reward);
     
     // Apply theme environmental effects to enemy HP
     if (this.currentTheme && this.currentTheme.enemyHpMultiplier) {
       hp *= this.currentTheme.enemyHpMultiplier;
     }
+    
+    // Determine boss type
+    const bossType = isBigBossWave ? 'big' : (isMiniBossWave ? 'mini' : undefined);
+    
+    // Generate boss abilities based on difficulty
+    let bossAbilities: string[] = stats.abilities ? [...stats.abilities] : [];
+    if (isBossWave) {
+      // Big bosses get more abilities
+      const abilityPool: string[] = ['shield', 'slow_towers', 'deactivate_towers', 'regenerate', 'heal_allies'];
+      if (isBigBossWave) {
+        // Big boss gets 2-3 additional abilities
+        const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
+        const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(3, additionalAbilities.length));
+        bossAbilities = [...new Set([...bossAbilities, ...selected])];
+      } else if (isMiniBossWave) {
+        // Mini boss gets 1-2 additional abilities
+        const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
+        const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(2, additionalAbilities.length));
+        bossAbilities = [...new Set([...bossAbilities, ...selected])];
+      }
+    }
+    
+    // Boss speed multiplier (bosses move slower)
+    const bossSpeedMultiplier = isBigBossWave ? 0.5 : (isMiniBossWave ? 0.7 : 1.0);
+    const baseSpeed = 0.05 * stats.speed * bossSpeedMultiplier;
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
         pathIndex: 0, progress: 0.0, 
         r: this.path[0].r, c: this.path[0].c, 
         hp, maxHp: hp, 
-        baseSpeed: 0.05 * stats.speed, 
+        baseSpeed: baseSpeed, 
         speedMultiplier: 1.0,
-        icon: isBoss && isBossWave ? "👹" : stats.icon, 
+        icon: isBossWave ? (isBigBossWave ? "👹" : "👺") : stats.icon, 
         color: stats.color, 
         reward: reward, 
-        scale: isBoss ? 1.5 : 1.0, 
+        scale: isBigBossWave ? 2.0 : (isMiniBossWave ? 1.5 : 1.0), 
         frozen: 0,
         xOffset: 0,
         yOffset: 0,
         money: reward,
-        damage: 0,
-        abilities: stats.abilities ? [...stats.abilities] : [],
-        abilityCooldown: stats.abilityCooldown || 0,
+        damage: isBossWave ? bossHpMultiplier : 0, // Boss damage = HP multiplier (3 for mini, 8 for big)
+        abilities: bossAbilities,
+        abilityCooldown: stats.abilityCooldown || (isBossWave ? 200 : 0),
         lastAbilityUse: -999,
-        isInvisible: stats.abilities?.includes('invisible') || false,
-        isFlying: stats.abilities?.includes('fly') || false,
-        isBurrowed: stats.abilities?.includes('burrow') || false,
+        isInvisible: bossAbilities.includes('invisible') || false,
+        isFlying: bossAbilities.includes('fly') || false,
+        isBurrowed: bossAbilities.includes('burrow') || false,
+        bossType: bossType,
+        bossShieldHp: bossAbilities.includes('shield') ? (isBigBossWave ? hp * 0.5 : hp * 0.3) : undefined,
         statusEffects: []
     });
   }
@@ -318,7 +355,9 @@ export class GameEngine {
             
             // Check Base Hit
             if (enemy.pathIndex >= this.path.length - 1) {
-                this.lives -= 1;
+                // Boss deals more damage based on boss type
+                const damage = enemy.bossType === 'big' ? 8 : (enemy.bossType === 'mini' ? 3 : 1);
+                this.lives -= damage;
                 this.baseHitEffect = 15; // Trigger Red Flash
                 enemy.hp = 0; 
                 enemy.escaped = true; 
@@ -424,7 +463,8 @@ export class GameEngine {
             if (stats.type === 'beam') {
                 // Continuous Laser
                 tower.targetId = target.id;
-                target.hp -= (tower.damage * 0.1);
+                const damage = tower.damage * 0.1;
+                applyDamageToEnemy(target, damage);
                 // Apply freeze effect for ice/beam towers
                 if (stats.projectileStyle === 'ice' || stats.projectileStyle === 'lightning') {
                     effectManager.applyEffectToEnemy(target, 'frostbite');
@@ -437,7 +477,7 @@ export class GameEngine {
                 // Instant hit for sniper/lightning projectiles
                 if (stats.projectileStyle === 'sniper' || stats.projectileStyle === 'lightning') {
                     // Instant Hit (Lightning/Sniper)
-                    target.hp -= tower.damage;
+                    applyDamageToEnemy(target, tower.damage);
                     if (stats.projectileStyle === 'lightning') {
                         this.addParticle(target.c*60+30, target.r*60+30, 'electric', stats.color);
                     }
@@ -493,7 +533,7 @@ export class GameEngine {
                             if (e.id === target.id) continue;
                             const dist = Math.sqrt((e.r - target.r)**2 + (e.c - target.c)**2);
                             if (dist <= stats.areaRadius) {
-                                e.hp -= tower.damage * 0.5; // 50% splash damage
+                                applyDamageToEnemy(e, tower.damage * 0.5); // 50% splash damage
                                 if (e.hp <= 0) this.killEnemy(e);
                             }
                         }
@@ -576,7 +616,7 @@ export class GameEngine {
               const ey = e.r + (e.yOffset || 0);
               const dist = Math.sqrt((ex - p.x)**2 + (ey - p.y)**2);
               if (dist <= p.splash!) {
-                  e.hp -= p.damage;
+                  applyDamageToEnemy(e, p.damage);
                   if (e.hp <= 0) this.killEnemy(e);
               }
           });
@@ -584,7 +624,7 @@ export class GameEngine {
           // Single Target
           const e = this.enemies.find(en => en.id === p.targetId);
           if (e) {
-              e.hp -= p.damage;
+              applyDamageToEnemy(e, p.damage);
               if (e.hp <= 0) this.killEnemy(e);
           }
       }
@@ -738,6 +778,27 @@ export class GameEngine {
             enemy.abilityCooldown = 250;
             this.addTextParticle(enemy.c, enemy.r, 'CHARGE!', "#f59e0b");
             soundSystem.play('charge');
+          }
+          break;
+          
+        case 'slow_towers':
+          if (timeSinceLastUse > 150 && Math.random() > 0.94) {
+            // Slow down nearby towers
+            const nearbyTowers = this.towers.filter(t => {
+              const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
+              return dist <= 4;
+            });
+            
+            nearbyTowers.forEach(tower => {
+              if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'firerate_debuff')) {
+                effectManager.applyEffectToTower(tower, 'firerate_debuff', 240); // 4 seconds
+              }
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 200;
+            this.addTextParticle(enemy.c, enemy.r, 'SLOW!', "#3b82f6");
+            soundSystem.play('debuff');
           }
           break;
       }
