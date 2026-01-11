@@ -501,7 +501,9 @@ export class GameEngine {
   // --- ACTIONS (Build/Upgrade/Sell) ---
 
   requestBuildTower(r: number, c: number, towerKey: string) {
-    if (this.map[r][c] !== 0) {
+    // Allow placement on empty (0) or path (1), but not on Start/Base/Obstacle
+    const cell = this.map[r][c];
+    if (cell === 'S' || cell === 'B' || cell === 'X') {
         this.addTextParticle(c, r, "Blocked!", "#ef4444");
         return;
     }

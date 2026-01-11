@@ -126,9 +126,10 @@ export const GameBoard: React.FC = () => {
   const getGhostStatus = () => {
       if (!draggingKey || !hoverPos) return null;
       const stats = TOWERS[draggingKey];
-      const isPath = game.map[hoverPos.r][hoverPos.c] !== 0; 
+      const cell = game.map[hoverPos.r][hoverPos.c];
+      const isBlocked = cell === 'S' || cell === 'B' || cell === 'X'; // Block Start/Base/Obstacle only
       const hasTower = game.towers.some(t => t.r === hoverPos.r && t.c === hoverPos.c);
-      const isValid = !isPath && !hasTower;
+      const isValid = !isBlocked && !hasTower; // Allow placement on path (1) and empty (0)
       return { stats, isValid, rangePx: stats.range * TILE_SIZE };
   };
   const ghost = getGhostStatus();
