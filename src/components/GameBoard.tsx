@@ -5,6 +5,7 @@ import { TOWERS, THEMES } from '../engine/data';
 import { ROWS, COLS } from '../engine/MapGenerator';
 import { QuestionModal } from './QuestionModal';
 import { soundSystem } from '../engine/SoundSystem';
+import { effectManager } from '../engine/EffectManager';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
 
@@ -367,9 +368,21 @@ export const GameBoard: React.FC = () => {
              let invest = stats.cost; for(let i=1; i<t.level; i++) invest += Math.floor(stats.cost * 1.5 * i);
              const sellPrice = Math.floor(invest * Math.max(0.5, 0.85 - (t.level * 0.05)));
              const upgradeCost = Math.floor(stats.cost * 1.5 * t.level);
+             const auraColor = effectManager.getTowerAuraColor(t);
 
              return (
                  <div key={t.id} className="absolute z-10" style={{ left: t.c * TILE_SIZE, top: t.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
+                     {/* Status Effect Aura */}
+                     {auraColor && (
+                         <div className="absolute inset-0 rounded-full pointer-events-none animate-pulse"
+                              style={{
+                                  boxShadow: `0 0 ${TILE_SIZE * 0.4}px ${auraColor}, 0 0 ${TILE_SIZE * 0.2}px ${auraColor}`,
+                                  border: `2px solid ${auraColor}`,
+                                  opacity: 0.6,
+                                  zIndex: -1
+                              }}
+                         />
+                     )}
                      <div onClick={() => setSelectedTowerId(isSelected ? null : t.id)} 
                           className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}>
                           {stats.icon}
@@ -388,7 +401,9 @@ export const GameBoard: React.FC = () => {
           })}
 
           {/* 4. Enemies - OPTIMIZED WITH REFS */}
-          {game.enemies.map(e => (
+          {game.enemies.map(e => {
+              const auraColor = effectManager.getEnemyAuraColor(e);
+              return (
               <div 
                   key={e.id} 
                   ref={(el) => {
@@ -402,6 +417,22 @@ export const GameBoard: React.FC = () => {
                       transform: `translate3d(${(e.c + (e.xOffset||0)) * TILE_SIZE}px, ${(e.r + (e.yOffset||0)) * TILE_SIZE}px, 0)` 
                   }}
               >
+                  {/* Status Effect Aura */}
+                  {auraColor && (
+                      <div className="absolute inset-0 rounded-full pointer-events-none animate-pulse"
+                           style={{
+                               boxShadow: `0 0 ${TILE_SIZE * 0.5}px ${auraColor}, 0 0 ${TILE_SIZE * 0.3}px ${auraColor}`,
+                               border: `2px solid ${auraColor}`,
+                               opacity: 0.7,
+                               zIndex: -1,
+                               width: TILE_SIZE * 1.2,
+                               height: TILE_SIZE * 1.2,
+                               left: '50%',
+                               top: '50%',
+                               transform: 'translate(-50%, -50%)'
+                           }}
+                      />
+                  )}
                   <div className="w-8 h-1 bg-slate-800 rounded-full overflow-hidden mb-0.5 border border-slate-600">
                       <div 
                         className="h-full bg-rose-500 will-change-[width]" 
@@ -414,7 +445,8 @@ export const GameBoard: React.FC = () => {
                   </div>
                   <div className="text-2xl drop-shadow-md">{e.icon}</div>
               </div>
-          ))}
+              );
+          })}
 
           {/* 5. Projectiles */}
           <svg className="absolute inset-0 pointer-events-none w-full h-full z-30 overflow-visible">
