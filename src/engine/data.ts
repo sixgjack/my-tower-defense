@@ -11,6 +11,8 @@ export interface EnemyType {
     abilities?: string[]; // Special abilities
     abilityCooldown?: number; // Cooldown in ticks
     isBoss?: boolean; // Mark as boss type
+    description?: string; // Clash Royale-style description
+    minWave?: number; // Minimum wave to spawn (for difficulty scaling)
 }
 
 export const ENEMY_TYPES: EnemyType[] = [

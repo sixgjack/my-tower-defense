@@ -261,11 +261,34 @@ export class GameEngine {
     const isMiniBossWave = this.wave % 5 === 0 && this.wave % 10 !== 0 && this.enemiesRemainingToSpawn === 0;
     const isBossWave = isBigBossWave || isMiniBossWave;
     
-    let availableTypes = isBossWave 
-      ? ENEMY_TYPES.filter(t => t.isBoss || Math.random() > 0.7) // Prefer boss types on boss waves
-      : ENEMY_TYPES.filter(t => !t.isBoss || Math.random() > 0.9); // Rare boss spawns on normal waves
+    // Filter enemies based on wave difficulty (first 10 waves = easier enemies)
+    let availableTypes = ENEMY_TYPES.filter(t => {
+      // First 10 waves: no hard enemies (no special abilities except basic ones)
+      if (this.wave <= 10) {
+        // Only allow basic enemies without powerful abilities
+        const hardAbilities = ['deactivate_towers', 'slow_towers', 'teleport', 'heal_allies', 'spawn_minions', 'split'];
+        if (t.abilities && t.abilities.some(a => hardAbilities.includes(a))) {
+          return false; // Exclude enemies with hard abilities in first 10 waves
+        }
+        // Exclude boss types in first 10 waves (except if it's a boss wave)
+        if (t.isBoss && !isBossWave) return false;
+        // Check minWave requirement
+        if (t.minWave && t.minWave > this.wave) return false;
+      } else {
+        // After wave 10: all enemies available
+        if (t.minWave && t.minWave > this.wave) return false;
+      }
+      return true;
+    });
     
-    if (availableTypes.length === 0) availableTypes = ENEMY_TYPES;
+    // Boss wave logic
+    if (isBossWave) {
+      availableTypes = availableTypes.filter(t => t.isBoss || Math.random() > 0.7); // Prefer boss types on boss waves
+    } else {
+      availableTypes = availableTypes.filter(t => !t.isBoss || Math.random() > 0.9); // Rare boss spawns on normal waves
+    }
+    
+    if (availableTypes.length === 0) availableTypes = ENEMY_TYPES.filter(t => !t.minWave || t.minWave <= this.wave);
     
     const typeIdx = Math.floor(Math.random() * availableTypes.length);
     const stats = availableTypes[typeIdx];
@@ -304,7 +327,8 @@ export class GameEngine {
     
     // Boss speed multiplier (bosses move slower)
     const bossSpeedMultiplier = isBigBossWave ? 0.5 : (isMiniBossWave ? 0.7 : 1.0);
-    const baseSpeed = 0.05 * stats.speed * bossSpeedMultiplier;
+    // Overall speed reduction: enemies move slower (reduced from 0.05 to 0.03)
+    const baseSpeed = 0.03 * stats.speed * bossSpeedMultiplier;
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
