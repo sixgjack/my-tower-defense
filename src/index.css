@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === THEME DEFINITIONS === */
+:root {
+  /* Default fallbacks */
+  --bg-color: #0f172a;
+  --high-ground: #1e293b;
+  --border: #334155;
+  --accent: #3b82f6;
+}
+
+/* 1. RHINE LAB (Tech Blue) */
+.theme-rhine { --bg-color: #0f172a; --high-ground: #1e293b; --border: #0ea5e9; --accent: #0ea5e9; }
+.theme-rhine .tile-high-ground { box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.2); }
+
+/* 2. KAZDEL (Ruins Orange) */
+.theme-kazdel { --bg-color: #271a12; --high-ground: #432a1c; --border: #f97316; --accent: #ea580c; }
+.theme-kazdel .tile-high-ground { border-style: dashed; }
+
+/* 3. KJERAG (Ice White/Cyan) */
+.theme-kjerag { --bg-color: #1e293b; --high-ground: #334155; --border: #a5f3fc; --accent: #22d3ee; }
+.theme-kjerag .tile-path { background: rgba(165, 243, 252, 0.1); }
+
+/* 4. SIESTA (Lava Red) */
+.theme-siesta { --bg-color: #2b0e0e; --high-ground: #451a1a; --border: #ef4444; --accent: #dc2626; }
+.theme-siesta .tile-path { background: rgba(239, 68, 68, 0.1); }
+
+/* 5. SARGON (Jungle Green) */
+.theme-sargon { --bg-color: #052e16; --high-ground: #14532d; --border: #22c55e; --accent: #16a34a; }
+
+/* 6. LUNGMEN (Neon Purple) */
+.theme-lungmen { --bg-color: #1e1b4b; --high-ground: #312e81; --border: #d8b4fe; --accent: #a855f7; }
+.theme-lungmen .tile-high-ground { box-shadow: 0 0 5px #a855f7; }
+
+/* 7. IBERIA (Ocean Deep Blue) */
+.theme-iberia { --bg-color: #082f49; --high-ground: #0c4a6e; --border: #38bdf8; --accent: #0284c7; }
+
+/* 8. LATERANO (Holy Gold) */
+.theme-laterano { --bg-color: #2a2a2a; --high-ground: #404040; --border: #facc15; --accent: #eab308; }
+
+/* 9. URSUS (Military Grey) */
+.theme-ursus { --bg-color: #18181b; --high-ground: #27272a; --border: #71717a; --accent: #52525b; }
+
+/* 10. VOID (Matrix Green/Black) */
+.theme-void { --bg-color: #000000; --high-ground: #111; --border: #22c55e; --accent: #00ff00; }
+.theme-void .tile-high-ground { border: 1px solid #00ff00; font-family: monospace; }
+
+
+/* === GLOBAL TILE CLASSES === */
+.game-container { background-color: var(--bg-color); transition: background 1s ease; }
+
+.tile-high-ground {
+  background-color: var(--high-ground);
+  border: 1px solid var(--border);
+  transition: all 0.5s ease;
+}
+
+.tile-path {
+  background-color: rgba(0,0,0,0.3);
+  border: 1px solid transparent;
+}
