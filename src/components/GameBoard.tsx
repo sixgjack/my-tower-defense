@@ -604,11 +604,26 @@ export const GameBoard: React.FC = () => {
         
         {/* GOLD BUTTON */}
         <div className="absolute bottom-8 right-8 z-50">
-           <button onClick={() => game.requestEarnMoney()} disabled={isTactical} className={`group relative overflow-hidden rounded-xl shadow-2xl transition-transform active:scale-95 ${isTactical ? 'grayscale cursor-not-allowed' : 'hover:-translate-y-1'}`}>
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-500 animate-pulse"></div>
-                <div className="relative bg-slate-900 m-[2px] rounded-[10px] px-8 py-3 flex items-center gap-3">
-                    <div className="bg-yellow-500 text-yellow-900 rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg">$</div>
-                    <div className="flex flex-col items-start"><span className="text-yellow-400 font-bold uppercase tracking-wider text-sm">獲取資金</span><span className="text-yellow-600 text-[10px] font-mono">GET FUNDING</span></div>
+           <button onClick={() => game.requestEarnMoney()} disabled={isTactical} className={`group relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${isTactical ? 'grayscale cursor-not-allowed opacity-50' : 'hover:scale-105 active:scale-95 hover:shadow-yellow-500/50'}`}>
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 animate-gradient-x"></div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                {/* Inner content */}
+                <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 m-[3px] rounded-[13px] px-10 py-4 flex items-center gap-4 border border-yellow-500/20">
+                    {/* Icon with glow */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-yellow-400 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                        <div className="relative bg-gradient-to-br from-yellow-400 to-amber-600 text-yellow-900 rounded-full w-10 h-10 flex items-center justify-center font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">$</div>
+                    </div>
+                    {/* Text */}
+                    <div className="flex flex-col items-start">
+                        <span className="text-yellow-300 font-bold uppercase tracking-wider text-sm drop-shadow-md">獲取資金</span>
+                        <span className="text-yellow-500/80 text-[10px] font-mono font-semibold">GET FUNDING</span>
+                    </div>
+                    {/* Sparkle effect */}
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping"></div>
+                    <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-amber-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping" style={{ animationDelay: '0.2s' }}></div>
                 </div>
            </button>
         </div>

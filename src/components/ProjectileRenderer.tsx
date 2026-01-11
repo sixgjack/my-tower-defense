@@ -103,6 +103,35 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
     case 'boomerang':
       return <g transform={`translate(${px}, ${py}) rotate(${angle + Math.sin(tick) * 20})`}><path d="M 8,0 Q 0,8 -8,0 Q 0,-8 8,0" fill={p.color} stroke="white" strokeWidth="1" opacity="0.9" /></g>;
     
+    case 'bloomerang':
+      // Flower-shaped boomerang with 5 rotating petals
+      const bloomRotation = tick * 20;
+      const petalCount = 5;
+      const petals = Array.from({ length: petalCount }, (_, i) => {
+        const angle = (i * 360 / petalCount) + bloomRotation;
+        const rad = angle * Math.PI / 180;
+        const px_petal = Math.cos(rad) * 6;
+        const py_petal = Math.sin(rad) * 6;
+        return (
+          <ellipse
+            key={i}
+            cx={px_petal}
+            cy={py_petal}
+            rx="4"
+            ry="8"
+            fill={p.color}
+            opacity={0.85}
+            transform={`rotate(${angle})`}
+          />
+        );
+      });
+      return (
+        <g transform={`translate(${px}, ${py}) rotate(${angle})`}>
+          <circle cx="0" cy="0" r="3" fill={p.color} opacity={0.9} />
+          {petals}
+        </g>
+      );
+    
     case 'spear':
       return <g transform={`translate(${px}, ${py}) rotate(${angle})`}><line x1={-10} y1={0} x2={8} y2={0} stroke={p.color} strokeWidth="3" /><path d="M 8,0 L 4,3 L 4,-3 Z" fill={p.color} /></g>;
     

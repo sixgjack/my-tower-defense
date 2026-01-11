@@ -410,13 +410,13 @@ export const TOWERS: Record<string, TowerStats> = {
   // BASIC INFANTRY & LIGHT WEAPONS
   // ==========================================
   'ARCHER': {
-    name: 'Auto-Rifle Turret', cost: 50, damage: 12, range: 3.5, cooldown: 50,
+    name: 'Auto-Rifle Turret', cost: 50, damage: 10, range: 3.2, cooldown: 50,
     type: 'projectile', color: '#fbbf24', icon: '🔫',
     description: 'Rapid-fire bullets. Fast and reliable for basic defense.',
     projectileStyle: 'dot'
   },
   'CANNON': {
-    name: 'Mortar Cannon', cost: 120, damage: 45, range: 4, cooldown: 100,
+    name: 'Mortar Cannon', cost: 120, damage: 38, range: 3.8, cooldown: 100,
     type: 'area', color: '#1e293b', icon: '💣',
     description: 'Explosive shells deal area damage to groups of enemies.',
     areaRadius: 1.5,
@@ -755,7 +755,7 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Star Shooter', cost: 380, damage: 40, range: 3, cooldown: 50,
     type: 'projectile', color: '#facc15', icon: '🌟',
     description: 'Starlight projectiles track and strike enemies.',
-    projectileStyle: 'star'
+    projectileStyle: 'bloomerang'
   },
   'SUZURAN': {
     name: 'Slow Field', cost: 500, damage: 10, range: 4, cooldown: 10,
