@@ -128,17 +128,8 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                           </p>
                         </div>
 
-                        {/* Live Demo */}
-                        <div>
-                          {!isUnlocked(selectedTower) && (
-                            <div className="bg-slate-900/70 rounded-xl p-4 border border-slate-700/50 mb-4">
-                              <div className="text-slate-400 text-sm text-center">
-                                {language === 'zh-TW' ? '解鎖後可查看實戰演示' : 'Unlock to view live demo'}
-                              </div>
-                            </div>
-                          )}
-                          <TowerLiveDemo tower={tower} />
-                        </div>
+                        {/* Live Demo - Always visible */}
+                        <TowerLiveDemo tower={tower} />
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 rounded-xl p-4">

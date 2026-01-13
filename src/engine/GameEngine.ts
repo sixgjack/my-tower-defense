@@ -152,7 +152,8 @@ export class GameEngine {
           this.showNotification(`SECTOR ${Math.ceil(this.wave/10)}: ${this.currentTheme.name}`, 'alert');
       } 
       else {
-          if (this.wave % 10 === 0) {
+          const isBigBoss = this.wave % 10 === 0;
+          if (isBigBoss) {
               this.showNotification("⚠️ BIG BOSS INCOMING ⚠️", 'boss');
               soundSystem.play('boss');
               // Spawn big boss immediately
@@ -196,7 +197,9 @@ export class GameEngine {
       const stats = availableBossTypes[typeIdx];
       
       // Boss HP multipliers: mini-boss = 3x, big boss = 8x
-      const bossHpMultiplier = isBigBoss ? 8 : 3;
+      // Scale down for early waves - first wave boss should be manageable
+      const waveScale = Math.max(0.5, Math.min(1.0, this.wave / 5)); // Scale from 0.5x at wave 1 to 1.0x at wave 5+
+      const bossHpMultiplier = (isBigBoss ? 8 : 3) * waveScale;
       let hp = stats.hp * bossHpMultiplier * diff;
       
       // Boss money bonus
@@ -531,6 +534,34 @@ export class GameEngine {
         
         if (tower.cooldown > 0) tower.cooldown--;
         
+        // Healer/Support towers - heal/buff nearby towers instead of attacking
+        if (stats.damage === 0 || (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Medic') || stats.description.includes('Support')))) {
+            if (tower.cooldown <= 0) {
+                tower.cooldown = effectiveCooldown;
+                // Find nearby towers to heal/buff
+                for (const nearbyTower of this.towers) {
+                    if (nearbyTower.id === tower.id) continue;
+                    const dist = Math.sqrt((nearbyTower.r - tower.r)**2 + (nearbyTower.c - tower.c)**2);
+                    if (dist <= tower.range) {
+                        // Heal towers
+                        if (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('Medic')) {
+                            const healAmount = 5;
+                            nearbyTower.hp = Math.min((nearbyTower.maxHp || 100), (nearbyTower.hp || 100) + healAmount);
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'heal', '#10b981');
+                            this.addTextParticle(nearbyTower.c, nearbyTower.r, `+${healAmount}`, '#10b981');
+                        }
+                        // Buff towers
+                        if (stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Command') || stats.description.includes('Support')) {
+                            // Apply temporary buff (handled by effect manager)
+                            effectManager.applyEffectToTower(nearbyTower, 'rage'); // Use existing rage effect for damage boost
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#fbbf24');
+                        }
+                    }
+                }
+            }
+            return; // Don't attack enemies
+        }
+        
         if (target) {
             // Calculate tower rotation angle to face target
             const dx = (target.c + (target.xOffset || 0)) - tower.c;
@@ -574,7 +605,7 @@ export class GameEngine {
                 } else if (stats.type === 'spread') {
                     // Spread/Shotgun: Fire multiple projectiles in an arc
                     const pelletCount = stats.multiTarget || 5; // Default to 5 pellets if not specified
-                    const spreadAngle = 30; // Total spread angle in degrees
+                    const spreadAngle = 40; // Wider spread angle for visibility
                     const baseAngle = Math.atan2(
                         (target.r + (target.yOffset || 0)) - tower.r,
                         (target.c + (target.xOffset || 0)) - tower.c
@@ -610,6 +641,29 @@ export class GameEngine {
                             type: 'arrow'
                         });
                     }
+                    soundSystem.play('shoot');
+                    const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
+                    this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
+                } else if (stats.projectileStyle === 'boomerang' || stats.projectileStyle === 'bloomerang') {
+                    // Boomerang/Bloomerang: Projectile returns after hitting
+                    this.projectiles.push({
+                        id: Math.random(),
+                        x: tower.c, y: tower.r,
+                        startX: tower.c, startY: tower.r,
+                        tx: target.c + (target.xOffset||0), 
+                        ty: target.r + (target.yOffset||0),
+                        targetId: target.id,
+                        color: stats.color, 
+                        life: 200, maxLife: 200, // Longer life for return trip
+                        style: stats.projectileStyle, 
+                        damage: tower.damage, 
+                        speed: stats.projectileSpeed || 0.12,
+                        splash: 0,
+                        progress: 0,
+                        type: 'boomerang',
+                        returnToTower: true,
+                        returnProgress: 0
+                    });
                     soundSystem.play('shoot');
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
@@ -673,46 +727,102 @@ export class GameEngine {
             return;
         }
 
-        p.progress += p.speed;
-        
-        // Update target position for all projectiles (homing behavior)
-        if (p.targetId) {
-            const e = this.enemies.find(en => en.id === p.targetId);
-            if (e) {
-                // Update target position to enemy's current position
-                p.tx = e.c + (e.xOffset || 0);
-                p.ty = e.r + (e.yOffset || 0);
-            } else {
-                // Target died, projectile continues to last known position
+        // Handle boomerang return logic
+        if (p.returnToTower && p.returnProgress !== undefined) {
+            if (p.progress < 1.0) {
+                // Still going to target
+                p.progress += p.speed;
+                
+                // Update target position
+                if (p.targetId) {
+                    const e = this.enemies.find(en => en.id === p.targetId);
+                    if (e) {
+                        p.tx = e.c + (e.xOffset || 0);
+                        p.ty = e.r + (e.yOffset || 0);
+                    }
+                }
+                
+                // Lerp position to target
+                const dx = p.tx - (p.startX!);
+                const dy = p.ty - (p.startY!);
+                p.x = (p.startX!) + dx * p.progress;
+                p.y = (p.startY!) + dy * p.progress;
+                
+                // Check if hit target
+                if (p.progress >= 1.0) {
+                    this.handleProjectileHit(p);
+                    // Start return journey
+                    p.returnProgress = 0;
+                }
+            } else if (p.returnProgress < 1.0) {
+                // Returning to tower
+                p.returnProgress += p.speed;
+                
+                // Find the tower that fired this projectile
+                const firingTower = this.towers.find(t => {
+                    const dist = Math.sqrt((t.c - p.x)**2 + (t.r - p.y)**2);
+                    return dist < 0.5; // Close to a tower
+                });
+                
+                if (firingTower) {
+                    // Return to firing tower
+                    const returnDx = firingTower.c - p.tx;
+                    const returnDy = firingTower.r - p.ty;
+                    p.x = p.tx + returnDx * p.returnProgress;
+                    p.y = p.ty + returnDy * p.returnProgress;
+                    
+                    if (p.returnProgress >= 1.0) {
+                        // Returned - remove projectile
+                        p.life = 0;
+                    }
+                } else {
+                    // Tower not found, remove projectile
+                    p.life = 0;
+                }
             }
-        }
-        
-        // Add trail effects for various projectile styles
-        if (p.progress > 0.1 && Math.random() > 0.7) {
-            const trailX = p.x * 60 + 30;
-            const trailY = p.y * 60 + 30;
-            if (p.style === 'fire' || p.style === 'plasma' || p.style === 'rocket' || p.style === 'missile') {
-                this.addParticle(trailX, trailY, 'smoke', p.color);
-            } else if (p.style === 'ice') {
-                this.addParticle(trailX, trailY, 'freeze', p.color);
-            } else if (p.style === 'poison' || p.style === 'acid') {
-                this.addParticle(trailX, trailY, 'poison_cloud', p.color);
-            } else if (p.style === 'magic' || p.style === 'holy' || p.style === 'orb') {
-                this.addParticle(trailX, trailY, 'star', p.color);
-            } else if (p.style === 'bolt') {
-                this.addParticle(trailX, trailY, 'electric', p.color);
+        } else {
+            // Normal projectile behavior
+            p.progress += p.speed;
+            
+            // Update target position for all projectiles (homing behavior)
+            if (p.targetId) {
+                const e = this.enemies.find(en => en.id === p.targetId);
+                if (e) {
+                    // Update target position to enemy's current position
+                    p.tx = e.c + (e.xOffset || 0);
+                    p.ty = e.r + (e.yOffset || 0);
+                } else {
+                    // Target died, projectile continues to last known position
+                }
             }
-        }
+            
+            // Add trail effects for various projectile styles
+            if (p.progress > 0.1 && Math.random() > 0.7) {
+                const trailX = p.x * 60 + 30;
+                const trailY = p.y * 60 + 30;
+                if (p.style === 'fire' || p.style === 'plasma' || p.style === 'rocket' || p.style === 'missile') {
+                    this.addParticle(trailX, trailY, 'smoke', p.color);
+                } else if (p.style === 'ice') {
+                    this.addParticle(trailX, trailY, 'freeze', p.color);
+                } else if (p.style === 'poison' || p.style === 'acid') {
+                    this.addParticle(trailX, trailY, 'poison_cloud', p.color);
+                } else if (p.style === 'magic' || p.style === 'holy' || p.style === 'orb') {
+                    this.addParticle(trailX, trailY, 'star', p.color);
+                } else if (p.style === 'bolt') {
+                    this.addParticle(trailX, trailY, 'electric', p.color);
+                }
+            }
 
-        // Lerp position
-        const dx = p.tx - (p.startX!);
-        const dy = p.ty - (p.startY!);
-        p.x = (p.startX!) + dx * p.progress;
-        p.y = (p.startY!) + dy * p.progress;
+            // Lerp position
+            const dx = p.tx - (p.startX!);
+            const dy = p.ty - (p.startY!);
+            p.x = (p.startX!) + dx * p.progress;
+            p.y = (p.startY!) + dy * p.progress;
 
-        if (p.progress >= 1.0) {
-            p.life = 0;
-            this.handleProjectileHit(p);
+            if (p.progress >= 1.0) {
+                p.life = 0;
+                this.handleProjectileHit(p);
+            }
         }
     });
     this.projectiles = this.projectiles.filter(p => (p.life ?? 100) > 0);

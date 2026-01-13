@@ -424,7 +424,7 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'WIZARD': {
     name: 'EMP Blaster', cost: 200, damage: 23, range: 2.4, cooldown: 60,
-    type: 'area', color: '#8b5cf6', icon: '⚡',
+    type: 'area', color: '#8b5cf6', icon: '🌀',
     description: 'Electromagnetic pulse disables multiple targets at once.',
     areaRadius: 2.0,
     projectileStyle: 'fire'
@@ -450,14 +450,14 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'X_BOW': {
     name: 'Gatling Gun', cost: 500, damage: 6, range: 5.7, cooldown: 6,
-    type: 'projectile', color: '#ec4899', icon: '⚔️',
+    type: 'projectile', color: '#ec4899', icon: '⚡',
     description: 'Extremely high rate of fire. Tears through enemies with a hail of bullets.',
     projectileSpeed: 0.25,
     projectileStyle: 'arrow_classic'
   },
   'INFERNO': {
     name: 'Flamethrower', cost: 600, damage: 4, range: 3.6, cooldown: 5,
-    type: 'beam', color: '#ef4444', icon: '🔥',
+    type: 'beam', color: '#ef4444', icon: '🌋',
     description: 'Continuous flame beam. Damage increases the longer it burns.',
     beamRamp: 0.8
   },
@@ -472,9 +472,9 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'SCATTERSHOT': {
     name: 'Shotgun Turret', cost: 550, damage: 31, range: 2.4, cooldown: 90,
-    type: 'spread', color: '#d97706', icon: '🔫',
+    type: 'spread', color: '#d97706', icon: '💥',
     description: 'Fires multiple pellets in a spread pattern. Hits multiple targets.',
-    multiTarget: 3,
+    multiTarget: 5,
     projectileStyle: 'shotgun'
   },
   'MONOLITH': {
@@ -495,7 +495,7 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'BUILDER': {
     name: 'Repair Station', cost: 2000, damage: 16, range: 1.6, cooldown: 30,
-    type: 'projectile', color: '#a3e635', icon: '🔧',
+    type: 'projectile', color: '#a3e635', icon: '🔨',
     description: 'Maintains and repairs nearby structures. Can defend itself.',
     projectileStyle: 'bullet'
   },
@@ -578,7 +578,7 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'IFRIT': {
     name: 'Laser Cannon', cost: 750, damage: 93, range: 4.0, cooldown: 50,
-    type: 'line', color: '#ff5722', icon: '🔥',
+    type: 'line', color: '#ff5722', icon: '🔴',
     description: 'Continuous laser beam burns enemies in a straight line.',
     burnDamage: 10
   },
@@ -596,7 +596,7 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'GOLDENGOLOW': {
     name: 'Drone Swarm', cost: 450, damage: 16, range: 80.2, cooldown: 20,
-    type: 'projectile', color: '#f9a8d4', icon: '⚡',
+    type: 'projectile', color: '#f9a8d4', icon: '🛸',
     description: 'Autonomous drones hunt targets across the entire battlefield.',
     projectileStyle: 'lightning'
   },
@@ -684,7 +684,7 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'BLAZE': {
     name: 'Chain Saw', cost: 600, damage: 85, range: 1.6, cooldown: 20,
-    type: 'aura', color: '#ea580c', icon: '🔥',
+    type: 'aura', color: '#ea580c', icon: '⚙️',
     description: 'Continuous area damage. Constantly shreds enemies nearby.',
     projectileStyle: 'fire'
   },
@@ -696,13 +696,13 @@ export const TOWERS: Record<string, TowerStats> = {
   },
   'NASTI': {
     name: 'Drill Cannon', cost: 400, damage: 47, range: 1.3, cooldown: 55,
-    type: 'projectile', color: '#475569', icon: '🔧',
+    type: 'projectile', color: '#475569', icon: '🔩',
     description: 'Rotating drill projectiles pierce through armor.',
     projectileStyle: 'needle'
   },
   'HADIYA': {
     name: 'Arrow Volley', cost: 380, damage: 42, range: 1.3, cooldown: 45,
-    type: 'projectile', color: '#a8a29e', icon: '⚔️',
+    type: 'projectile', color: '#a8a29e', icon: '🏹',
     description: 'Rapid arrow fire strikes enemies with precision.',
     projectileStyle: 'arrow'
   },
@@ -804,13 +804,13 @@ export const TOWERS: Record<string, TowerStats> = {
   'HARUKA': { name: 'Command Relay', cost: 220, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Routes commands to other defense systems.' },
   'KICHISEI': { name: 'Scatter Gun', cost: 480, damage: 47, range: 2.0, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Fires wide spread of projectiles at multiple angles.' },
   'MATSUKIRI': { name: 'Tactical Rifle', cost: 350, damage: 35, range: 1.3, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Precision strikes with tactical targeting.' },
-  'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🤖', description: 'Deploys combat drones to engage enemies.' },
+  'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🛠️', description: 'Deploys combat drones to engage enemies.' },
   'LEIZI': { name: 'Chain Lightning', cost: 580, damage: 55, range: 2.8, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Electricity chains between multiple enemies.' },
   'RECORD_KEEPER': { name: 'Log System', cost: 200, damage: 11, range: 2.4, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Records and tracks enemy movements.' },
   'TIPPI': { name: 'Scout Drone', cost: 360, damage: 39, range: 2.4, cooldown: 50, type: 'projectile', color: '#86efac', icon: '🐦', description: 'Aerial reconnaissance unit with combat capability.' },
   'MISS_CHRISTINE': { name: 'Elegant Cannon', cost: 280, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '🐈', description: 'Graceful but deadly precision shots.' },
   'SANKTA': { name: 'Heavy Defender', cost: 600, damage: 62, range: 1.3, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🥛', description: 'Heavy-caliber rounds for close-range defense.' },
-  'GRACEBEARER': { name: 'Standard Gun', cost: 550, damage: 70, range: 1.3, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '⚔️', description: 'Reliable standard-issue weapon system.' },
+  'GRACEBEARER': { name: 'Standard Gun', cost: 550, damage: 70, range: 1.3, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '🎖️', description: 'Reliable standard-issue weapon system.' },
   'CONFESS_47': { name: 'Robot Sentry', cost: 100, damage: 16, range: 1.3, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '🤖', description: 'Automated sentry turret with basic targeting.' },
   'MON3TR': { name: 'Combat Mech', cost: 400, damage: 155, range: 1.6, cooldown: 60, type: 'projectile', color: '#10b981', icon: '👾', description: 'Deployable mech unit with high damage output.' },
   'ALANNA': { name: 'Weapon Forge', cost: 350, damage: 39, range: 1.3, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🛠️', description: 'Manufactures and launches custom projectiles.' },

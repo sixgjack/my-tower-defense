@@ -134,12 +134,15 @@ export interface Projectile {
     damage: number;
     color: string;
     progress: number; 
-    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook';
+    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook' | 'boomerang';
     style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
     targetId?: number;
     life?: number;
     maxLife?: number;
     splash?: number;
+    returnToTower?: boolean; // For boomerang/bloomerang return logic
+    returnProgress?: number; // Progress of return journey (0 to 1)
+    pullStrength?: number; // For pull attacks
     special?: {
         pull?: number;
         slow?: number;

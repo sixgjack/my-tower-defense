@@ -1,5 +1,5 @@
 // src/components/TowerLiveDemo.tsx
-// Enhanced live demo canvas showing tower attacking enemies with better visuals
+// Enhanced live demo showing tower attacking enemies on a route
 import React, { useRef, useEffect } from 'react';
 import type { TowerStats } from '../engine/types';
 
@@ -15,8 +15,7 @@ interface Enemy {
   hp: number;
   maxHp: number;
   angle: number;
-  targetX: number;
-  targetY: number;
+  pathProgress: number; // Progress along path (0 to 1)
   id: number;
 }
 
@@ -28,12 +27,15 @@ interface Projectile {
   progress: number;
   angle: number;
   id: number;
+  style?: string;
+  returnToTower?: boolean;
+  returnProgress?: number;
 }
 
 export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({ 
   tower, 
   width = 500, 
-  height = 400 
+  height = 300 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
@@ -51,7 +53,7 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size with device pixel ratio for crisp rendering
+    // Set canvas size with device pixel ratio
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
@@ -67,144 +69,96 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
     enemyIdCounter.current = 0;
     projectileIdCounter.current = 0;
 
+    // Define a simple path (left to right)
+    const path = [
+      { x: 20, y: height / 2 },
+      { x: width - 20, y: height / 2 }
+    ];
+    
     const towerX = width / 2;
     const towerY = height / 2;
-    const rangePixels = tower.range * 50; // Scale range to pixels
+    const rangePixels = tower.range * 50;
 
-    // Spawn enemies periodically
+    // Spawn enemies on the path
     const spawnEnemy = () => {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = rangePixels + 60 + Math.random() * 40;
-      const x = towerX + Math.cos(angle) * distance;
-      const y = towerY + Math.sin(angle) * distance;
-      
       enemyIdCounter.current++;
       enemiesRef.current.push({
-        x,
-        y,
+        x: path[0].x,
+        y: path[0].y,
         hp: 100,
         maxHp: 100,
-        angle: Math.atan2(towerY - y, towerX - x),
-        targetX: towerX,
-        targetY: towerY,
+        angle: 0,
+        pathProgress: 0,
         id: enemyIdCounter.current
       });
     };
 
     // Initial enemies
     setTimeout(() => spawnEnemy(), 500);
-    setTimeout(() => spawnEnemy(), 1500);
-    setTimeout(() => spawnEnemy(), 2500);
+    setTimeout(() => spawnEnemy(), 2000);
+    setTimeout(() => spawnEnemy(), 3500);
 
     const drawProjectile = (ctx: CanvasRenderingContext2D, proj: Projectile, style?: string) => {
       ctx.save();
       ctx.translate(proj.x, proj.y);
-      ctx.rotate(proj.angle);
+      
+      if (proj.returnToTower && proj.returnProgress !== undefined && proj.returnProgress > 0) {
+        // Returning - rotate back
+        ctx.rotate(proj.angle + Math.PI);
+      } else {
+        ctx.rotate(proj.angle);
+      }
 
       switch (style) {
-        case 'missile':
-          // Missile shape
+        case 'shotgun':
+          // Small pellets
           ctx.fillStyle = tower.color;
           ctx.beginPath();
-          ctx.moveTo(0, -8);
-          ctx.lineTo(-4, 8);
-          ctx.lineTo(0, 6);
-          ctx.lineTo(4, 8);
-          ctx.closePath();
-          ctx.fill();
-          // Flame trail
-          ctx.fillStyle = '#ff6b00';
-          ctx.beginPath();
-          ctx.arc(0, 8, 3, 0, Math.PI * 2);
+          ctx.arc(0, 0, 2, 0, Math.PI * 2);
           ctx.fill();
           break;
-        case 'arrow':
-        case 'arrow_classic':
-          // Arrow shape
+        case 'boomerang':
+          // Boomerang shape
           ctx.fillStyle = tower.color;
           ctx.beginPath();
-          ctx.moveTo(0, -6);
-          ctx.lineTo(-3, 6);
+          ctx.moveTo(0, -4);
+          ctx.lineTo(-3, 0);
           ctx.lineTo(0, 4);
-          ctx.lineTo(3, 6);
+          ctx.lineTo(3, 0);
           ctx.closePath();
           ctx.fill();
           break;
-        case 'arc':
-          // Cannonball
+        case 'bloomerang':
+          // Flower-shaped boomerang
+          const bloomRotation = tickRef.current * 5;
+          const petalCount = 5;
+          for (let i = 0; i < petalCount; i++) {
+            const angle = (i * 360 / petalCount) + bloomRotation;
+            const rad = angle * Math.PI / 180;
+            const px = Math.cos(rad) * 3;
+            const py = Math.sin(rad) * 3;
+            ctx.fillStyle = tower.color;
+            ctx.beginPath();
+            ctx.ellipse(px, py, 2, 4, rad, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.fillStyle = tower.color;
           ctx.beginPath();
-          ctx.arc(0, 0, 6, 0, Math.PI * 2);
-          ctx.fill();
-          // Shadow
-          ctx.fillStyle = 'rgba(0,0,0,0.3)';
-          ctx.beginPath();
-          ctx.arc(2, 2, 4, 0, Math.PI * 2);
+          ctx.arc(0, 0, 2, 0, Math.PI * 2);
           ctx.fill();
           break;
-        case 'lightning':
-          // Lightning bolt
-          ctx.strokeStyle = '#ffff00';
-          ctx.lineWidth = 3;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#ffff00';
-          ctx.beginPath();
-          ctx.moveTo(-3, -8);
-          ctx.lineTo(2, 0);
-          ctx.lineTo(-2, 0);
-          ctx.lineTo(3, 8);
-          ctx.stroke();
-          break;
-        case 'fire':
-          // Fireball
-          const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 6);
-          gradient.addColorStop(0, '#ff6b00');
-          gradient.addColorStop(0.5, '#ff0000');
-          gradient.addColorStop(1, tower.color);
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(0, 0, 6, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-        case 'ice':
-          // Ice shard
-          ctx.fillStyle = '#a5f3fc';
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(0, -6);
-          ctx.lineTo(-4, 4);
-          ctx.lineTo(0, 2);
-          ctx.lineTo(4, 4);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          break;
-        case 'sniper':
-          // Sniper bullet (fast, small)
+        case 'spread':
+          // Spread pattern
           ctx.fillStyle = tower.color;
           ctx.beginPath();
           ctx.arc(0, 0, 3, 0, Math.PI * 2);
           ctx.fill();
-          // Trail
-          ctx.strokeStyle = tower.color + '80';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(0, -10);
-          ctx.lineTo(0, 0);
-          ctx.stroke();
           break;
         default:
           // Default dot
           ctx.fillStyle = tower.color;
           ctx.beginPath();
-          ctx.arc(0, 0, 4, 0, Math.PI * 2);
-          ctx.fill();
-          // Glow effect
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = tower.color;
-          ctx.beginPath();
-          ctx.arc(0, 0, 4, 0, Math.PI * 2);
+          ctx.arc(0, 0, 3, 0, Math.PI * 2);
           ctx.fill();
       }
       ctx.restore();
@@ -214,90 +168,74 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
       tickRef.current++;
       ctx.clearRect(0, 0, width, height);
 
-      // Draw background with gradient
+      // Draw background
       const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
       bgGradient.addColorStop(0, '#0f172a');
       bgGradient.addColorStop(1, '#1e293b');
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Draw subtle grid
-      ctx.strokeStyle = 'rgba(100, 100, 100, 0.15)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < width; i += 25) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, height);
-        ctx.stroke();
-      }
-      for (let i = 0; i < height; i += 25) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(width, i);
-        ctx.stroke();
-      }
+      // Draw path
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      ctx.lineTo(path[1].x, path[1].y);
+      ctx.stroke();
 
-      // Draw range circle (pulsing effect)
-      const pulse = Math.sin(tickRef.current * 0.1) * 0.1 + 0.9;
-      ctx.strokeStyle = tower.color + '30';
-      ctx.lineWidth = 2;
+      // Draw range circle (subtle)
+      ctx.strokeStyle = tower.color + '20';
+      ctx.lineWidth = 1;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.arc(towerX, towerY, rangePixels * pulse, 0, Math.PI * 2);
+      ctx.arc(towerX, towerY, rangePixels, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
 
       // Update and draw enemies
       enemiesRef.current.forEach((enemy) => {
-        // Move enemy towards tower
-        const dx = enemy.targetX - enemy.x;
-        const dy = enemy.targetY - enemy.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const speed = 0.8;
-        if (dist > 5) {
-          enemy.x += (dx / dist) * speed;
-          enemy.y += (dy / dist) * speed;
+        // Move enemy along path
+        enemy.pathProgress += 0.005;
+        if (enemy.pathProgress > 1) {
+          enemy.pathProgress = 0; // Reset to start
         }
-        enemy.angle = Math.atan2(dy, dx);
+        
+        enemy.x = path[0].x + (path[1].x - path[0].x) * enemy.pathProgress;
+        enemy.y = path[0].y + (path[1].y - path[0].y) * enemy.pathProgress;
+        
+        // Check if in range
+        const dist = Math.sqrt(Math.pow(enemy.x - towerX, 2) + Math.pow(enemy.y - towerY, 2));
+        const inRange = dist <= rangePixels;
 
         // Draw enemy shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.beginPath();
-        ctx.ellipse(enemy.x + 2, enemy.y + 18, 12, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(enemy.x + 2, enemy.y + 12, 10, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw enemy body
+        // Draw enemy
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
-        ctx.rotate(enemy.angle);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(-12, -8, 24, 16);
-        // Enemy icon
-        ctx.font = '20px Arial';
+        ctx.fillStyle = inRange ? '#ef4444' : '#dc2626';
+        ctx.fillRect(-10, -6, 20, 12);
+        ctx.font = '16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('👾', 0, 0);
         ctx.restore();
 
         // Draw HP bar
-        const barWidth = 28;
-        const barHeight = 4;
+        const barWidth = 24;
+        const barHeight = 3;
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 22, barWidth, barHeight);
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 16, barWidth, barHeight);
         const hpPercent = enemy.hp / enemy.maxHp;
-        const hpGradient = ctx.createLinearGradient(enemy.x - barWidth / 2, 0, enemy.x + barWidth / 2, 0);
-        hpGradient.addColorStop(0, hpPercent > 0.5 ? '#22c55e' : '#f59e0b');
-        hpGradient.addColorStop(1, hpPercent > 0.5 ? '#16a34a' : '#dc2626');
-        ctx.fillStyle = hpGradient;
-        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 22, barWidth * hpPercent, barHeight);
-        // HP bar border
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(enemy.x - barWidth / 2, enemy.y - 22, barWidth, barHeight);
+        ctx.fillStyle = hpPercent > 0.5 ? '#22c55e' : '#dc2626';
+        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 16, barWidth * hpPercent, barHeight);
       });
 
       // Tower shooting logic - slower for demo visibility
-      const cooldownTicks = Math.max(1, Math.floor((tower.cooldown * 2) / 16.67)); // 60fps = 16.67ms per frame, 2x slower for demo
+      const cooldownTicks = Math.max(1, Math.floor((tower.cooldown * 3) / 16.67)); // 3x slower for demo
       if (tickRef.current - lastShotRef.current >= cooldownTicks) {
         const nearestEnemy = enemiesRef.current
           .map((e) => ({ 
@@ -310,66 +248,119 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
         if (nearestEnemy) {
           lastShotRef.current = tickRef.current;
           const angle = Math.atan2(nearestEnemy.enemy.y - towerY, nearestEnemy.enemy.x - towerX);
-          projectileIdCounter.current++;
-          projectilesRef.current.push({
-            x: towerX,
-            y: towerY,
-            targetX: nearestEnemy.enemy.x,
-            targetY: nearestEnemy.enemy.y,
-            progress: 0,
-            angle,
-            id: projectileIdCounter.current
-          });
+          
+          // Handle different attack types
+          if (tower.type === 'spread') {
+            // Spread attack - multiple pellets
+            const pelletCount = tower.multiTarget || 5;
+            const spreadAngle = 35;
+            for (let i = 0; i < pelletCount; i++) {
+              const angleOffset = (i / (pelletCount - 1) - 0.5) * spreadAngle * (Math.PI / 180);
+              const pelletAngle = angle + angleOffset;
+              const distance = nearestEnemy.dist;
+              const pelletTx = towerX + Math.cos(pelletAngle) * distance;
+              const pelletTy = towerY + Math.sin(pelletAngle) * distance;
+              
+              projectileIdCounter.current++;
+              projectilesRef.current.push({
+                x: towerX,
+                y: towerY,
+                targetX: pelletTx,
+                targetY: pelletTy,
+                progress: 0,
+                angle: pelletAngle,
+                id: projectileIdCounter.current,
+                style: 'shotgun'
+              });
+            }
+          } else if (tower.projectileStyle === 'boomerang' || tower.projectileStyle === 'bloomerang') {
+            // Boomerang attack
+            projectileIdCounter.current++;
+            projectilesRef.current.push({
+              x: towerX,
+              y: towerY,
+              targetX: nearestEnemy.enemy.x,
+              targetY: nearestEnemy.enemy.y,
+              progress: 0,
+              angle,
+              id: projectileIdCounter.current,
+              style: tower.projectileStyle,
+              returnToTower: true,
+              returnProgress: 0
+            });
+          } else {
+            // Standard projectile
+            projectileIdCounter.current++;
+            projectilesRef.current.push({
+              x: towerX,
+              y: towerY,
+              targetX: nearestEnemy.enemy.x,
+              targetY: nearestEnemy.enemy.y,
+              progress: 0,
+              angle,
+              id: projectileIdCounter.current,
+              style: tower.projectileStyle || 'dot'
+            });
+          }
         }
       }
 
       // Update and draw projectiles
       projectilesRef.current.forEach((proj, projIndex) => {
-        const speed = tower.projectileSpeed ? (1 - tower.projectileSpeed) * 0.1 : 0.08;
-        proj.progress += speed;
-        
-        if (proj.progress >= 1) {
-          // Hit target - find closest enemy
-          const hitEnemy = enemiesRef.current.find(e => {
-            const dist = Math.sqrt(Math.pow(e.x - proj.targetX, 2) + Math.pow(e.y - proj.targetY, 2));
-            return dist < 25;
-          });
-          
-          if (hitEnemy) {
-            // Damage enemy
-            hitEnemy.hp -= tower.damage;
-            
-            // Area damage for area towers
-            if (tower.type === 'area' && tower.areaRadius) {
-              const areaRadiusPixels = tower.areaRadius * 50;
-              enemiesRef.current.forEach(e => {
-                const dist = Math.sqrt(Math.pow(e.x - hitEnemy.x, 2) + Math.pow(e.y - hitEnemy.y, 2));
-                if (dist <= areaRadiusPixels && e.id !== hitEnemy.id) {
-                  e.hp -= tower.damage * 0.5; // Reduced area damage
-                }
-              });
-            }
-            
-            if (hitEnemy.hp <= 0) {
-              const index = enemiesRef.current.indexOf(hitEnemy);
-              enemiesRef.current.splice(index, 1);
-              // Spawn new enemy after delay
-              setTimeout(() => spawnEnemy(), 800);
-            }
+        if (proj.returnToTower && proj.returnProgress !== undefined) {
+          // Boomerang return logic
+          if (proj.progress < 1) {
+            // Going to target
+            proj.progress += 0.08;
+            proj.x = towerX + (proj.targetX - towerX) * proj.progress;
+            proj.y = towerY + (proj.targetY - towerY) * proj.progress;
+          } else if (proj.returnProgress < 1) {
+            // Returning to tower
+            proj.returnProgress += 0.08;
+            proj.x = proj.targetX + (towerX - proj.targetX) * proj.returnProgress;
+            proj.y = proj.targetY + (towerY - proj.targetY) * proj.returnProgress;
+          } else {
+            // Returned - remove
+            projectilesRef.current.splice(projIndex, 1);
+            return;
           }
-          
-          projectilesRef.current.splice(projIndex, 1);
         } else {
-          // Update projectile position
-          proj.x = towerX + (proj.targetX - towerX) * proj.progress;
-          proj.y = towerY + (proj.targetY - towerY) * proj.progress;
-          
-          // Draw projectile
-          drawProjectile(ctx, proj, tower.projectileStyle);
+          // Normal projectile
+          proj.progress += 0.08;
+          if (proj.progress >= 1) {
+            // Hit target
+            const hitEnemy = enemiesRef.current.find(e => {
+              const dist = Math.sqrt(Math.pow(e.x - proj.targetX, 2) + Math.pow(e.y - proj.targetY, 2));
+              return dist < 15;
+            });
+            
+            if (hitEnemy) {
+              hitEnemy.hp -= tower.damage;
+              if (hitEnemy.hp <= 0) {
+                const index = enemiesRef.current.indexOf(hitEnemy);
+                enemiesRef.current.splice(index, 1);
+                setTimeout(() => spawnEnemy(), 1000);
+              }
+            }
+            
+            // Handle boomerang return
+            if (tower.projectileStyle === 'boomerang' || tower.projectileStyle === 'bloomerang') {
+              proj.returnToTower = true;
+              proj.returnProgress = 0;
+            } else {
+              projectilesRef.current.splice(projIndex, 1);
+            }
+          } else {
+            proj.x = towerX + (proj.targetX - towerX) * proj.progress;
+            proj.y = towerY + (proj.targetY - towerY) * proj.progress;
+          }
         }
+        
+        // Draw projectile
+        drawProjectile(ctx, proj, proj.style);
       });
 
-      // Draw tower with rotation towards nearest enemy
+      // Draw tower
       const nearestEnemy = enemiesRef.current
         .map((e) => ({ 
           enemy: e, 
@@ -385,39 +376,28 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
       // Draw tower shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(towerX + 3, towerY + 25, 18, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(towerX + 2, towerY + 15, 15, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Draw tower base
       ctx.fillStyle = tower.color + '40';
       ctx.beginPath();
-      ctx.arc(towerX, towerY, 22, 0, Math.PI * 2);
+      ctx.arc(towerX, towerY, 18, 0, Math.PI * 2);
       ctx.fill();
 
-      // Draw tower body with rotation
+      // Draw tower with rotation
       ctx.save();
       ctx.translate(towerX, towerY);
       ctx.rotate(towerAngle);
       ctx.fillStyle = tower.color;
       ctx.beginPath();
-      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.arc(0, 0, 15, 0, Math.PI * 2);
       ctx.fill();
-      // Tower icon
-      ctx.font = '28px Arial';
+      ctx.font = '20px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(tower.icon, 0, 0);
       ctx.restore();
-
-      // Draw range indicator when shooting (pulse effect)
-      if (projectilesRef.current.length > 0) {
-        const pulse = Math.sin(tickRef.current * 0.3) * 0.2 + 0.8;
-        ctx.strokeStyle = tower.color + '60';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(towerX, towerY, rangePixels * pulse, 0, Math.PI * 2);
-        ctx.stroke();
-      }
 
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -426,10 +406,10 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
 
     // Spawn enemies periodically
     const spawnInterval = setInterval(() => {
-      if (enemiesRef.current.length < 4) {
+      if (enemiesRef.current.length < 3) {
         spawnEnemy();
       }
-    }, 2500);
+    }, 3000);
 
     return () => {
       if (animationFrameRef.current) {
