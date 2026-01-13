@@ -1,7 +1,7 @@
 // src/components/TowerGallery.tsx
 import React, { useState } from 'react';
 import { TOWERS } from '../engine/data';
-import { getTowerPersonality, TOWER_PERSONALITIES } from '../data/towerPersonalities';
+import { getTowerPersonality } from '../data/towerPersonalities';
 import { TowerLiveDemo } from './TowerLiveDemo';
 import { useLanguage } from '../i18n/useTranslation';
 
@@ -129,9 +129,16 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                         </div>
 
                         {/* Live Demo */}
-                        {isUnlocked(selectedTower) && (
+                        <div>
+                          {!isUnlocked(selectedTower) && (
+                            <div className="bg-slate-900/70 rounded-xl p-4 border border-slate-700/50 mb-4">
+                              <div className="text-slate-400 text-sm text-center">
+                                {language === 'zh-TW' ? '解鎖後可查看實戰演示' : 'Unlock to view live demo'}
+                              </div>
+                            </div>
+                          )}
                           <TowerLiveDemo tower={tower} />
-                        )}
+                        </div>
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 rounded-xl p-4">

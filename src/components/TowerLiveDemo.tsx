@@ -36,7 +36,7 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
   height = 400 
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const enemiesRef = useRef<Enemy[]>([]);
   const projectilesRef = useRef<Projectile[]>([]);
   const lastShotRef = useRef<number>(0);
@@ -248,7 +248,7 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
       ctx.setLineDash([]);
 
       // Update and draw enemies
-      enemiesRef.current.forEach((enemy, index) => {
+      enemiesRef.current.forEach((enemy) => {
         // Move enemy towards tower
         const dx = enemy.targetX - enemy.x;
         const dy = enemy.targetY - enemy.y;

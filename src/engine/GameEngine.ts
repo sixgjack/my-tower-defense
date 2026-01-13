@@ -153,19 +153,28 @@ export class GameEngine {
       } 
       else {
           const isBigBoss = this.wave % 10 === 0;
-          const isMiniBoss = this.wave % 5 === 0 && !isBigBoss;
           if (isBigBoss) {
               this.showNotification("⚠️ BIG BOSS INCOMING ⚠️", 'boss');
               soundSystem.play('boss');
-          } else if (isMiniBoss) {
+              // Spawn big boss immediately
+              this.spawnBossEnemy(true, false);
+          } else if (this.wave % 5 === 0) {
               this.showNotification("⚠️ MINI BOSS INCOMING ⚠️", 'boss');
               soundSystem.play('boss');
+              // Spawn mini boss immediately
+              this.spawnBossEnemy(false, true);
           } else {
               this.showNotification(`WAVE ${this.wave}`, 'wave');
           }
       }
 
-      this.enemiesRemainingToSpawn = 5 + Math.floor(this.wave * 1.5);
+      // Boss waves: fewer regular enemies, regular waves: normal count
+      const isBossWave = this.wave % 5 === 0;
+      if (isBossWave) {
+          this.enemiesRemainingToSpawn = Math.max(3, Math.floor((5 + Math.floor(this.wave * 1.5)) * 0.5));
+      } else {
+          this.enemiesRemainingToSpawn = 5 + Math.floor(this.wave * 1.5);
+      }
       this.waveInProgress = true;
   }
 
@@ -174,6 +183,78 @@ export class GameEngine {
       this.wave++;
       this.waveCountdown = 240; // 4 seconds break between waves
       // Optional: soundSystem.play('wave_clear');
+  }
+  
+  spawnBossEnemy(isBigBoss: boolean, isMiniBoss: boolean) {
+      if (!this.path.length) return;
+      
+      const diff = Math.pow(1.1, this.wave);
+      const availableBossTypes = ENEMY_TYPES.filter(t => t.isBoss === true);
+      
+      if (availableBossTypes.length === 0) return;
+      
+      const typeIdx = Math.floor(Math.random() * availableBossTypes.length);
+      const stats = availableBossTypes[typeIdx];
+      
+      // Boss HP multipliers: mini-boss = 3x, big boss = 8x
+      const bossHpMultiplier = isBigBoss ? 8 : 3;
+      let hp = stats.hp * bossHpMultiplier * diff;
+      
+      // Boss money bonus
+      const baseReward = stats.reward * bossHpMultiplier;
+      const moneyBonus = stats.moneyBonus ? stats.moneyBonus : 1.0;
+      const reward = baseReward * moneyBonus;
+      
+      // Apply theme environmental effects
+      if (this.currentTheme && this.currentTheme.enemyHpMultiplier) {
+          hp *= this.currentTheme.enemyHpMultiplier;
+      }
+      
+      // Generate boss abilities
+      let bossAbilities: string[] = stats.abilities ? [...stats.abilities] : [];
+      const abilityPool: string[] = ['shield', 'slow_towers', 'deactivate_towers', 'regenerate', 'heal_allies'];
+      if (isBigBoss) {
+          const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
+          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(3, additionalAbilities.length));
+          bossAbilities = [...new Set([...bossAbilities, ...selected])];
+      } else {
+          const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
+          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(2, additionalAbilities.length));
+          bossAbilities = [...new Set([...bossAbilities, ...selected])];
+      }
+      
+      // Boss speed multiplier
+      const bossSpeedMultiplier = isBigBoss ? 0.5 : 0.7;
+      const baseSpeed = 0.035 * stats.speed * bossSpeedMultiplier;
+      
+      const bossType = isBigBoss ? 'big' : 'mini';
+      
+      this.enemies.push({ 
+          id: Date.now() + Math.random(), 
+          pathIndex: 0, progress: 0.0, 
+          r: this.path[0].r, c: this.path[0].c, 
+          hp, maxHp: hp, 
+          baseSpeed: baseSpeed, 
+          speedMultiplier: 1.0,
+          icon: isBigBoss ? "👹" : "👺", 
+          color: stats.color, 
+          reward: reward, 
+          scale: isBigBoss ? 2.5 : 2.0, 
+          frozen: 0,
+          xOffset: 0,
+          yOffset: 0,
+          money: reward,
+          damage: bossHpMultiplier,
+          abilities: bossAbilities,
+          abilityCooldown: stats.abilityCooldown || 200,
+          lastAbilityUse: -999,
+          isInvisible: bossAbilities.includes('invisible') || false,
+          isFlying: bossAbilities.includes('fly') || false,
+          isBurrowed: bossAbilities.includes('burrow') || false,
+          bossType: bossType,
+          bossShieldHp: bossAbilities.includes('shield') ? (isBigBoss ? hp * 0.5 : hp * 0.3) : undefined,
+          statusEffects: []
+      });
   }
 
   // --- MAP & PATH ---
@@ -256,105 +337,52 @@ export class GameEngine {
     
     const diff = Math.pow(1.1, this.wave); // Scaling difficulty
     
-    // Boss Logic - mini-boss every 5 waves, big boss every 10 waves
-    const isBigBossWave = this.wave % 10 === 0 && this.enemiesRemainingToSpawn === 0;
-    const isMiniBossWave = this.wave % 5 === 0 && this.wave % 10 !== 0 && this.enemiesRemainingToSpawn === 0;
-    const isBossWave = isBigBossWave || isMiniBossWave;
+    // Boss waves are handled in startWave(), so regular spawnEnemy only spawns regular enemies
+    // At wave > 20, 5% chance for a previous boss to randomly appear
+    const allowRandomBoss = this.wave > 20 && Math.random() < 0.05;
     
-    // Boss spawning logic:
-    // - Mini-bosses ONLY on waves 5, 15, 25... (5n waves, not 10n)
-    // - Big bosses ONLY on waves 10, 20, 30... (10n waves)
-    // - On non-boss waves, regular enemies only (no bosses)
-    // - At higher waves (wave > 20), previous bosses may randomly appear with low chance (5%)
+    // Progressive enemy unlocking by theme
+    // Theme 0 (waves 1-10): 5 types, Theme 1 (waves 11-20): 10 types, Theme 2 (waves 21-30): 15 types, etc.
+    const themeIndex = Math.floor((this.wave - 1) / 10);
+    const maxEnemyTypes = 5 * (themeIndex + 1); // 5, 10, 15, 20...
     
-    let availableTypes: typeof ENEMY_TYPES;
-    
-    if (isBossWave) {
-      // Boss waves: only spawn the appropriate boss type
-      if (isBigBossWave) {
-        // Big boss wave: only big boss types (wave 10, 20, 30...)
-        availableTypes = ENEMY_TYPES.filter(t => t.isBoss === true);
-      } else {
-        // Mini-boss wave: only mini-boss types (wave 5, 15, 25...)
-        // For now, use all boss types (can be refined later to distinguish mini vs big)
-        availableTypes = ENEMY_TYPES.filter(t => t.isBoss === true);
-      }
-    } else {
-      // Non-boss waves: regular enemies only
-      // At wave > 20, 5% chance for a previous boss to randomly appear
-      const allowRandomBoss = this.wave > 20 && Math.random() < 0.05;
+    const nonBossTypes = ENEMY_TYPES.filter(t => {
+      // Exclude bosses on regular waves (unless random boss spawn)
+      if (t.isBoss && !allowRandomBoss) return false;
       
-      // Progressive enemy unlocking by theme
-      // Theme 0 (waves 1-10): 5 types, Theme 1 (waves 11-20): 10 types, Theme 2 (waves 21-30): 15 types, etc.
-      const themeIndex = Math.floor((this.wave - 1) / 10);
-      const maxEnemyTypes = 5 * (themeIndex + 1); // 5, 10, 15, 20...
-      
-      const nonBossTypes = ENEMY_TYPES.filter(t => {
-        // Exclude bosses on regular waves (unless random boss spawn)
-        if (t.isBoss && !allowRandomBoss) return false;
-        
-        // First 10 waves: no hard enemies
-        if (this.wave <= 10) {
-          const hardAbilities = ['deactivate_towers', 'slow_towers', 'teleport', 'heal_allies', 'spawn_minions', 'split'];
-          if (t.abilities && t.abilities.some(a => hardAbilities.includes(a))) {
-            return false;
-          }
+      // First 10 waves: no hard enemies
+      if (this.wave <= 10) {
+        const hardAbilities = ['deactivate_towers', 'slow_towers', 'teleport', 'heal_allies', 'spawn_minions', 'split'];
+        if (t.abilities && t.abilities.some(a => hardAbilities.includes(a))) {
+          return false;
         }
-        
-        // Check minWave requirement
-        if (t.minWave && t.minWave > this.wave) return false;
-        
-        return true;
-      });
+      }
       
-      // Limit to first maxEnemyTypes enemies (unlock progressively)
-      availableTypes = nonBossTypes.slice(0, Math.min(maxEnemyTypes, nonBossTypes.length));
-    }
+      // Check minWave requirement
+      if (t.minWave && t.minWave > this.wave) return false;
+      
+      return true;
+    });
+    
+    // Limit to first maxEnemyTypes enemies (unlock progressively)
+    let availableTypes = nonBossTypes.slice(0, Math.min(maxEnemyTypes, nonBossTypes.length));
     
     if (availableTypes.length === 0) availableTypes = ENEMY_TYPES.filter(t => !t.minWave || t.minWave <= this.wave);
     
     const typeIdx = Math.floor(Math.random() * availableTypes.length);
     const stats = availableTypes[typeIdx];
-    const isBoss = stats.isBoss || isBossWave;
+    // isBoss removed - regular enemies only in spawnEnemy
     
-    // Boss HP multipliers: mini-boss = 3x, big boss = 8x
-    const bossHpMultiplier = isBigBossWave ? 8 : (isMiniBossWave ? 3 : 1);
-    let hp = (isBoss ? stats.hp * bossHpMultiplier : stats.hp) * diff;
-    // Boss money bonus: base reward * boss multiplier * moneyBonus (if exists)
-    const baseReward = (isBoss ? stats.reward * bossHpMultiplier : stats.reward);
-    const moneyBonus = (isBoss && stats.moneyBonus) ? stats.moneyBonus : 1.0;
-    const reward = baseReward * moneyBonus;
+    let hp = stats.hp * diff;
+    const reward = stats.reward;
     
     // Apply theme environmental effects to enemy HP
     if (this.currentTheme && this.currentTheme.enemyHpMultiplier) {
       hp *= this.currentTheme.enemyHpMultiplier;
     }
     
-    // Determine boss type
-    const bossType = isBigBossWave ? 'big' : (isMiniBossWave ? 'mini' : undefined);
-    
-    // Generate boss abilities based on difficulty
-    let bossAbilities: string[] = stats.abilities ? [...stats.abilities] : [];
-    if (isBossWave) {
-      // Big bosses get more abilities
-      const abilityPool: string[] = ['shield', 'slow_towers', 'deactivate_towers', 'regenerate', 'heal_allies'];
-      if (isBigBossWave) {
-        // Big boss gets 2-3 additional abilities
-        const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
-        const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(3, additionalAbilities.length));
-        bossAbilities = [...new Set([...bossAbilities, ...selected])];
-      } else if (isMiniBossWave) {
-        // Mini boss gets 1-2 additional abilities
-        const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
-        const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(2, additionalAbilities.length));
-        bossAbilities = [...new Set([...bossAbilities, ...selected])];
-      }
-    }
-    
-    // Boss speed multiplier (bosses move slower)
-    const bossSpeedMultiplier = isBigBossWave ? 0.5 : (isMiniBossWave ? 0.7 : 1.0);
     // Overall speed: slightly increased for better pacing (0.035)
-    const baseSpeed = 0.035 * stats.speed * bossSpeedMultiplier;
+    const baseSpeed = 0.035 * stats.speed;
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
@@ -363,23 +391,23 @@ export class GameEngine {
         hp, maxHp: hp, 
         baseSpeed: baseSpeed, 
         speedMultiplier: 1.0,
-        icon: isBossWave ? (isBigBossWave ? "👹" : "👺") : stats.icon, 
+        icon: stats.icon, 
         color: stats.color, 
         reward: reward, 
-        scale: isBigBossWave ? 2.5 : (isMiniBossWave ? 2.0 : 1.0), 
+        scale: 1.0, 
         frozen: 0,
         xOffset: 0,
         yOffset: 0,
         money: reward,
-        damage: isBossWave ? bossHpMultiplier : 0, // Boss damage = HP multiplier (3 for mini, 8 for big)
-        abilities: bossAbilities,
-        abilityCooldown: stats.abilityCooldown || (isBossWave ? 200 : 0),
+        damage: 0,
+        abilities: stats.abilities || [],
+        abilityCooldown: stats.abilityCooldown || 0,
         lastAbilityUse: -999,
-        isInvisible: bossAbilities.includes('invisible') || false,
-        isFlying: bossAbilities.includes('fly') || false,
-        isBurrowed: bossAbilities.includes('burrow') || false,
-        bossType: bossType,
-        bossShieldHp: bossAbilities.includes('shield') ? (isBigBossWave ? hp * 0.5 : hp * 0.3) : undefined,
+        isInvisible: (stats.abilities && stats.abilities.includes('invisible')) || false,
+        isFlying: (stats.abilities && stats.abilities.includes('fly')) || false,
+        isBurrowed: (stats.abilities && stats.abilities.includes('burrow')) || false,
+        bossType: undefined,
+        bossShieldHp: undefined,
         statusEffects: []
     });
   }
@@ -544,6 +572,48 @@ export class GameEngine {
                     if(target.hp <= 0) this.killEnemy(target);
                     soundSystem.play('shoot');
 
+                } else if (stats.type === 'spread') {
+                    // Spread/Shotgun: Fire multiple projectiles in an arc
+                    const pelletCount = stats.multiTarget || 5; // Default to 5 pellets if not specified
+                    const spreadAngle = 30; // Total spread angle in degrees
+                    const baseAngle = Math.atan2(
+                        (target.r + (target.yOffset || 0)) - tower.r,
+                        (target.c + (target.xOffset || 0)) - tower.c
+                    );
+                    
+                    for (let i = 0; i < pelletCount; i++) {
+                        const angleOffset = (i / (pelletCount - 1) - 0.5) * spreadAngle * (Math.PI / 180);
+                        const pelletAngle = baseAngle + angleOffset;
+                        const pelletDamage = tower.damage / pelletCount; // Each pellet does less damage
+                        
+                        // Calculate target position for this pellet
+                        const distance = Math.sqrt(
+                            Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
+                            Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
+                        );
+                        const pelletTx = tower.c + Math.cos(pelletAngle) * distance;
+                        const pelletTy = tower.r + Math.sin(pelletAngle) * distance;
+                        
+                        this.projectiles.push({
+                            id: Math.random(),
+                            x: tower.c, y: tower.r,
+                            startX: tower.c, startY: tower.r,
+                            tx: pelletTx,
+                            ty: pelletTy,
+                            targetId: target.id,
+                            color: stats.color, 
+                            life: 100, maxLife: 100,
+                            style: stats.projectileStyle || 'shotgun', 
+                            damage: pelletDamage, 
+                            speed: stats.projectileSpeed || 0.15,
+                            splash: 0,
+                            progress: 0,
+                            type: 'arrow'
+                        });
+                    }
+                    soundSystem.play('shoot');
+                    const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
+                    this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
                 } else {
                     // Traveling Projectile
                     this.projectiles.push({

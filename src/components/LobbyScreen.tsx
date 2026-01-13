@@ -101,27 +101,28 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-              <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 mb-3 drop-shadow-2xl">
-                {t('lobby.title')} / COMMAND CENTER
-              </h1>
-              <p className="text-slate-300 text-base md:text-lg">
-                {t('lobby.welcome')} / Welcome back, <span className="text-yellow-400 font-semibold">{user.displayName || 'Commander'}</span>
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Language Toggle */}
-              <button
-                onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 font-semibold text-sm"
-              >
-                {language === 'en' ? '中文' : 'EN'}
-              </button>
-              <button
-                onClick={onSignOut}
-                className="px-5 py-2 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-md text-white rounded-xl transition-all border border-red-500/30 font-semibold"
-              >
-                {t('menu.signOut')} / Sign Out
-              </button>
+                <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 mb-3 drop-shadow-2xl">
+                  {t('lobby.title')} / COMMAND CENTER
+                </h1>
+                <p className="text-slate-300 text-base md:text-lg">
+                  {t('lobby.welcome')} / Welcome back, <span className="text-yellow-400 font-semibold">{user.displayName || 'Commander'}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {/* Language Toggle */}
+                <button
+                  onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 font-semibold text-sm"
+                >
+                  {language === 'en' ? '中文' : 'EN'}
+                </button>
+                <button
+                  onClick={onSignOut}
+                  className="px-5 py-2 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-md text-white rounded-xl transition-all border border-red-500/30 font-semibold"
+                >
+                  {t('menu.signOut')} / Sign Out
+                </button>
+              </div>
             </div>
           </div>
 
