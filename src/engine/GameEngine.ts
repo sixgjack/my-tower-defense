@@ -185,7 +185,7 @@ export class GameEngine {
       // Optional: soundSystem.play('wave_clear');
   }
   
-  spawnBossEnemy(isBigBoss: boolean, isMiniBoss: boolean) {
+  spawnBossEnemy(isBigBoss: boolean, _isMiniBoss: boolean) {
       if (!this.path.length) return;
       
       const diff = Math.pow(1.1, this.wave);
