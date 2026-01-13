@@ -5,6 +5,7 @@ import { i18n } from '../utils/i18n';
 interface GameOverModalProps {
   isOpen: boolean;
   onRestart: () => void;
+  onBackToMenu?: () => void;
   stats: {
     wave: number;
     towersBuilt: number;
@@ -13,7 +14,7 @@ interface GameOverModalProps {
   };
 }
 
-export const GameOverModal: React.FC<GameOverModalProps> = ({ isOpen, onRestart, stats }) => {
+export const GameOverModal: React.FC<GameOverModalProps> = ({ isOpen, onRestart, onBackToMenu, stats }) => {
   if (!isOpen) return null;
 
   return (
@@ -58,6 +59,14 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({ isOpen, onRestart,
           >
             {i18n.t('gameOver.restart')}
           </button>
+          {onBackToMenu && (
+            <button
+              onClick={onBackToMenu}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+            >
+              Back to Menu
+            </button>
+          )}
         </div>
       </div>
     </div>

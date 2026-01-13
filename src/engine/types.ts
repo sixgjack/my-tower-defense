@@ -135,7 +135,7 @@ export interface Projectile {
     color: string;
     progress: number; 
     type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook';
-    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
+    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
     targetId?: number;
     life?: number;
     maxLife?: number;

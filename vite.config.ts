@@ -7,5 +7,8 @@ export default defineConfig({
   server: {
     host: true, // This exposes the app to the network
     port: 5174  // (Optional) Forces port 5173
+  },
+  resolve: {
+    dedupe: ['react', 'react-dom']
   }
 })

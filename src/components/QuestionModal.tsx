@@ -7,20 +7,33 @@ interface QuestionModalProps {
   onClose: () => void;
   onSuccess: () => void;
   theme: string; // 'theme-rhine' or 'theme-kazdel'
+  questionSetId?: string; // Question set identifier (e.g., 'math-basics', 'programming', 'mixed')
 }
 
-export const QuestionModal = ({ isOpen, onClose, onSuccess, theme }: QuestionModalProps) => {
+export const QuestionModal = ({ isOpen, onClose, onSuccess, theme, questionSetId = 'mixed' }: QuestionModalProps) => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentQ, setCurrentQ] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Load questions from Firebase when the component first mounts
+  // 1. Load questions from Firebase filtered by questionSetId
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "questions"));
         const qList = querySnapshot.docs.map(doc => doc.data());
-        setQuestions(qList);
+        
+        // Filter questions by questionSetId
+        let filteredQuestions = qList;
+        if (questionSetId !== 'mixed') {
+          filteredQuestions = qList.filter((q: any) => q.questionSetId === questionSetId);
+        }
+        
+        // If no questions found for the set, fallback to all questions
+        if (filteredQuestions.length === 0) {
+          filteredQuestions = qList;
+        }
+        
+        setQuestions(filteredQuestions);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -28,7 +41,7 @@ export const QuestionModal = ({ isOpen, onClose, onSuccess, theme }: QuestionMod
       }
     };
     fetchQuestions();
-  }, []);
+  }, [questionSetId]);
 
   // 2. Pick a random question every time the modal opens
   useEffect(() => {

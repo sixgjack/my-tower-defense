@@ -15,7 +15,12 @@ const TILE_SIZE = 60; // Increased tile size for better visibility
 const BOARD_WIDTH = COLS * TILE_SIZE; 
 const BOARD_HEIGHT = ROWS * TILE_SIZE;
 
-export const GameBoard: React.FC = () => {
+interface GameBoardProps {
+  onGameEnd?: (result?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number }) => void;
+  questionSetId?: string; // Question set identifier for the game mode
+}
+
+export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId = 'mixed' }) => {
   // --- REACT STATE ---
   const [tick, setTick] = useState(0);
   const [selectedTowerId, setSelectedTowerId] = useState<number | null>(null);
@@ -272,13 +277,23 @@ export const GameBoard: React.FC = () => {
          </>
       )}
 
-      <QuestionModal isOpen={isModalOpen} onSuccess={() => { game.confirmAction(); setIsModalOpen(false); }} onClose={() => { game.cancelAction(); setIsModalOpen(false); }} theme={currentTheme.name} />
+      <QuestionModal isOpen={isModalOpen} onSuccess={() => { game.confirmAction(); setIsModalOpen(false); }} onClose={() => { game.cancelAction(); setIsModalOpen(false); }} theme={currentTheme.name} questionSetId={questionSetId} />
       
       <GameOverModal 
         isOpen={isGameOver}
         onRestart={() => {
           game.startNewGame();
           setIsGameOver(false);
+        }}
+        onBackToMenu={() => {
+          if (onGameEnd) {
+            onGameEnd({
+              wave: game.wave,
+              towersBuilt: game.towers.length,
+              enemiesKilled: game.totalEnemiesKilled,
+              moneyEarned: game.totalMoneyEarned
+            });
+          }
         }}
         stats={{
           wave: game.wave,
