@@ -69,6 +69,7 @@ export const translations: Translations = {
   'enemy.minWave': { 'zh-TW': '最低波數', 'en': 'Min Wave' },
   'enemy.specialAbilities': { 'zh-TW': '特殊能力', 'en': 'Special Abilities' },
   'enemy.boss': { 'zh-TW': '首領', 'en': 'BOSS' },
+  'enemy.study': { 'zh-TW': '研究敵人類型和能力', 'en': 'Study enemy types and abilities' },
   
   // Teacher
   'teacher.login': { 'zh-TW': '教師登入', 'en': 'Teacher Login' },
