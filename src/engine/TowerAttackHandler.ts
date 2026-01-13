@@ -309,8 +309,6 @@ export class TowerAttackHandler {
       .filter(e => {
         const ex = e.c + (e.xOffset || 0);
         const ey = e.r + (e.yOffset || 0);
-        const tx = tower.c;
-        const ty = tower.r;
         
         const distToLine = Math.abs(
           (dy * ex - dx * ey + tower.c * (target.r + (target.yOffset || 0)) - tower.r * (target.c + (target.xOffset || 0))) / distance
