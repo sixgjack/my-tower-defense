@@ -24,6 +24,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tick, setTick] = useState(0);
+  const [isReady, setIsReady] = useState(false);
   const miniGameRef = useRef<GameEngine | null>(null);
 
   useEffect(() => {
@@ -34,18 +35,22 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     miniGame.money = 10000; // Give plenty of money
     miniGame.lives = 100; // Don't let it end
     
-    // Place the tower in the center
-    const centerR = Math.floor(ROWS / 2);
-    const centerC = Math.floor(COLS / 2);
-    
-    // Find tower key
-    const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
-    if (towerKey) {
-      miniGame.requestBuildTower(centerR, centerC, towerKey);
-      miniGame.confirmAction();
-    }
-    
     miniGameRef.current = miniGame;
+    
+    // Wait for map generation, then place tower
+    setTimeout(() => {
+      // Place the tower in the center
+      const centerR = Math.floor(ROWS / 2);
+      const centerC = Math.floor(COLS / 2);
+      
+      // Find tower key
+      const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+      if (towerKey) {
+        miniGame.requestBuildTower(centerR, centerC, towerKey);
+        miniGame.confirmAction();
+      }
+      setIsReady(true);
+    }, 200);
 
     // Game loop
     let frameId: number;
@@ -97,9 +102,17 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     };
   }, [tower]);
 
-  if (!miniGameRef.current) return null;
-
   const game = miniGameRef.current;
+  if (!game || !isReady) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-400">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
+          <div>Loading demo...</div>
+        </div>
+      </div>
+    );
+  }
   const scaleX = width / (COLS * TILE_SIZE);
   const scaleY = height / (ROWS * TILE_SIZE);
   const scale = Math.min(scaleX, scaleY);

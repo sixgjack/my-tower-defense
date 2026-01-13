@@ -691,32 +691,42 @@ export class GameEngine {
                         (target.c + (target.xOffset || 0)) - tower.c
                     );
                     
+                    // Calculate distance to target
+                    const distance = Math.sqrt(
+                        Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
+                        Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
+                    );
+                    
                     for (let i = 0; i < pelletCount; i++) {
+                        // Calculate angle offset for this pellet
+                        // Distribute pellets evenly across the spread angle
                         const angleOffset = (i / (pelletCount - 1) - 0.5) * spreadAngle * (Math.PI / 180);
                         const pelletAngle = baseAngle + angleOffset;
-                        const pelletDamage = tower.damage / pelletCount; // Each pellet does less damage
                         
-                        // Calculate target position for this pellet
-                        const distance = Math.sqrt(
-                            Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
-                            Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
-                        );
+                        // Calculate target position for this pellet (at same distance as original target)
                         const pelletTx = tower.c + Math.cos(pelletAngle) * distance;
                         const pelletTy = tower.r + Math.sin(pelletAngle) * distance;
                         
+                        // Damage per pellet (total damage divided by pellet count)
+                        const pelletDamage = tower.damage / pelletCount;
+                        
+                        // Create projectile - spread pellets don't home, they go straight
                         this.projectiles.push({
                             id: Math.random(),
-                            x: tower.c, y: tower.r,
-                            startX: tower.c, startY: tower.r,
+                            x: tower.c, 
+                            y: tower.r,
+                            startX: tower.c, 
+                            startY: tower.r,
                             tx: pelletTx,
                             ty: pelletTy,
-                            targetId: target.id,
+                            targetId: undefined, // No homing for spread pellets - they go straight
                             color: stats.color, 
-                            life: 100, maxLife: 100,
+                            life: 100, 
+                            maxLife: 100,
                             style: stats.projectileStyle || 'shotgun', 
                             damage: pelletDamage, 
-                            speed: stats.projectileSpeed || 0.15,
-                            splash: 0,
+                            speed: stats.projectileSpeed || 0.15, // Slightly faster for visibility
+                            splash: 0, // No splash for individual pellets
                             progress: 0,
                             type: 'arrow'
                         });
@@ -898,44 +908,76 @@ export class GameEngine {
             // Normal projectile behavior
             p.progress += p.speed;
             
-            // Update target position for all projectiles (homing behavior)
-            if (p.targetId) {
-                const e = this.enemies.find(en => en.id === p.targetId);
-                if (e) {
-                    // Update target position to enemy's current position
-                    p.tx = e.c + (e.xOffset || 0);
-                    p.ty = e.r + (e.yOffset || 0);
-                } else {
-                    // Target died, projectile continues to last known position
+            // For spread/shotgun projectiles, check for enemies in path (no homing)
+            if (p.style === 'shotgun') {
+                // Update position first
+                const dx = p.tx - (p.startX!);
+                const dy = p.ty - (p.startY!);
+                p.x = (p.startX!) + dx * p.progress;
+                p.y = (p.startY!) + dy * p.progress;
+                
+                // Check if projectile hits any enemy in its path
+                let hitEnemy = false;
+                this.enemies.forEach(enemy => {
+                    if (hitEnemy) return; // Already hit one enemy
+                    const enemyX = enemy.c + (enemy.xOffset || 0);
+                    const enemyY = enemy.r + (enemy.yOffset || 0);
+                    const dist = Math.sqrt((enemyX - p.x)**2 + (enemyY - p.y)**2);
+                    if (dist < 0.3 && p.progress > 0.1) { // Hit radius, must have traveled some distance
+                        // Hit enemy
+                        applyDamageToEnemy(enemy, p.damage);
+                        if (enemy.hp <= 0) this.killEnemy(enemy);
+                        // Create hit effect
+                        this.createExplosion(p.x * 60 + 30, p.y * 60 + 30, p.color, 0.5, 'impact');
+                        hitEnemy = true;
+                        p.life = 0; // Remove projectile
+                    }
+                });
+                
+                // If reached target position without hitting, remove
+                if (p.progress >= 1.0 && !hitEnemy) {
+                    p.life = 0;
                 }
-            }
-            
-            // Add trail effects for various projectile styles
-            if (p.progress > 0.1 && Math.random() > 0.7) {
-                const trailX = p.x * 60 + 30;
-                const trailY = p.y * 60 + 30;
-                if (p.style === 'fire' || p.style === 'plasma' || p.style === 'rocket' || p.style === 'missile') {
-                    this.addParticle(trailX, trailY, 'smoke', p.color);
-                } else if (p.style === 'ice') {
-                    this.addParticle(trailX, trailY, 'freeze', p.color);
-                } else if (p.style === 'poison' || p.style === 'acid') {
-                    this.addParticle(trailX, trailY, 'poison_cloud', p.color);
-                } else if (p.style === 'magic' || p.style === 'holy' || p.style === 'orb') {
-                    this.addParticle(trailX, trailY, 'star', p.color);
-                } else if (p.style === 'bolt') {
-                    this.addParticle(trailX, trailY, 'electric', p.color);
+            } else {
+                // For other projectiles, update target position (homing behavior)
+                if (p.targetId) {
+                    const e = this.enemies.find(en => en.id === p.targetId);
+                    if (e) {
+                        // Update target position to enemy's current position
+                        p.tx = e.c + (e.xOffset || 0);
+                        p.ty = e.r + (e.yOffset || 0);
+                    } else {
+                        // Target died, projectile continues to last known position
+                    }
                 }
-            }
+                
+                // Add trail effects for various projectile styles
+                if (p.progress > 0.1 && Math.random() > 0.7) {
+                    const trailX = p.x * 60 + 30;
+                    const trailY = p.y * 60 + 30;
+                    if (p.style === 'fire' || p.style === 'plasma' || p.style === 'rocket' || p.style === 'missile') {
+                        this.addParticle(trailX, trailY, 'smoke', p.color);
+                    } else if (p.style === 'ice') {
+                        this.addParticle(trailX, trailY, 'freeze', p.color);
+                    } else if (p.style === 'poison' || p.style === 'acid') {
+                        this.addParticle(trailX, trailY, 'poison_cloud', p.color);
+                    } else if (p.style === 'magic' || p.style === 'holy' || p.style === 'orb') {
+                        this.addParticle(trailX, trailY, 'star', p.color);
+                    } else if (p.style === 'bolt') {
+                        this.addParticle(trailX, trailY, 'electric', p.color);
+                    }
+                }
 
-            // Lerp position
-            const dx = p.tx - (p.startX!);
-            const dy = p.ty - (p.startY!);
-            p.x = (p.startX!) + dx * p.progress;
-            p.y = (p.startY!) + dy * p.progress;
+                // Lerp position
+                const dx = p.tx - (p.startX!);
+                const dy = p.ty - (p.startY!);
+                p.x = (p.startX!) + dx * p.progress;
+                p.y = (p.startY!) + dy * p.progress;
 
-            if (p.progress >= 1.0) {
-                p.life = 0;
-                this.handleProjectileHit(p);
+                if (p.progress >= 1.0) {
+                    p.life = 0;
+                    this.handleProjectileHit(p);
+                }
             }
         }
     });

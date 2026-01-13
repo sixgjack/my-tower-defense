@@ -826,7 +826,7 @@ export const TOWERS: Record<string, TowerStats> = {
   // ==========================================
   'PERFUMER': { name: 'Medic Station', cost: 200, damage: 8, range: 2.4, cooldown: 60, type: 'projectile', color: '#bef264', icon: '💚', description: 'Heals nearby structures (Concept).' },
   'HARUKA': { name: 'Command Relay', cost: 220, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Routes commands to other defense systems.' },
-  'KICHISEI': { name: 'Scatter Gun', cost: 480, damage: 47, range: 2.0, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Fires wide spread of projectiles at multiple angles.' },
+  'KICHISEI': { name: 'Scatter Gun', cost: 480, damage: 47, range: 2.0, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Fires wide spread of projectiles at multiple angles.', multiTarget: 7, projectileStyle: 'shotgun' },
   'MATSUKIRI': { name: 'Tactical Rifle', cost: 350, damage: 35, range: 1.3, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Precision strikes with tactical targeting.' },
   'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🛠️', description: 'Deploys combat drones to engage enemies.' },
   'LEIZI': { name: 'Chain Lightning', cost: 580, damage: 55, range: 2.8, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Electricity chains between multiple enemies.' },
