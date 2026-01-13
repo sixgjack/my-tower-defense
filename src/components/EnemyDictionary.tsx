@@ -44,7 +44,7 @@ export const EnemyDictionary: React.FC<EnemyDictionaryProps> = ({ onBack, encoun
                 onClick={onBack}
                 className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg transition-all backdrop-blur-sm border border-slate-600"
               >
-                ← {t('common.back')} / Back
+                ← {t('common.back')}
               </button>
             </div>
           </div>

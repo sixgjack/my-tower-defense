@@ -102,10 +102,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 mb-3 drop-shadow-2xl">
-                  {t('lobby.title')} / COMMAND CENTER
+                  {language === 'zh-TW' ? t('lobby.title') : 'COMMAND CENTER'}
                 </h1>
                 <p className="text-slate-300 text-base md:text-lg">
-                  {t('lobby.welcome')} / Welcome back, <span className="text-yellow-400 font-semibold">{user.displayName || 'Commander'}</span>
+                  {language === 'zh-TW' ? t('lobby.welcome') : 'Welcome back'}, <span className="text-yellow-400 font-semibold">{user.displayName || (language === 'zh-TW' ? '指揮官' : 'Commander')}</span>
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -120,7 +120,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   onClick={onSignOut}
                   className="px-5 py-2 bg-red-500/20 hover:bg-red-500/30 backdrop-blur-md text-white rounded-xl transition-all border border-red-500/30 font-semibold"
                 >
-                  {t('menu.signOut')} / Sign Out
+                  {t('menu.signOut')}
                 </button>
               </div>
             </div>
@@ -135,7 +135,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   💰
                 </div>
                 <div className="flex-1">
-                  <div className="text-slate-400 text-sm mb-1">{t('lobby.credits')} / Credits</div>
+                  <div className="text-slate-400 text-sm mb-1">{t('lobby.credits')}</div>
                   <div className="text-3xl font-bold text-yellow-400">{studentStatus?.credits || 0}</div>
                 </div>
               </div>
@@ -148,7 +148,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   🌊
                 </div>
                 <div className="flex-1">
-                  <div className="text-slate-400 text-sm mb-1">{t('lobby.highestWave')} / Highest Wave</div>
+                  <div className="text-slate-400 text-sm mb-1">{t('lobby.highestWave')}</div>
                   <div className="text-3xl font-bold text-blue-400">{studentStatus?.highestWave || 0}</div>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   🎮
                 </div>
                 <div className="flex-1">
-                  <div className="text-slate-400 text-sm mb-1">{t('lobby.gamesPlayed')} / Games Played</div>
+                  <div className="text-slate-400 text-sm mb-1">{t('lobby.gamesPlayed')}</div>
                   <div className="text-3xl font-bold text-purple-400">{studentStatus?.totalGames || 0}</div>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-7xl mb-4 group-hover:scale-110 transition-transform duration-300">⚔️</div>
-                <h2 className="text-3xl font-bold text-white mb-3">{t('lobby.startCombat')} / Start Combat</h2>
+                <h2 className="text-3xl font-bold text-white mb-3">{t('lobby.startCombat')}</h2>
                 <p className="text-purple-100 text-base mb-4">{language === 'zh-TW' ? '開始新的防禦任務' : 'Begin a new defense mission'}</p>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg border border-white/20">
                   <span className="text-purple-200 text-sm font-semibold">{language === 'zh-TW' ? '選擇模式 →' : 'Select Mode →'}</span>
@@ -200,7 +200,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300 animate-spin-slow">🎰</div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.luckyDraw')} / Lucky Draw</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.luckyDraw')}</h2>
                 <p className="text-yellow-100 text-sm mb-3">{language === 'zh-TW' ? '使用積分抽取強大的防禦塔' : 'Draw powerful towers with credits'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-yellow-200 bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/30">
@@ -221,7 +221,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">🏰</div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.towerGallery')} / Tower Gallery</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.towerGallery')}</h2>
                 <p className="text-blue-100 text-sm mb-3">{language === 'zh-TW' ? '查看所有可用的防禦塔' : 'View all available towers'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-200 bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">
@@ -242,8 +242,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">📖</div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.enemyDictionary')} / Enemy Dictionary</h2>
-                <p className="text-red-100 text-sm mb-3">{t('enemy.study')} / Study enemy types and abilities</p>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.enemyDictionary')}</h2>
+                <p className="text-red-100 text-sm mb-3">{t('enemy.study')}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-red-200 bg-red-500/20 px-3 py-1 rounded-full border border-red-500/30">
                     {studentStatus?.encounteredEnemies?.length || 0} {language === 'zh-TW' ? '已發現' : 'discovered'}
@@ -258,19 +258,19 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="text-5xl">📊</div>
-                  <h2 className="text-2xl font-bold text-white">{t('lobby.stats')} / Statistics</h2>
+                  <h2 className="text-2xl font-bold text-white">{t('lobby.stats')}</h2>
                 </div>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-slate-300 text-sm">{t('lobby.totalWaves')} / Total Waves</span>
+                    <span className="text-slate-300 text-sm">{t('lobby.totalWaves')}</span>
                     <span className="text-white font-bold text-lg">{studentStatus?.totalWaves || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-slate-300 text-sm">{t('lobby.enemiesKilled')} / Enemies Killed</span>
+                    <span className="text-slate-300 text-sm">{t('lobby.enemiesKilled')}</span>
                     <span className="text-white font-bold text-lg">{studentStatus?.totalEnemiesKilled.toLocaleString() || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-slate-300 text-sm">{t('lobby.totalEarned')} / Total Earned</span>
+                    <span className="text-slate-300 text-sm">{t('lobby.totalEarned')}</span>
                     <span className="text-green-400 font-bold text-lg">${studentStatus?.totalMoneyEarned.toLocaleString() || 0}</span>
                   </div>
                 </div>

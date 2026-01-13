@@ -24,7 +24,7 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-              🏰 {t('tower.title')} / Tower Gallery
+              🏰 {t('tower.title')}
             </h1>
             <div className="flex items-center gap-4">
               <button
@@ -37,7 +37,7 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                 onClick={onBack}
                 className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg transition-all backdrop-blur-sm border border-slate-600"
               >
-                ← {t('common.back')} / Back
+                ← {t('common.back')}
               </button>
             </div>
           </div>
@@ -143,19 +143,19 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-900/50 rounded-xl p-4">
                           <div>
-                            <div className="text-slate-400 text-sm">{t('tower.damage')} / Damage</div>
+                            <div className="text-slate-400 text-sm">{t('tower.damage')}</div>
                             <div className="text-white font-bold text-xl">{tower.damage}</div>
                           </div>
                           <div>
-                            <div className="text-slate-400 text-sm">{t('tower.range')} / Range</div>
+                            <div className="text-slate-400 text-sm">{t('tower.range')}</div>
                             <div className="text-white font-bold text-xl">{tower.range}</div>
                           </div>
                           <div>
-                            <div className="text-slate-400 text-sm">{t('tower.cooldown')} / Cooldown</div>
+                            <div className="text-slate-400 text-sm">{t('tower.cooldown')}</div>
                             <div className="text-white font-bold text-xl">{tower.cooldown}ms</div>
                           </div>
                           <div>
-                            <div className="text-slate-400 text-sm">{t('tower.cost')} / Cost</div>
+                            <div className="text-slate-400 text-sm">{t('tower.cost')}</div>
                             <div className="text-yellow-400 font-bold text-xl">${tower.cost}</div>
                           </div>
                         </div>
@@ -164,7 +164,7 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                         {tower.specialAbility && (
                           <div className="bg-purple-500/20 border border-purple-500/50 rounded-xl p-4">
                             <div className="text-purple-300 font-bold mb-2">
-                              {t('tower.specialAbility')} / Special Ability
+                              {t('tower.specialAbility')}
                             </div>
                             <div className="text-white capitalize">{tower.specialAbility}</div>
                           </div>

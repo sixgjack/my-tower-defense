@@ -296,8 +296,8 @@ export const TowerLiveDemo: React.FC<TowerLiveDemoProps> = ({
         ctx.strokeRect(enemy.x - barWidth / 2, enemy.y - 22, barWidth, barHeight);
       });
 
-      // Tower shooting logic
-      const cooldownTicks = Math.max(1, Math.floor(tower.cooldown / 16.67)); // 60fps = 16.67ms per frame
+      // Tower shooting logic - slower for demo visibility
+      const cooldownTicks = Math.max(1, Math.floor((tower.cooldown * 2) / 16.67)); // 60fps = 16.67ms per frame, 2x slower for demo
       if (tickRef.current - lastShotRef.current >= cooldownTicks) {
         const nearestEnemy = enemiesRef.current
           .map((e) => ({ 

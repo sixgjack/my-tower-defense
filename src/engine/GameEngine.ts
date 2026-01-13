@@ -152,8 +152,7 @@ export class GameEngine {
           this.showNotification(`SECTOR ${Math.ceil(this.wave/10)}: ${this.currentTheme.name}`, 'alert');
       } 
       else {
-          const isBigBoss = this.wave % 10 === 0;
-          if (isBigBoss) {
+          if (this.wave % 10 === 0) {
               this.showNotification("⚠️ BIG BOSS INCOMING ⚠️", 'boss');
               soundSystem.play('boss');
               // Spawn big boss immediately
