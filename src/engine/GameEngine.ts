@@ -41,6 +41,14 @@ export class GameEngine {
   // Current Theme (for environmental effects)
   currentTheme: any = null;
   
+  // Support Tower Limits
+  maxSupportTowers: number = 5; // Maximum number of support/healer towers
+  supportTowerCount: number = 0; // Current count of support towers
+  
+  // Mine System
+  mines: Array<{ id: number; r: number; c: number; damage: number; maxMines: number }> = [];
+  maxMinesPerTower: number = 3; // Default max mines per mine tower
+  
   // --- AUTO-WAVE & LOGIC INTERNALS ---
   speedAccumulator: number = 0;
   tickCount: number = 0;
@@ -64,6 +72,8 @@ export class GameEngine {
     this.enemies = [];
     this.projectiles = [];
     this.particles = [];
+    this.mines = [];
+    this.supportTowerCount = 0;
     this.waveInProgress = false;
     this.waveCountdown = 180;
     this.isGameOver = false;
@@ -449,6 +459,17 @@ export class GameEngine {
             }
         }
         
+        // Check for mine hits
+        this.mines.forEach((mine, mineIndex) => {
+            const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - mine.c)**2 + (enemy.r + (enemy.yOffset || 0) - mine.r)**2);
+            if (dist < 0.3) { // Hit mine
+                applyDamageToEnemy(enemy, mine.damage);
+                this.createExplosion(mine.c * 60 + 30, mine.r * 60 + 30, '#f59e0b', 1.5, 'grenade');
+                this.mines.splice(mineIndex, 1); // Remove mine after explosion
+                if (enemy.hp <= 0) this.killEnemy(enemy);
+            }
+        });
+        
         // Smooth Rendering Position
         if (!enemy.escaped && this.path[enemy.pathIndex] && this.path[enemy.pathIndex + 1]) {
             const current = this.path[enemy.pathIndex];
@@ -534,6 +555,38 @@ export class GameEngine {
         
         if (tower.cooldown > 0) tower.cooldown--;
         
+        // Mine towers - plant mines on route
+        if (stats.description.includes('Mine') || stats.description.includes('mine') || tower.key.includes('MINE')) {
+            if (tower.cooldown <= 0) {
+                tower.cooldown = effectiveCooldown;
+                // Find a spot on the path to plant mine
+                if (this.path.length > 0) {
+                    const pathIndex = Math.floor(Math.random() * this.path.length);
+                    const pathPoint = this.path[pathIndex];
+                    
+                    // Count existing mines from this tower
+                    const towerMines = this.mines.filter(m => {
+                        const dist = Math.sqrt((m.r - tower.r)**2 + (m.c - tower.c)**2);
+                        return dist <= tower.range * 2; // Assume mines within 2x range belong to this tower
+                    });
+                    
+                    const maxMines = (tower.level || 1) * this.maxMinesPerTower;
+                    if (towerMines.length < maxMines) {
+                        this.mines.push({
+                            id: Date.now() + Math.random(),
+                            r: pathPoint.r,
+                            c: pathPoint.c,
+                            damage: tower.damage * (tower.level || 1),
+                            maxMines: maxMines
+                        });
+                        this.addParticle(pathPoint.c * 60 + 30, pathPoint.r * 60 + 30, 'impact', '#f59e0b');
+                        soundSystem.play('build');
+                    }
+                }
+            }
+            return; // Don't attack enemies
+        }
+        
         // Healer/Support towers - heal/buff nearby towers instead of attacking
         if (stats.damage === 0 || (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Medic') || stats.description.includes('Support')))) {
             if (tower.cooldown <= 0) {
@@ -543,17 +596,44 @@ export class GameEngine {
                     if (nearbyTower.id === tower.id) continue;
                     const dist = Math.sqrt((nearbyTower.r - tower.r)**2 + (nearbyTower.c - tower.c)**2);
                     if (dist <= tower.range) {
-                        // Heal towers
+                        // Heal towers - green + sign effect
                         if (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('Medic')) {
                             const healAmount = 5;
                             nearbyTower.hp = Math.min((nearbyTower.maxHp || 100), (nearbyTower.hp || 100) + healAmount);
+                            // Green + sign particle
                             this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'heal', '#10b981');
                             this.addTextParticle(nearbyTower.c, nearbyTower.r, `+${healAmount}`, '#10b981');
+                            // Visual + sign on tower
+                            this.particles.push({
+                                id: Math.random(),
+                                x: nearbyTower.c * 60 + 30,
+                                y: nearbyTower.r * 60 + 30,
+                                vx: 0,
+                                vy: -1,
+                                life: 30,
+                                maxLife: 30,
+                                color: '#10b981',
+                                scale: 1.5,
+                                type: 'heal',
+                                text: '+' // Show + sign
+                            });
                         }
-                        // Buff towers
-                        if (stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Command') || stats.description.includes('Support')) {
-                            // Apply temporary buff (handled by effect manager)
-                            effectManager.applyEffectToTower(nearbyTower, 'rage'); // Use existing rage effect for damage boost
+                        // Buff towers - only apply to towers, not enemies
+                        if (stats.description.includes('Speed') || stats.description.includes('speed') || tower.key === 'SPEED_BOOSTER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'haste');
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#fbbf24');
+                        } else if (stats.description.includes('Damage') || stats.description.includes('damage') || stats.description.includes('Amplifier') || tower.key === 'DAMAGE_AMPLIFIER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'power_boost');
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#ef4444');
+                        } else if (stats.description.includes('Frost') || stats.description.includes('frost') || tower.key === 'FROST_ENHANCER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'frost_aura');
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#bfdbfe');
+                        } else if (stats.description.includes('Venom') || stats.description.includes('venom') || stats.description.includes('Poison') || tower.key === 'VENOM_ENHANCER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'venom_aura');
+                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#14b8a6');
+                        } else if (stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Command') || stats.description.includes('Support')) {
+                            // Generic buff - apply damage boost
+                            effectManager.applyEffectToTower(nearbyTower, 'rage');
                             this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#fbbf24');
                         }
                     }
@@ -645,7 +725,7 @@ export class GameEngine {
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
                 } else if (stats.projectileStyle === 'boomerang' || stats.projectileStyle === 'bloomerang') {
-                    // Boomerang/Bloomerang: Projectile returns after hitting
+                    // Boomerang/Bloomerang: Projectile returns after hitting, can hit multiple targets
                     this.projectiles.push({
                         id: Math.random(),
                         x: tower.c, y: tower.r,
@@ -654,7 +734,7 @@ export class GameEngine {
                         ty: target.r + (target.yOffset||0),
                         targetId: target.id,
                         color: stats.color, 
-                        life: 200, maxLife: 200, // Longer life for return trip
+                        life: 300, maxLife: 300, // Longer life for return trip and multiple hits
                         style: stats.projectileStyle, 
                         damage: tower.damage, 
                         speed: stats.projectileSpeed || 0.12,
@@ -662,7 +742,9 @@ export class GameEngine {
                         progress: 0,
                         type: 'boomerang',
                         returnToTower: true,
-                        returnProgress: 0
+                        returnProgress: 0,
+                        hitTargets: [], // Track hit enemies
+                        firingTowerId: tower.id
                     });
                     soundSystem.play('shoot');
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
@@ -727,10 +809,10 @@ export class GameEngine {
             return;
         }
 
-        // Handle boomerang return logic
+        // Handle boomerang return logic - can hit multiple targets
         if (p.returnToTower && p.returnProgress !== undefined) {
             if (p.progress < 1.0) {
-                // Still going to target
+                // Still going to target (forward journey)
                 p.progress += p.speed;
                 
                 // Update target position
@@ -748,21 +830,39 @@ export class GameEngine {
                 p.x = (p.startX!) + dx * p.progress;
                 p.y = (p.startY!) + dy * p.progress;
                 
-                // Check if hit target
+                // Check for enemy hits during forward journey (bloomerang hits multiple)
+                if (p.style === 'bloomerang' || p.style === 'boomerang') {
+                    this.enemies.forEach(enemy => {
+                        if (p.hitTargets && p.hitTargets.includes(enemy.id)) return; // Already hit
+                        const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - p.x)**2 + (enemy.r + (enemy.yOffset || 0) - p.y)**2);
+                        if (dist < 0.3) { // Hit radius
+                            applyDamageToEnemy(enemy, p.damage);
+                            if (!p.hitTargets) p.hitTargets = [];
+                            p.hitTargets.push(enemy.id);
+                            if (enemy.hp <= 0) this.killEnemy(enemy);
+                        }
+                    });
+                }
+                
+                // Check if reached initial target
                 if (p.progress >= 1.0) {
-                    this.handleProjectileHit(p);
+                    if (!p.hitTargets || !p.hitTargets.includes(p.targetId || -1)) {
+                        this.handleProjectileHit(p);
+                    }
                     // Start return journey
                     p.returnProgress = 0;
                 }
             } else if (p.returnProgress < 1.0) {
-                // Returning to tower
+                // Returning to tower (backward journey)
                 p.returnProgress += p.speed;
                 
                 // Find the tower that fired this projectile
-                const firingTower = this.towers.find(t => {
-                    const dist = Math.sqrt((t.c - p.x)**2 + (t.r - p.y)**2);
-                    return dist < 0.5; // Close to a tower
-                });
+                const firingTower = p.firingTowerId 
+                    ? this.towers.find(t => t.id === p.firingTowerId)
+                    : this.towers.find(t => {
+                        const dist = Math.sqrt((t.c - p.x)**2 + (t.r - p.y)**2);
+                        return dist < 0.5;
+                    });
                 
                 if (firingTower) {
                     // Return to firing tower
@@ -770,6 +870,20 @@ export class GameEngine {
                     const returnDy = firingTower.r - p.ty;
                     p.x = p.tx + returnDx * p.returnProgress;
                     p.y = p.ty + returnDy * p.returnProgress;
+                    
+                    // Check for enemy hits during return journey (bloomerang hits multiple)
+                    if (p.style === 'bloomerang' || p.style === 'boomerang') {
+                        this.enemies.forEach(enemy => {
+                            if (p.hitTargets && p.hitTargets.includes(enemy.id)) return; // Already hit
+                            const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - p.x)**2 + (enemy.r + (enemy.yOffset || 0) - p.y)**2);
+                            if (dist < 0.3) { // Hit radius
+                                applyDamageToEnemy(enemy, p.damage);
+                                if (!p.hitTargets) p.hitTargets = [];
+                                p.hitTargets.push(enemy.id);
+                                if (enemy.hp <= 0) this.killEnemy(enemy);
+                            }
+                        });
+                    }
                     
                     if (p.returnProgress >= 1.0) {
                         // Returned - remove projectile
@@ -1030,6 +1144,35 @@ export class GameEngine {
             soundSystem.play('debuff');
           }
           break;
+          
+        case 'attack_towers':
+          if (timeSinceLastUse > 100 && Math.random() > 0.90) {
+            // Attack nearby towers
+            const nearbyTowers = this.towers.filter(t => {
+              const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
+              return dist <= 2; // Close range attack
+            });
+            
+            nearbyTowers.forEach(tower => {
+              if (tower.hp && tower.maxHp) {
+                const damage = enemy.maxHp * 0.05; // 5% of enemy max HP as damage
+                tower.hp = Math.max(0, tower.hp - damage);
+                this.addTextParticle(tower.c, tower.r, `-${Math.floor(damage)}`, "#ef4444");
+                this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'impact', '#ef4444');
+                if (tower.hp <= 0) {
+                  this.createExplosion(tower.c * 60 + 30, tower.r * 60 + 30, "#ef4444", 1.5, 'blast');
+                  const idx = this.towers.findIndex(t => t.id === tower.id);
+                  if (idx !== -1) this.towers.splice(idx, 1);
+                }
+              }
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 200;
+            this.addTextParticle(enemy.c, enemy.r, 'ATTACK!', "#ef4444");
+            soundSystem.play('hit');
+          }
+          break;
       }
     });
   }
@@ -1090,6 +1233,20 @@ export class GameEngine {
     if (this.pendingAction.type === 'BUILD') {
         const { r, c, towerKey } = this.pendingAction;
         const stats = TOWERS[towerKey];
+        
+        // Check if this is a support/healer tower
+        const isSupportTower = stats.damage === 0 || 
+            (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || 
+             stats.description.includes('buff') || stats.description.includes('Buff') || 
+             stats.description.includes('Medic') || stats.description.includes('Support')));
+        
+        // Check support tower limit
+        if (isSupportTower && this.supportTowerCount >= this.maxSupportTowers) {
+            this.addTextParticle(c, r, `Max ${this.maxSupportTowers} Support Towers!`, "#ef4444");
+            this.pendingAction = null;
+            return;
+        }
+        
         this.money -= stats.cost;
         const maxHp = stats.maxHp || 100;
         const newTower: Tower = { 
@@ -1111,6 +1268,12 @@ export class GameEngine {
             angle: 0
         };
         this.towers.push(newTower);
+        
+        // Increment support tower count
+        if (isSupportTower) {
+            this.supportTowerCount++;
+        }
+        
         soundSystem.play('build');
     } else if (this.pendingAction.type === 'UPGRADE') {
         const { towerId, cost } = this.pendingAction;
@@ -1138,9 +1301,32 @@ export class GameEngine {
       const idx = this.towers.findIndex(t => t.id === towerId);
       if(idx !== -1) {
           const t = this.towers[idx];
-          let v = TOWERS[t.key].cost; 
+          const stats = TOWERS[t.key];
+          
+          // Check if this is a support tower
+          const isSupportTower = stats.damage === 0 || 
+              (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || 
+               stats.description.includes('buff') || stats.description.includes('Buff') || 
+               stats.description.includes('Medic') || stats.description.includes('Support')));
+          
+          let v = stats.cost; 
           this.money += Math.floor(v * 0.7);
           this.towers.splice(idx, 1);
+          
+          // Decrement support tower count
+          if (isSupportTower) {
+              this.supportTowerCount = Math.max(0, this.supportTowerCount - 1);
+          }
+          
+          // Remove mines if this was a mine tower
+          if (stats.description.includes('Mine') || stats.description.includes('mine')) {
+              this.mines = this.mines.filter(m => {
+                  // Find if any mine belongs to this tower (by proximity)
+                  const dist = Math.sqrt((m.r - t.r)**2 + (m.c - t.c)**2);
+                  return dist > 2; // Keep mines far from this tower
+              });
+          }
+          
           soundSystem.play('sell');
       }
   }

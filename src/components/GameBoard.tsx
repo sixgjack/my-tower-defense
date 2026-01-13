@@ -594,6 +594,31 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                  </radialGradient>
               </defs>
 
+              {/* Mines */}
+              {game.mines.map(mine => (
+                  <g key={mine.id}>
+                      <circle
+                          cx={mine.c * TILE_SIZE + TILE_SIZE / 2}
+                          cy={mine.r * TILE_SIZE + TILE_SIZE / 2}
+                          r={TILE_SIZE / 4}
+                          fill="#f59e0b"
+                          stroke="#dc2626"
+                          strokeWidth="2"
+                          opacity="0.8"
+                      />
+                      <text
+                          x={mine.c * TILE_SIZE + TILE_SIZE / 2}
+                          y={mine.r * TILE_SIZE + TILE_SIZE / 2}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize={TILE_SIZE / 3}
+                      >
+                          💣
+                      </text>
+                  </g>
+              ))}
+
+              {/* Projectiles */}
               {game.projectiles.map(p => (
                   <ProjectileRenderer key={p.id} projectile={p} tileSize={TILE_SIZE} tick={tick} />
               ))}

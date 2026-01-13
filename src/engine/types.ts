@@ -39,7 +39,7 @@ export interface Particle {
 }
 
 // --- ENEMIES ---
-export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield';
+export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield' | 'attack_towers';
 
 export type BossType = 'mini' | 'big';
 
@@ -143,6 +143,8 @@ export interface Projectile {
     returnToTower?: boolean; // For boomerang/bloomerang return logic
     returnProgress?: number; // Progress of return journey (0 to 1)
     pullStrength?: number; // For pull attacks
+    hitTargets?: number[]; // For bloomerang - track which enemies have been hit
+    firingTowerId?: number; // Track which tower fired this projectile
     special?: {
         pull?: number;
         slow?: number;

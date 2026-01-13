@@ -190,6 +190,7 @@ export const TOWER_STATUS_EFFECTS: Record<string, StatusEffect> = {
         visualAura: '#6366f1', // Indigo
         soundEffect: 'stun',
         modifiers: {
+            speed: -1.0, // -100% speed = completely stopped
             cooldown: 999, // Effectively disables (1000% cooldown = never attacks)
         },
     },
@@ -221,6 +222,66 @@ export const TOWER_STATUS_EFFECTS: Record<string, StatusEffect> = {
         soundEffect: 'buff',
         modifiers: {
             cost: -0.1, // -10% cost per stack
+        },
+    },
+    
+    // Attack Speed Boost
+    'haste': {
+        id: 'haste',
+        name: 'Haste',
+        type: 'buff',
+        duration: 600, // 10 seconds
+        stackCount: 1,
+        priority: 5,
+        visualAura: '#fbbf24', // Yellow
+        soundEffect: 'buff',
+        modifiers: {
+            cooldown: -0.3, // -30% cooldown = faster attacks
+        },
+    },
+    
+    // Damage Boost
+    'power_boost': {
+        id: 'power_boost',
+        name: 'Power Boost',
+        type: 'buff',
+        duration: 600, // 10 seconds
+        stackCount: 1,
+        priority: 5,
+        visualAura: '#ef4444', // Red
+        soundEffect: 'buff',
+        modifiers: {
+            damage: 0.5, // +50% damage
+        },
+    },
+    
+    // Freeze Effect Buff
+    'frost_aura': {
+        id: 'frost_aura',
+        name: 'Frost Aura',
+        type: 'buff',
+        duration: 600, // 10 seconds
+        stackCount: 1,
+        priority: 4,
+        visualAura: '#bfdbfe', // Light blue
+        soundEffect: 'freeze',
+        modifiers: {
+            // Towers with this buff apply freeze to enemies
+        },
+    },
+    
+    // Poison Effect Buff
+    'venom_aura': {
+        id: 'venom_aura',
+        name: 'Venom Aura',
+        type: 'buff',
+        duration: 600, // 10 seconds
+        stackCount: 1,
+        priority: 4,
+        visualAura: '#14b8a6', // Teal
+        soundEffect: 'debuff',
+        modifiers: {
+            // Towers with this buff apply poison to enemies
         },
     },
 };

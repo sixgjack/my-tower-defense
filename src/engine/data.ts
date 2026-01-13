@@ -91,6 +91,30 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Archon", hp: 920, speed: 0.11, reward: 205, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200, moneyBonus: 5.0 },
     { name: "Abomination", hp: 880, speed: 0.14, reward: 195, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'], moneyBonus: 4.5 },
     { name: "World Eater", hp: 1000, speed: 0.08, reward: 220, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150, moneyBonus: 6.0 },
+    
+    // ==========================================
+    // NEW ENEMIES (20 new enemies with abilities)
+    // ==========================================
+    { name: "Sapper", hp: 180, speed: 0.4, reward: 45, color: "#f97316", icon: "🔨", abilities: ['attack_towers'], abilityCooldown: 200, minWave: 3 },
+    { name: "Siege Engine", hp: 450, speed: 0.2, reward: 110, color: "#78716c", icon: "⚙️", abilities: ['attack_towers', 'shield'], abilityCooldown: 300, minWave: 8 },
+    { name: "Corruptor", hp: 220, speed: 0.5, reward: 55, color: "#7c3aed", icon: "💜", abilities: ['slow_towers', 'poison_aura'], abilityCooldown: 250, minWave: 5 },
+    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 48, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], abilityCooldown: 350, minWave: 6 },
+    { name: "Plague Bearer", hp: 160, speed: 0.7, reward: 40, color: "#14b8a6", icon: "🦠", abilities: ['poison_aura', 'spawn_minions'], abilityCooldown: 400, minWave: 4 },
+    { name: "Shock Trooper", hp: 140, speed: 0.9, reward: 35, color: "#facc15", icon: "⚡", abilities: ['stun_attack', 'charge'], abilityCooldown: 280, minWave: 3 },
+    { name: "Armored Crawler", hp: 380, speed: 0.25, reward: 95, color: "#475569", icon: "🦂", abilities: ['shield', 'damage_reflect'], minWave: 7 },
+    { name: "Void Walker", hp: 200, speed: 0.55, reward: 50, color: "#1e293b", icon: "🌌", abilities: ['teleport', 'invisible'], abilityCooldown: 320, minWave: 5 },
+    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 105, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], minWave: 9 },
+    { name: "Shadow Assassin", hp: 120, speed: 1.0, reward: 30, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 380, minWave: 4 },
+    { name: "Molten Core", hp: 500, speed: 0.18, reward: 125, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], minWave: 10 },
+    { name: "Storm Caller", hp: 280, speed: 0.45, reward: 70, color: "#3b82f6", icon: "⛈️", abilities: ['stun_attack', 'deactivate_towers'], abilityCooldown: 300, minWave: 6 },
+    { name: "Bone Collector", hp: 320, speed: 0.35, reward: 80, color: "#f3f4f6", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 450, minWave: 7 },
+    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 38, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], abilityCooldown: 350, minWave: 4 },
+    { name: "Frost Giant", hp: 550, speed: 0.15, reward: 140, color: "#bfdbfe", icon: "🧊", isBoss: true, abilities: ['freeze_aura', 'shield', 'stun_attack'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0 },
+    { name: "Chaos Spawn", hp: 240, speed: 0.5, reward: 60, color: "#dc2626", icon: "🌀", abilities: ['teleport', 'split', 'berserk'], abilityCooldown: 400, minWave: 6 },
+    { name: "Iron Maiden", hp: 400, speed: 0.18, reward: 100, color: "#64748b", icon: "⚔️", abilities: ['attack_towers', 'damage_reflect'], abilityCooldown: 250, minWave: 8 }, // Slower
+    { name: "Necrotic Plague", hp: 180, speed: 0.65, reward: 45, color: "#7c2d12", icon: "🦠", abilities: ['poison_aura', 'regenerate', 'spawn_minions'], abilityCooldown: 500, minWave: 5 },
+    { name: "Void Reaper", hp: 350, speed: 0.3, reward: 88, color: "#000000", icon: "🌑", abilities: ['invisible', 'teleport', 'damage_reflect'], abilityCooldown: 360, minWave: 8 },
+    { name: "Titanium Behemoth", hp: 650, speed: 0.08, reward: 165, color: "#94a3b8", icon: "🗿", isBoss: true, abilities: ['attack_towers', 'shield', 'damage_reflect', 'regenerate'], abilityCooldown: 200, minWave: 15, moneyBonus: 4.0 }, // Much slower
 ];
 
 export interface Theme {
@@ -820,5 +844,14 @@ export const TOWERS: Record<string, TowerStats> = {
   'NOWELL': { name: 'Medic Unit', cost: 250, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '⚕️', description: 'Medical support unit with defensive capabilities.' },
   'XINGZHU': { name: 'Support Tower', cost: 300, damage: 23, range: 2.4, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🥢', description: 'Provides support fire for nearby defenses.' },
   'TECNO': { name: 'Tech Summoner', cost: 350, damage: 31, range: 2.4, cooldown: 50, type: 'summon', color: '#a5f3fc', icon: '💻', description: 'Summons technological constructs to fight.' },
-  'ROSE_SALT': { name: 'Multi-Healer', cost: 280, damage: 11, range: 2.4, cooldown: 60, type: 'projectile', color: '#fbcfe8', icon: '🧂', description: 'Heals multiple structures simultaneously.' },
+  'ROSE_SALT': { name: 'Multi-Healer', cost: 280, damage: 0, range: 2.4, cooldown: 60, type: 'aura', color: '#fbcfe8', icon: '🧂', description: 'Heals multiple structures simultaneously.' },
+  
+  // ==========================================
+  // NEW SUPPORT & BUFF TOWERS
+  // ==========================================
+  'SPEED_BOOSTER': { name: 'Speed Enhancer', cost: 400, damage: 0, range: 2.8, cooldown: 120, type: 'aura', color: '#fbbf24', icon: '⚡', description: 'Increases attack speed of nearby towers by 30%.' },
+  'DAMAGE_AMPLIFIER': { name: 'Damage Amplifier', cost: 500, damage: 0, range: 2.6, cooldown: 150, type: 'aura', color: '#ef4444', icon: '💥', description: 'Boosts damage of nearby towers by 50%.' },
+  'FROST_ENHANCER': { name: 'Frost Enhancer', cost: 450, damage: 0, range: 2.4, cooldown: 140, type: 'aura', color: '#bfdbfe', icon: '❄️', description: 'Grants nearby towers freeze effect on attacks.' },
+  'VENOM_ENHANCER': { name: 'Venom Enhancer', cost: 450, damage: 0, range: 2.4, cooldown: 140, type: 'aura', color: '#14b8a6', icon: '☠️', description: 'Grants nearby towers poison effect on attacks.' },
+  'MINE_LAYER': { name: 'Mine Layer', cost: 600, damage: 50, range: 3.0, cooldown: 200, type: 'projectile', color: '#f59e0b', icon: '💣', description: 'Plants explosive mines on the enemy route. Max 3 mines per level.' },
 };
