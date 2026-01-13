@@ -15,6 +15,7 @@ interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies?: string[]; // Enemy names encountered in battle
   lastPlayed: any;
 }
 
@@ -66,7 +67,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   }
 
   if (activeView === 'enemies') {
-    return <EnemyDictionary onBack={() => setActiveView('lobby')} />;
+    return <EnemyDictionary 
+      onBack={() => setActiveView('lobby')} 
+      encounteredEnemies={studentStatus?.encounteredEnemies || []}
+    />;
   }
 
   return (

@@ -9,6 +9,7 @@ export interface GameResult {
   enemiesKilled: number;
   moneyEarned: number;
   towersBuilt: number;
+  encounteredEnemies?: string[]; // Array of enemy type names encountered
 }
 
 /**

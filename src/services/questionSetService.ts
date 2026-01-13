@@ -1,6 +1,6 @@
 // src/services/questionSetService.ts
 // Service for managing question sets (game modes) dynamically
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { GameMode } from '../components/ModeSelection';
 
