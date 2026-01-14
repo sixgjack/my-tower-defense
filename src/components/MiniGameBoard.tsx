@@ -29,7 +29,6 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
 
   useEffect(() => {
     // Create a new game instance for the demo
-    const { GameEngine } = require('../engine/GameEngine');
     const miniGame = new GameEngine();
     miniGame.money = 10000;
     miniGame.lives = 100;
