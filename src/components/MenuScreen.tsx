@@ -1,9 +1,7 @@
 // src/components/MenuScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import type { User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../firebase';
+import { signInWithGoogle, signOut, onAuthStateChanged, getCurrentUser, type GoogleUser } from '../services/googleAuth';
+import { getStudentStatus, createStudentStatus } from '../services/studentService';
 import { LobbyScreen } from './LobbyScreen';
 
 interface StudentStatus {
@@ -18,18 +16,17 @@ interface StudentStatus {
 }
 
 export const MenuScreen: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<GoogleUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [studentStatus, setStudentStatus] = useState<StudentStatus | null>(null);
   const [showLobby, setShowLobby] = useState(false);
 
   const loadStudentStatus = async (uid: string) => {
     try {
-      const statusRef = doc(db, 'students', uid);
-      const statusSnap = await getDoc(statusRef);
+      const status = await getStudentStatus(uid);
       
-      if (statusSnap.exists()) {
-        setStudentStatus(statusSnap.data() as StudentStatus);
+      if (status) {
+        setStudentStatus(status);
       } else {
         // Create new student status
         const newStatus: StudentStatus = {
@@ -40,9 +37,9 @@ export const MenuScreen: React.FC = () => {
           highestWave: 0,
           credits: 0,
           unlockedTowers: [],
-          lastPlayed: serverTimestamp()
+          lastPlayed: new Date().toISOString()
         };
-        await setDoc(statusRef, newStatus);
+        await createStudentStatus(uid, newStatus);
         setStudentStatus(newStatus);
       }
     } catch (error) {
@@ -51,13 +48,15 @@ export const MenuScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
       
       if (currentUser) {
         // Load or create student status
         await loadStudentStatus(currentUser.uid);
+      } else {
+        setStudentStatus(null);
       }
     });
 
@@ -67,7 +66,7 @@ export const MenuScreen: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithGoogle();
     } catch (error: any) {
       console.error('Sign in error:', error);
       alert('Failed to sign in: ' + error.message);
@@ -76,7 +75,7 @@ export const MenuScreen: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOut();
       setStudentStatus(null);
     } catch (error) {
       console.error('Sign out error:', error);

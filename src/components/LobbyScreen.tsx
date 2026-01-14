@@ -22,7 +22,7 @@ interface StudentStatus {
 }
 
 interface LobbyScreenProps {
-  user: User;
+  user: GoogleUser;
   studentStatus: StudentStatus | null;
   onSignOut: () => void;
   onStatusUpdate: () => Promise<void>;

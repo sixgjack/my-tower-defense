@@ -15,22 +15,23 @@ export const QuestionModal = ({ isOpen, onClose, onSuccess, theme, questionSetId
   const [currentQ, setCurrentQ] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Load questions from Firebase filtered by questionSetId
+  // 1. Load questions from PostgreSQL filtered by questionSetId
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "questions"));
-        const qList = querySnapshot.docs.map(doc => doc.data());
+        let filteredQuestions;
         
-        // Filter questions by questionSetId
-        let filteredQuestions = qList;
-        if (questionSetId !== 'mixed') {
-          filteredQuestions = qList.filter((q: any) => q.questionSetId === questionSetId);
+        if (questionSetId === 'mixed') {
+          // Get all questions
+          filteredQuestions = await getAllQuestions();
+        } else {
+          // Get questions by set
+          filteredQuestions = await getQuestionsBySet(questionSetId);
         }
         
         // If no questions found for the set, fallback to all questions
-        if (filteredQuestions.length === 0) {
-          filteredQuestions = qList;
+        if (filteredQuestions.length === 0 && questionSetId !== 'mixed') {
+          filteredQuestions = await getAllQuestions();
         }
         
         setQuestions(filteredQuestions);
