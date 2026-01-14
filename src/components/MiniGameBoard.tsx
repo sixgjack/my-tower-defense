@@ -39,19 +39,49 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     miniGameRef.current = miniGame;
     
     // Wait for map generation, then place tower
-    setTimeout(() => {
-      // Place the tower in the center
-      const centerR = Math.floor(ROWS / 2);
-      const centerC = Math.floor(COLS / 2);
+    // Use a longer timeout and check if path is ready
+    let initAttempts = 0;
+    const maxAttempts = 50; // Maximum 5 seconds of attempts
+    
+    const initTower = () => {
+      initAttempts++;
       
-      // Find tower key
-      const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
-      if (towerKey) {
-        miniGame.requestBuildTower(centerR, centerC, towerKey);
-        miniGame.confirmAction();
+      // Check if path is ready
+      if (miniGame.path && miniGame.path.length > 0 && miniGame.map && miniGame.map.length > 0) {
+        // Place the tower near the path but not on it
+        let towerR = Math.floor(ROWS / 2);
+        let towerC = Math.floor(COLS / 2);
+        
+        // Try to find a spot near the path but not on it
+        let attempts = 0;
+        while (attempts < 20) {
+          const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
+          const isObstacle = miniGame.map[towerR] && miniGame.map[towerR][towerC] === 'X';
+          if (!isOnPath && !isObstacle) break;
+          towerR = Math.floor(Math.random() * ROWS);
+          towerC = Math.floor(Math.random() * COLS);
+          attempts++;
+        }
+        
+        // Find tower key
+        const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+        if (towerKey) {
+          miniGame.requestBuildTower(towerR, towerC, towerKey);
+          miniGame.confirmAction();
+        }
+        setIsReady(true);
+      } else if (initAttempts < maxAttempts) {
+        // Path not ready yet, try again
+        setTimeout(initTower, 100);
+      } else {
+        // Give up after max attempts - set ready anyway to show something
+        console.warn('MiniGameBoard: Failed to initialize path after', maxAttempts, 'attempts');
+        setIsReady(true);
       }
-      setIsReady(true);
-    }, 200);
+    };
+    
+    // Start initialization after a short delay
+    setTimeout(initTower, 300);
 
     // Game loop
     let frameId: number;
@@ -101,7 +131,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
       cancelAnimationFrame(frameId);
       clearInterval(spawnInterval);
     };
-  }, [tower]);
+  }, [tower, isReady]);
 
   const game = miniGameRef.current;
   if (!game || !isReady || !game.path || game.path.length === 0) {
