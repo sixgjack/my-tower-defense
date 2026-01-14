@@ -8,6 +8,7 @@ import { TowerGallery } from './TowerGallery';
 import { EnemyDictionary } from './EnemyDictionary';
 import { ModeSelection, type GameMode } from './ModeSelection';
 import { useLanguage } from '../i18n/useTranslation';
+import { updateStudentStatusAfterGame } from '../services/studentService';
 
 interface StudentStatus {
   totalGames: number;
@@ -48,6 +49,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     setShowGame(false);
     setActiveView('lobby');
     setSelectedMode(null);
+    
+    // Update student status after game
+    if (gameResult && user) {
+      try {
+        await updateStudentStatusAfterGame(user.uid, gameResult);
+        await onStatusUpdate();
+      } catch (error) {
+        console.error('Error updating student status:', error);
+      }
+    }
     if (gameResult) {
       await onStatusUpdate();
     }
