@@ -240,6 +240,16 @@ const translations: Record<Language, Record<string, string>> = {
     'tower.TECNO.description': 'Summons technological constructs to fight.',
     'tower.ROSE_SALT.name': 'Multi-Healer',
     'tower.ROSE_SALT.description': 'Heals multiple structures simultaneously.',
+    'tower.SPEED_BOOSTER.name': 'Speed Enhancer',
+    'tower.SPEED_BOOSTER.description': 'Increases attack speed of nearby towers by 30%.',
+    'tower.DAMAGE_AMPLIFIER.name': 'Damage Amplifier',
+    'tower.DAMAGE_AMPLIFIER.description': 'Boosts damage of nearby towers by 50%.',
+    'tower.FROST_ENHANCER.name': 'Frost Enhancer',
+    'tower.FROST_ENHANCER.description': 'Grants nearby towers freeze effect on attacks.',
+    'tower.VENOM_ENHANCER.name': 'Venom Enhancer',
+    'tower.VENOM_ENHANCER.description': 'Grants nearby towers poison effect on attacks.',
+    'tower.MINE_LAYER.name': 'Mine Layer',
+    'tower.MINE_LAYER.description': 'Plants explosive mines on the enemy route. Max 3 mines per level.',
   },
   zh: {
     // UI Elements - Traditional Chinese (繁體中文)
@@ -446,6 +456,16 @@ const translations: Record<Language, Record<string, string>> = {
     'tower.TECNO.description': '召喚科技構造體戰鬥。',
     'tower.ROSE_SALT.name': '多重治療',
     'tower.ROSE_SALT.description': '同時治療多個結構。',
+    'tower.SPEED_BOOSTER.name': '速度增強器',
+    'tower.SPEED_BOOSTER.description': '提升附近砲塔30%攻擊速度。',
+    'tower.DAMAGE_AMPLIFIER.name': '傷害放大器',
+    'tower.DAMAGE_AMPLIFIER.description': '提升附近砲塔50%傷害。',
+    'tower.FROST_ENHANCER.name': '冰霜增強器',
+    'tower.FROST_ENHANCER.description': '賦予附近砲塔攻擊時冰凍效果。',
+    'tower.VENOM_ENHANCER.name': '劇毒增強器',
+    'tower.VENOM_ENHANCER.description': '賦予附近砲塔攻擊時中毒效果。',
+    'tower.MINE_LAYER.name': '地雷部署器',
+    'tower.MINE_LAYER.description': '在敵人行進路線上部署爆炸地雷。每級最多3枚地雷。',
   }
 };
 

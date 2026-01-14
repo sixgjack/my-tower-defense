@@ -103,7 +103,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
   }, [tower]);
 
   const game = miniGameRef.current;
-  if (!game || !isReady) {
+  if (!game || !isReady || !game.path || game.path.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-slate-400">
         <div className="text-center">
