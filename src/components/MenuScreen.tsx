@@ -1,6 +1,6 @@
 // src/components/MenuScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { signInWithGoogle, signOut, onAuthStateChanged, getCurrentUser, type GoogleUser } from '../services/googleAuth';
+import { signInWithGoogle, signOut, onAuthStateChanged, type GoogleUser } from '../services/googleAuth';
 import { getStudentStatus, createStudentStatus } from '../services/studentService';
 import { LobbyScreen } from './LobbyScreen';
 

@@ -1,7 +1,7 @@
 // src/components/LobbyScreen.tsx
 // Redesigned lobby with modern UI/UX principles and bilingual support
 import React, { useState } from 'react';
-import type { User } from 'firebase/auth';
+import type { GoogleUser } from '../services/googleAuth';
 import { GameBoard } from './GameBoard';
 import { LuckyDraw } from './LuckyDraw';
 import { TowerGallery } from './TowerGallery';

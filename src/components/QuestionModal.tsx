@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getQuestionsBySet, getAllQuestions } from '../services/questionService';
 
 interface QuestionModalProps {
   isOpen: boolean;
