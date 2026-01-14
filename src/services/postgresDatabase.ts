@@ -22,6 +22,28 @@ async function initDatabase(): Promise<void> {
 
   initPromise = (async () => {
     try {
+      // Clear corrupted IndexedDB if it exists
+      try {
+        const deleteReq = indexedDB.deleteDatabase('tower-defense-db');
+        await new Promise<void>((resolve, reject) => {
+          deleteReq.onsuccess = () => {
+            console.log('Cleared corrupted IndexedDB database');
+            setTimeout(resolve, 200); // Wait for cleanup
+          };
+          deleteReq.onerror = () => {
+            console.warn('Could not delete IndexedDB (may not exist):', deleteReq.error);
+            resolve(); // Continue anyway
+          };
+          deleteReq.onblocked = () => {
+            console.warn('IndexedDB delete blocked, continuing anyway...');
+            resolve();
+          };
+        });
+      } catch (e) {
+        console.warn('Error clearing IndexedDB:', e);
+        // Continue anyway
+      }
+
       // Initialize PGlite - uses IndexedDB for persistence in browser
       db = new PGlite('idb://tower-defense-db');
 

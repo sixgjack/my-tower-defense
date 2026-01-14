@@ -1,17 +1,16 @@
 // src/services/questionSetService.ts
-// Service for managing question sets (game modes) dynamically
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, getDoc, writeBatch } from 'firebase/firestore';
-import { db } from '../firebase';
+// Service for managing question sets (game modes) dynamically - using PostgreSQL
+import * as db from './postgresDatabase';
 import type { GameMode } from '../components/ModeSelection';
 
 // Re-export for convenience
 export type { GameMode };
 
 export interface QuestionSet extends GameMode {
-  id: string;
+  id: string | number;
   createdBy: string; // Teacher UID
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: string;
+  updatedAt?: string;
   questionCount?: number; // Number of questions in this set
 }
 
@@ -20,11 +19,38 @@ export interface QuestionSet extends GameMode {
  */
 export const getAllQuestionSets = async (): Promise<QuestionSet[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'questionSets'));
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as QuestionSet));
+    const result = await db.getAllQuestionSets();
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to fetch question sets');
+    }
+    
+    // Get question counts for each set
+    const setsWithCounts = await Promise.all(
+      result.data.map(async (set) => {
+        const questionsResult = await db.getQuestionsBySet(set.name || '');
+        const questionCount = questionsResult.success && questionsResult.data 
+          ? questionsResult.data.length 
+          : 0;
+        
+        return {
+          id: String(set.id),
+          name: set.name,
+          nameZh: set.nameZh,
+          description: set.description || '',
+          descriptionZh: set.descriptionZh || '',
+          questionSetId: set.name?.toLowerCase().replace(/\s+/g, '-') || '',
+          difficulty: 'easy' as const,
+          icon: '📚',
+          color: '#3b82f6',
+          createdBy: set.createdBy || 'system',
+          createdAt: set.createdAt,
+          updatedAt: set.updatedAt,
+          questionCount
+        } as QuestionSet;
+      })
+    );
+    
+    return setsWithCounts;
   } catch (error) {
     console.error('Error fetching question sets:', error);
     throw error;
@@ -36,12 +62,8 @@ export const getAllQuestionSets = async (): Promise<QuestionSet[]> => {
  */
 export const getQuestionSetsByTeacher = async (teacherUid: string): Promise<QuestionSet[]> => {
   try {
-    const q = query(collection(db, 'questionSets'), where('createdBy', '==', teacherUid));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as QuestionSet));
+    const allSets = await getAllQuestionSets();
+    return allSets.filter(set => set.createdBy === teacherUid);
   } catch (error) {
     console.error('Error fetching question sets by teacher:', error);
     throw error;
@@ -53,12 +75,8 @@ export const getQuestionSetsByTeacher = async (teacherUid: string): Promise<Ques
  */
 export const getQuestionSet = async (id: string): Promise<QuestionSet | null> => {
   try {
-    const docRef = doc(db, 'questionSets', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as QuestionSet;
-    }
-    return null;
+    const allSets = await getAllQuestionSets();
+    return allSets.find(set => String(set.id) === id) || null;
   } catch (error) {
     console.error('Error fetching question set:', error);
     throw error;
@@ -70,12 +88,19 @@ export const getQuestionSet = async (id: string): Promise<QuestionSet | null> =>
  */
 export const createQuestionSet = async (questionSet: Omit<QuestionSet, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, 'questionSets'), {
-      ...questionSet,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const result = await db.addQuestionSet({
+      name: questionSet.name,
+      nameZh: questionSet.nameZh,
+      description: questionSet.description,
+      descriptionZh: questionSet.descriptionZh,
+      createdBy: questionSet.createdBy || 'system'
     });
-    return docRef.id;
+    
+    if (!result.success || result.data === undefined) {
+      throw new Error(result.error || 'Failed to create question set');
+    }
+    
+    return String(result.data);
   } catch (error) {
     console.error('Error creating question set:', error);
     throw error;
@@ -87,11 +112,22 @@ export const createQuestionSet = async (questionSet: Omit<QuestionSet, 'id' | 'c
  */
 export const updateQuestionSet = async (id: string, updates: Partial<QuestionSet>): Promise<void> => {
   try {
-    const docRef = doc(db, 'questionSets', id);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: new Date()
+    const setId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (isNaN(setId)) {
+      throw new Error('Invalid question set ID');
+    }
+    
+    const result = await db.updateQuestionSet(setId, {
+      name: updates.name,
+      nameZh: updates.nameZh,
+      description: updates.description,
+      descriptionZh: updates.descriptionZh,
+      createdBy: updates.createdBy
     });
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update question set');
+    }
   } catch (error) {
     console.error('Error updating question set:', error);
     throw error;
@@ -103,8 +139,15 @@ export const updateQuestionSet = async (id: string, updates: Partial<QuestionSet
  */
 export const deleteQuestionSet = async (id: string): Promise<void> => {
   try {
-    const docRef = doc(db, 'questionSets', id);
-    await deleteDoc(docRef);
+    const setId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (isNaN(setId)) {
+      throw new Error('Invalid question set ID');
+    }
+    
+    const result = await db.deleteQuestionSet(setId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete question set');
+    }
   } catch (error) {
     console.error('Error deleting question set:', error);
     throw error;
@@ -179,18 +222,12 @@ export const initializeDefaultQuestionSets = async (): Promise<void> => {
       }
     ];
 
-    const batch = writeBatch(db);
-    defaultSets.forEach((set) => {
-      const docRef = doc(collection(db, 'questionSets'));
-      batch.set(docRef, {
-        ...set,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    });
-    await batch.commit();
+    // Create all default sets
+    for (const set of defaultSets) {
+      await createQuestionSet(set);
+    }
   } catch (error) {
     console.error('Error initializing default question sets:', error);
-    throw error;
+    // Don't throw - allow app to continue even if initialization fails
   }
 };
