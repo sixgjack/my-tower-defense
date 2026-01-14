@@ -8,6 +8,7 @@ import { GameOverModal } from './GameOverModal';
 import { soundSystem } from '../engine/SoundSystem';
 import { effectManager } from '../engine/EffectManager';
 import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
+import { getThemeDescription } from '../utils/themeHelpers';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
 
@@ -317,9 +318,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
              </button>
            </div>
            <div className="flex justify-between items-center mt-1 opacity-70 text-xs">
-               <span>{i18n.t('game.wave')}: {currentTheme.name}</span>
+               <span>{i18n.t('game.wave')}: {language === 'zh' && currentTheme.nameZh ? currentTheme.nameZh : currentTheme.name}</span>
                {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">{i18n.t('game.nextWaveIn')}: {(waveCountdown/60).toFixed(1)}s</span>}
            </div>
+           {/* Environment Effects Info */}
+           {(currentTheme.towerCooldownMultiplier || currentTheme.towerRangeMultiplier || currentTheme.towerDamageMultiplier || currentTheme.enemySpeedMultiplier || currentTheme.enemyHpMultiplier || currentTheme.moneyBonus) && (
+             <div className="p-3 bg-slate-800/50 border-t border-slate-700">
+               <div className="text-xs text-slate-300 font-semibold mb-1">
+                 {language === 'zh' ? '環境效果' : 'Environment Effects'}
+               </div>
+               <div className="text-xs text-slate-400 leading-tight">
+                 {getThemeDescription(currentTheme)}
+               </div>
+             </div>
+           )}
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {Object.entries(TOWERS).map(([key, tower]) => {

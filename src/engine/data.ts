@@ -119,6 +119,9 @@ export const ENEMY_TYPES: EnemyType[] = [
 
 export interface Theme {
   name: string;
+  nameZh?: string; // Traditional Chinese name
+  description?: string; // English description of environmental effects
+  descriptionZh?: string; // Traditional Chinese description
   bg: string;
   grid: string;
   path: string;
