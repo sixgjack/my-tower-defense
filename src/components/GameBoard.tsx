@@ -307,20 +307,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
       {/* --- SIDEBAR --- */}
       <div className="w-64 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-900/95 z-20 shadow-xl">
         <div className="p-4 border-b border-slate-700 bg-slate-950">
-           <div className="flex items-center justify-between mb-2">
-             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{i18n.t('game.title')}</h1>
-             <button 
-               onClick={toggleLanguage}
-               className="px-2 py-1 text-xs rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-colors"
-               title={i18n.t('game.language')}
-             >
-               {language === 'en' ? '中' : 'EN'}
-             </button>
-           </div>
-           <div className="flex justify-between items-center mt-1 opacity-70 text-xs">
-               <span>{i18n.t('game.wave')}: {language === 'zh' && currentTheme.nameZh ? currentTheme.nameZh : currentTheme.name}</span>
-               {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">{i18n.t('game.nextWaveIn')}: {(waveCountdown/60).toFixed(1)}s</span>}
-           </div>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{i18n.t('game.title')}</h1>
+            <button 
+              onClick={toggleLanguage}
+              className="px-2 py-1 text-xs rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-colors"
+              title={i18n.t('game.language')}
+            >
+              {language === 'en' ? '中' : 'EN'}
+            </button>
+          </div>
+          {/* Home Button */}
+          <button
+            onClick={() => {
+              if (onGameEnd) {
+                onGameEnd({
+                  wave: game.wave,
+                  towersBuilt: game.towers.length,
+                  enemiesKilled: game.totalEnemiesKilled,
+                  moneyEarned: game.totalMoneyEarned
+                });
+              }
+            }}
+            className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            title={language === 'zh' ? '返回大廳' : 'Return to Lobby'}
+          >
+            <span>🏠</span>
+            <span>{language === 'zh' ? '返回大廳' : 'Home'}</span>
+          </button>
+          <div className="flex justify-between items-center mt-1 opacity-70 text-xs">
+              <span>{i18n.t('game.wave')}: {language === 'zh' && currentTheme.nameZh ? currentTheme.nameZh : currentTheme.name}</span>
+              {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">{i18n.t('game.nextWaveIn')}: {(waveCountdown/60).toFixed(1)}s</span>}
+          </div>
            {/* Environment Effects Info */}
            {(currentTheme.towerCooldownMultiplier || currentTheme.towerRangeMultiplier || currentTheme.towerDamageMultiplier || currentTheme.enemySpeedMultiplier || currentTheme.enemyHpMultiplier || currentTheme.moneyBonus) && (
              <div className="p-3 bg-slate-800/50 border-t border-slate-700">
