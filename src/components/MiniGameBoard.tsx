@@ -179,12 +179,53 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
   }, [tower]);
 
   const game = miniGameRef.current;
-  if (!game || !isReady || !game.path || game.path.length === 0) {
+  
+  // Debug logging
+  if (game) {
+    console.log('MiniGameBoard Render:', {
+      isReady,
+      hasPath: !!game.path,
+      pathLength: game.path?.length || 0,
+      hasMap: !!game.map,
+      mapLength: game.map?.length || 0,
+      towersCount: game.towers?.length || 0
+    });
+  }
+  
+  if (!game) {
     return (
-      <div className="flex items-center justify-center h-full text-slate-400">
+      <div className="flex items-center justify-center h-full text-slate-400" style={{ minHeight: height }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
+          <div>Initializing game engine...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-400" style={{ minHeight: height }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
           <div>Loading demo...</div>
+          {!game.path || game.path.length === 0 ? (
+            <div className="text-xs mt-2 text-slate-500">Initializing path...</div>
+          ) : (
+            <div className="text-xs mt-2 text-slate-500">Placing tower...</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
+  if (!game.path || game.path.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-400" style={{ minHeight: height }}>
+        <div className="text-center">
+          <div className="text-red-400 mb-2">⚠️</div>
+          <div>Path not found</div>
+          <div className="text-xs mt-2 text-slate-500">Unable to initialize demo</div>
         </div>
       </div>
     );
