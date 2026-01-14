@@ -2,16 +2,8 @@
 // Service for managing questions in PostgreSQL
 import * as db from './postgresDatabase';
 
-export interface Question {
-  id?: number | string; // Question ID
-  question: string;
-  options: string[];
-  correct: string;
-  questionSetId: string;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  category?: string;
-  createdAt?: string;
-}
+// Re-export the Question type from postgresDatabase for consistency
+export type Question = db.Question & { id?: number | string }; // Allow string for backward compatibility
 
 /**
  * Add a single question to PostgreSQL
