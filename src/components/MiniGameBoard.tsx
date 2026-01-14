@@ -24,7 +24,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
   height = DEMO_HEIGHT 
 }) => {
   const [tick, setTick] = useState(0);
-  const miniGameRef = useRef<typeof game | null>(null);
+  const miniGameRef = useRef<GameEngine | null>(null);
   const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
