@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // This exposes the app to the network
-    port: 5174  // (Optional) Forces port 5173
+    port: 5173  // Default Vite port
   },
   resolve: {
     dedupe: ['react', 'react-dom']
