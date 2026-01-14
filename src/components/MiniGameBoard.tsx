@@ -1,8 +1,7 @@
 // src/components/MiniGameBoard.tsx
 // Simplified Mini GameBoard for tower live demo - standalone implementation
 import React, { useEffect, useRef, useState } from 'react';
-import { TOWERS, ENEMY_TYPES } from '../engine/data';
-import { ROWS, COLS } from '../engine/MapGenerator';
+import { ENEMY_TYPES } from '../engine/data';
 import type { TowerStats } from '../engine/types';
 
 const TILE_SIZE = 30;
