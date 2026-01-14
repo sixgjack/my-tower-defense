@@ -42,6 +42,13 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     // The GameEngine constructor calls startNewGame() which should initialize map and path synchronously
     // But we'll add a small delay to ensure everything is ready
     const initTower = () => {
+      console.log('MiniGameBoard: initTower called', {
+        hasPath: !!miniGame.path,
+        pathLength: miniGame.path?.length || 0,
+        hasMap: !!miniGame.map,
+        mapLength: miniGame.map?.length || 0
+      });
+      
       // Force a few ticks to ensure path is calculated
       for (let i = 0; i < 5; i++) {
         miniGame.tick();
@@ -49,6 +56,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
       
       // Check if path is ready
       if (miniGame.path && miniGame.path.length > 0 && miniGame.map && miniGame.map.length > 0) {
+        console.log('MiniGameBoard: Path ready, placing tower');
         // Place the tower near the path but not on it
         // Find a valid spot near the middle of the path
         const midPathIndex = Math.floor(miniGame.path.length / 2);
@@ -98,17 +106,21 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
         
         // Find tower key and place tower
         const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+        console.log('MiniGameBoard: Tower key found?', !!towerKey, 'Found spot?', foundSpot);
+        
         if (towerKey && foundSpot) {
           miniGame.requestBuildTower(towerR, towerC, towerKey);
           miniGame.confirmAction();
+          console.log('MiniGameBoard: Tower placed at', towerR, towerC, 'Towers count:', miniGame.towers.length);
           setIsReady(true);
         } else {
           // If we can't find a spot, set ready anyway (tower might not show but demo will render)
-          console.warn('MiniGameBoard: Could not find valid spot for tower');
+          console.warn('MiniGameBoard: Could not find valid spot for tower', { towerKey, foundSpot });
           setIsReady(true);
         }
       } else {
         // Path not ready, try again after a short delay
+        console.log('MiniGameBoard: Path not ready, retrying...');
         setTimeout(initTower, 100);
       }
     };
@@ -164,7 +176,7 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
       cancelAnimationFrame(frameId);
       clearInterval(spawnInterval);
     };
-  }, [tower, isReady]);
+  }, [tower]);
 
   const game = miniGameRef.current;
   if (!game || !isReady || !game.path || game.path.length === 0) {
