@@ -1,8 +1,7 @@
 // src/components/LuckyDraw.tsx
 import React, { useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
-import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import * as db from '../services/postgresDatabase';
 import { TOWERS } from '../engine/data';
 
 interface LuckyDrawProps {
@@ -74,22 +73,25 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
 
     // Update credits and unlock tower
     try {
-      const statusRef = doc(db, 'students', user.uid);
-      const statusSnap = await getDoc(statusRef);
+      const statusResult = await db.getStudentStatus(user.uid);
       
-      if (statusSnap.exists()) {
-        const currentStatus = statusSnap.data();
+      if (statusResult.success && statusResult.data) {
+        const currentStatus = statusResult.data;
         const unlockedTowers = currentStatus.unlockedTowers || [];
         
         if (!unlockedTowers.includes(towerKey)) {
-          await updateDoc(statusRef, {
-            credits: increment(-DRAW_COST),
+          await db.updateStudentStatus(user.uid, {
+            increment: {
+              credits: -DRAW_COST
+            },
             unlockedTowers: [...unlockedTowers, towerKey]
           });
           await onStatusUpdate();
         } else {
-          await updateDoc(statusRef, {
-            credits: increment(-DRAW_COST)
+          await db.updateStudentStatus(user.uid, {
+            increment: {
+              credits: -DRAW_COST
+            }
           });
           await onStatusUpdate();
         }
