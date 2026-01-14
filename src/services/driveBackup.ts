@@ -25,7 +25,7 @@ async function getGapiClient(): Promise<any> {
         (window as any).gapi.client
           .init({
             apiKey: import.meta.env.VITE_GOOGLE_API_KEY || '',
-            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '853641374592-pals90c6l8pek49hoqjm7qkt63pd3b8u.apps.googleusercontent.com',
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
             scope: 'https://www.googleapis.com/auth/drive.file'
           })
