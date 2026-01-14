@@ -1,12 +1,12 @@
 // src/components/LuckyDraw.tsx
 import React, { useState } from 'react';
-import type { User } from 'firebase/auth';
+import type { GoogleUser } from '../services/googleAuth';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TOWERS } from '../engine/data';
 
 interface LuckyDrawProps {
-  user: User;
+  user: GoogleUser;
   credits: number;
   onBack: () => void;
   onStatusUpdate: () => Promise<void>;
