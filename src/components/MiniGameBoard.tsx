@@ -39,49 +39,82 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     miniGameRef.current = miniGame;
     
     // Wait for map generation, then place tower
-    // Use a longer timeout and check if path is ready
-    let initAttempts = 0;
-    const maxAttempts = 50; // Maximum 5 seconds of attempts
-    
+    // The GameEngine constructor calls startNewGame() which should initialize map and path synchronously
+    // But we'll add a small delay to ensure everything is ready
     const initTower = () => {
-      initAttempts++;
+      // Force a few ticks to ensure path is calculated
+      for (let i = 0; i < 5; i++) {
+        miniGame.tick();
+      }
       
       // Check if path is ready
       if (miniGame.path && miniGame.path.length > 0 && miniGame.map && miniGame.map.length > 0) {
         // Place the tower near the path but not on it
-        let towerR = Math.floor(ROWS / 2);
-        let towerC = Math.floor(COLS / 2);
+        // Find a valid spot near the middle of the path
+        const midPathIndex = Math.floor(miniGame.path.length / 2);
+        const midPathPoint = miniGame.path[midPathIndex];
         
-        // Try to find a spot near the path but not on it
-        let attempts = 0;
-        while (attempts < 20) {
-          const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
-          const isObstacle = miniGame.map[towerR] && miniGame.map[towerR][towerC] === 'X';
-          if (!isOnPath && !isObstacle) break;
-          towerR = Math.floor(Math.random() * ROWS);
-          towerC = Math.floor(Math.random() * COLS);
-          attempts++;
+        let towerR = midPathPoint.r;
+        let towerC = midPathPoint.c;
+        
+        // Try positions around the path point
+        const offsets = [
+          [-1, -1], [-1, 0], [-1, 1],
+          [0, -1],           [0, 1],
+          [1, -1],  [1, 0],  [1, 1]
+        ];
+        
+        let foundSpot = false;
+        for (const [dr, dc] of offsets) {
+          const testR = towerR + dr;
+          const testC = towerC + dc;
+          
+          if (testR >= 0 && testR < ROWS && testC >= 0 && testC < COLS) {
+            const isOnPath = miniGame.path.some(p => p.r === testR && p.c === testC);
+            const isObstacle = miniGame.map[testR] && miniGame.map[testR][testC] === 'X';
+            
+            if (!isOnPath && !isObstacle && miniGame.map[testR][testC] === 0) {
+              towerR = testR;
+              towerC = testC;
+              foundSpot = true;
+              break;
+            }
+          }
         }
         
-        // Find tower key
+        // If no spot found, try random positions
+        if (!foundSpot) {
+          for (let attempts = 0; attempts < 50; attempts++) {
+            towerR = Math.floor(Math.random() * ROWS);
+            towerC = Math.floor(Math.random() * COLS);
+            const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
+            const isObstacle = miniGame.map[towerR] && miniGame.map[towerR][towerC] === 'X';
+            if (!isOnPath && !isObstacle && miniGame.map[towerR][towerC] === 0) {
+              foundSpot = true;
+              break;
+            }
+          }
+        }
+        
+        // Find tower key and place tower
         const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
-        if (towerKey) {
+        if (towerKey && foundSpot) {
           miniGame.requestBuildTower(towerR, towerC, towerKey);
           miniGame.confirmAction();
+          setIsReady(true);
+        } else {
+          // If we can't find a spot, set ready anyway (tower might not show but demo will render)
+          console.warn('MiniGameBoard: Could not find valid spot for tower');
+          setIsReady(true);
         }
-        setIsReady(true);
-      } else if (initAttempts < maxAttempts) {
-        // Path not ready yet, try again
-        setTimeout(initTower, 100);
       } else {
-        // Give up after max attempts - set ready anyway to show something
-        console.warn('MiniGameBoard: Failed to initialize path after', maxAttempts, 'attempts');
-        setIsReady(true);
+        // Path not ready, try again after a short delay
+        setTimeout(initTower, 100);
       }
     };
     
-    // Start initialization after a short delay
-    setTimeout(initTower, 300);
+    // Start initialization after a short delay to ensure GameEngine is fully initialized
+    setTimeout(initTower, 100);
 
     // Game loop
     let frameId: number;
