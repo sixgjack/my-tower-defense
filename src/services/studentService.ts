@@ -1,8 +1,7 @@
 // src/services/studentService.ts
 // Service to manage student data and game statistics
 
-import { doc, updateDoc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import * as db from './postgresDatabase';
 
 export interface GameResult {
   wave: number;
@@ -10,6 +9,18 @@ export interface GameResult {
   moneyEarned: number;
   towersBuilt: number;
   encounteredEnemies?: string[]; // Array of enemy type names encountered
+}
+
+export interface StudentStatus {
+  userId: string;
+  totalGames: number;
+  totalWaves: number;
+  totalEnemiesKilled: number;
+  totalMoneyEarned: number;
+  highestWave: number;
+  credits: number;
+  unlockedTowers: string[];
+  lastPlayed: string;
 }
 
 /**
@@ -20,26 +31,26 @@ export async function updateStudentStatusAfterGame(
   gameResult: GameResult
 ): Promise<void> {
   try {
-    const statusRef = doc(db, 'students', userId);
-    const statusSnap = await getDoc(statusRef);
-
-    if (!statusSnap.exists()) {
-      console.error('Student status document does not exist');
+    // Get current status
+    const currentStatusResult = await db.getStudentStatus(userId);
+    if (!currentStatusResult.success || !currentStatusResult.data) {
+      console.error('Student status does not exist');
       return;
     }
 
-    const currentStatus = statusSnap.data();
+    const currentStatus = currentStatusResult.data;
     const creditsEarned = Math.floor(gameResult.moneyEarned / 10); // 1 credit per 10 money earned
     const isNewHighWave = gameResult.wave > (currentStatus.highestWave || 0);
 
-    await updateDoc(statusRef, {
-      totalGames: increment(1),
-      totalWaves: increment(gameResult.wave),
-      totalEnemiesKilled: increment(gameResult.enemiesKilled),
-      totalMoneyEarned: increment(gameResult.moneyEarned),
-      credits: increment(creditsEarned),
-      highestWave: isNewHighWave ? gameResult.wave : currentStatus.highestWave,
-      lastPlayed: serverTimestamp()
+    await db.updateStudentStatus(userId, {
+      increment: {
+        totalGames: 1,
+        totalWaves: gameResult.wave,
+        totalEnemiesKilled: gameResult.enemiesKilled,
+        totalMoneyEarned: gameResult.moneyEarned,
+        credits: creditsEarned,
+        highestWave: isNewHighWave ? gameResult.wave : 0
+      }
     });
   } catch (error) {
     console.error('Error updating student status:', error);
@@ -50,17 +61,25 @@ export async function updateStudentStatusAfterGame(
 /**
  * Get student status
  */
-export async function getStudentStatus(userId: string) {
+export async function getStudentStatus(userId: string): Promise<StudentStatus | null> {
   try {
-    const statusRef = doc(db, 'students', userId);
-    const statusSnap = await getDoc(statusRef);
-    
-    if (statusSnap.exists()) {
-      return statusSnap.data();
+    const result = await db.getStudentStatus(userId);
+    if (!result.success || !result.data) {
+      return null;
     }
-    return null;
+    return result.data;
   } catch (error) {
     console.error('Error getting student status:', error);
     throw error;
+  }
+}
+
+/**
+ * Create student status
+ */
+export async function createStudentStatus(userId: string, initialData: Partial<StudentStatus> = {}): Promise<void> {
+  const result = await db.createStudentStatus(userId, initialData);
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to create student status');
   }
 }

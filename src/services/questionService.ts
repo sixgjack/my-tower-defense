@@ -1,138 +1,77 @@
 // src/services/questionService.ts
-// Service for managing questions in Firebase
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
-import { db } from '../firebase';
+// Service for managing questions in PostgreSQL
+import * as db from './postgresDatabase';
 
 export interface Question {
-  id?: string; // Document ID (optional, auto-generated if not provided)
+  id?: number | string; // Question ID
   question: string;
   options: string[];
   correct: string;
   questionSetId: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   category?: string;
-  createdAt?: any; // Firestore Timestamp
+  createdAt?: string;
 }
 
 /**
- * Add a single question to Firestore
+ * Add a single question to PostgreSQL
  */
 export const addQuestion = async (question: Omit<Question, 'id' | 'createdAt'>): Promise<string> => {
-  try {
-    const docRef = await addDoc(collection(db, 'questions'), {
-      ...question,
-      createdAt: new Date()
-    });
-    return docRef.id;
-  } catch (error) {
-    console.error('Error adding question:', error);
-    throw error;
+  const result = await db.addQuestion(question);
+  if (!result.success || result.data === undefined) {
+    throw new Error(result.error || 'Failed to add question');
   }
+  return String(result.data);
 };
 
 /**
- * Bulk import questions to Firestore
+ * Bulk import questions to PostgreSQL
  */
 export const bulkImportQuestions = async (questions: Omit<Question, 'id' | 'createdAt'>[]): Promise<{ success: number; failed: number; errors: string[] }> => {
-  const batch = writeBatch(db);
-  let success = 0;
-  let failed = 0;
-  const errors: string[] = [];
-
-  // Process in batches of 500 (Firestore limit)
-  const batchSize = 500;
-  for (let i = 0; i < questions.length; i += batchSize) {
-    const batchQuestions = questions.slice(i, i + batchSize);
-    
-    try {
-      batchQuestions.forEach((question) => {
-        // Validate question
-        if (!question.question || !question.options || !question.correct || !question.questionSetId) {
-          failed++;
-          errors.push(`Invalid question at index ${i + batchQuestions.indexOf(question)}: Missing required fields`);
-          return;
-        }
-
-        if (!question.options.includes(question.correct)) {
-          failed++;
-          errors.push(`Invalid question: Correct answer "${question.correct}" not in options`);
-          return;
-        }
-
-        const docRef = doc(collection(db, 'questions'));
-        batch.set(docRef, {
-          ...question,
-          createdAt: new Date()
-        });
-        success++;
-      });
-
-      await batch.commit();
-    } catch (error: any) {
-      failed += batchQuestions.length;
-      errors.push(`Batch error: ${error.message}`);
-    }
-  }
-
-  return { success, failed, errors };
+  return db.bulkImportQuestions(questions);
 };
 
 /**
- * Get all questions from Firestore
+ * Get all questions from PostgreSQL
  */
 export const getAllQuestions = async (): Promise<Question[]> => {
-  try {
-    const querySnapshot = await getDocs(collection(db, 'questions'));
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Question));
-  } catch (error) {
-    console.error('Error fetching questions:', error);
-    throw error;
+  const result = await db.getAllQuestions();
+  if (!result.success || !result.data) {
+    throw new Error(result.error || 'Failed to fetch questions');
   }
+  return result.data;
 };
 
 /**
  * Get questions by questionSetId
  */
 export const getQuestionsBySet = async (questionSetId: string): Promise<Question[]> => {
-  try {
-    const q = query(collection(db, 'questions'), where('questionSetId', '==', questionSetId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Question));
-  } catch (error) {
-    console.error('Error fetching questions by set:', error);
-    throw error;
+  const result = await db.getQuestionsBySet(questionSetId);
+  if (!result.success || !result.data) {
+    throw new Error(result.error || 'Failed to fetch questions');
   }
+  return result.data;
 };
 
 /**
  * Update a question
  */
-export const updateQuestion = async (questionId: string, updates: Partial<Question>): Promise<void> => {
-  try {
-    const questionRef = doc(db, 'questions', questionId);
-    await updateDoc(questionRef, updates);
-  } catch (error) {
-    console.error('Error updating question:', error);
-    throw error;
+export const updateQuestion = async (questionId: string | number, updates: Partial<Question>): Promise<void> => {
+  const id = typeof questionId === 'string' ? parseInt(questionId, 10) : questionId;
+  const result = await db.updateQuestion(id, updates);
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to update question');
   }
 };
 
 /**
  * Delete a question
  */
-export const deleteQuestion = async (questionId: string): Promise<void> => {
-  try {
-    const questionRef = doc(db, 'questions', questionId);
-    await deleteDoc(questionRef);
-  } catch (error) {
-    console.error('Error deleting question:', error);
-    throw error;
+export const deleteQuestion = async (questionId: string | number): Promise<void> => {
+  const id = typeof questionId === 'string' ? parseInt(questionId, 10) : questionId;
+  const result = await db.deleteQuestion(id);
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to delete question');
   }
 };
 
@@ -140,17 +79,6 @@ export const deleteQuestion = async (questionId: string): Promise<void> => {
  * Delete all questions (use with caution!)
  */
 export const deleteAllQuestions = async (): Promise<void> => {
-  try {
-    const querySnapshot = await getDocs(collection(db, 'questions'));
-    const batch = writeBatch(db);
-    
-    querySnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    
-    await batch.commit();
-  } catch (error) {
-    console.error('Error deleting all questions:', error);
-    throw error;
-  }
+  const allQuestions = await getAllQuestions();
+  await Promise.all(allQuestions.map(q => deleteQuestion(q.id!)));
 };

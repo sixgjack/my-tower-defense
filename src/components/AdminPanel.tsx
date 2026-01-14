@@ -138,7 +138,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
     }
   };
 
-  const handleDelete = async (questionId: string) => {
+  const handleDelete = async (questionId: string | number) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     setLoading(true);
