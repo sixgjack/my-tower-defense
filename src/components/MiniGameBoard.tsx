@@ -6,6 +6,7 @@ import { TOWERS, ENEMY_TYPES } from '../engine/data';
 import { ROWS, COLS } from '../engine/MapGenerator';
 import type { TowerStats } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
+import { effectManager } from '../engine/EffectManager';
 
 const TILE_SIZE = 30; // Smaller for demo
 const DEMO_WIDTH = 500;
@@ -159,8 +160,22 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
           const stats = TOWERS[t.key];
           const x = t.c * TILE_SIZE + TILE_SIZE / 2;
           const y = t.r * TILE_SIZE + TILE_SIZE / 2;
+          const auraColor = effectManager.getTowerAuraColor(t);
           return (
             <g key={t.id}>
+              {/* Status Effect Aura */}
+              {auraColor && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={TILE_SIZE * 0.8}
+                  fill="none"
+                  stroke={auraColor}
+                  strokeWidth="2"
+                  opacity="0.6"
+                  className="animate-pulse"
+                />
+              )}
               {/* Range circle */}
               <circle
                 cx={x}
@@ -188,6 +203,20 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
               >
                 {stats.icon}
               </text>
+              {/* Healing/Buff effect */}
+              {(stats.description.includes('Heal') || stats.description.includes('Medic')) && (
+                <text
+                  x={x + TILE_SIZE / 2}
+                  y={y - TILE_SIZE / 2}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={TILE_SIZE / 3}
+                  fill="#10b981"
+                  className="animate-pulse"
+                >
+                  +
+                </text>
+              )}
             </g>
           );
         })}
@@ -196,8 +225,22 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
         {game.enemies.map(e => {
           const x = (e.c + (e.xOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
           const y = (e.r + (e.yOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
+          const auraColor = effectManager.getEnemyAuraColor(e);
           return (
             <g key={e.id}>
+              {/* Status Effect Aura */}
+              {auraColor && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={TILE_SIZE * 0.6}
+                  fill="none"
+                  stroke={auraColor}
+                  strokeWidth="2"
+                  opacity="0.7"
+                  className="animate-pulse"
+                />
+              )}
               <circle
                 cx={x}
                 cy={y}
@@ -256,6 +299,27 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
             </text>
           </g>
         ))}
+
+        {/* Particles */}
+        {game.particles.map(p => {
+          if (p.type === 'text') {
+            return (
+              <text
+                key={p.id}
+                x={p.x}
+                y={p.y + (p.maxLife - p.life) * (p.vy || 0)}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={16 * (p.scale || 1)}
+                fill={p.color}
+                opacity={p.life / p.maxLife}
+              >
+                {p.text}
+              </text>
+            );
+          }
+          return null;
+        })}
 
         {/* Projectiles */}
         {game.projectiles.map(p => (
