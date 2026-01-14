@@ -1,10 +1,14 @@
 // src/components/MiniGameBoard.tsx
-// Simplified Mini GameBoard for tower live demo - standalone implementation
+// Mini version of GameBoard for tower live demo - uses actual GameEngine
 import React, { useEffect, useRef, useState } from 'react';
-import { ENEMY_TYPES } from '../engine/data';
+import { game } from '../engine/GameEngine';
+import { TOWERS, ENEMY_TYPES } from '../engine/data';
+import { ROWS, COLS } from '../engine/MapGenerator';
 import type { TowerStats } from '../engine/types';
+import { ProjectileRenderer } from './ProjectileRenderer';
+import { effectManager } from '../engine/EffectManager';
 
-const TILE_SIZE = 30;
+const TILE_SIZE = 20; // Much smaller for demo
 const DEMO_WIDTH = 500;
 const DEMO_HEIGHT = 300;
 
@@ -14,262 +18,339 @@ interface MiniGameBoardProps {
   height?: number;
 }
 
-interface Enemy {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  icon: string;
-  color: string;
-  progress: number; // 0 to 1 along path
-}
-
-interface Projectile {
-  id: number;
-  x: number;
-  y: number;
-  tx: number;
-  ty: number;
-  progress: number;
-  color: string;
-  style: string;
-}
-
 export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({ 
   tower, 
   width = DEMO_WIDTH, 
   height = DEMO_HEIGHT 
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [enemies, setEnemies] = useState<Enemy[]>([]);
-  const [projectiles, setProjectiles] = useState<Projectile[]>([]);
-  const [towerPos] = useState({ x: width / 2, y: height / 2 });
-  const lastShotTime = useRef<number>(0);
+  const [tick, setTick] = useState(0);
+  const miniGameRef = useRef<typeof game | null>(null);
   const animationFrameRef = useRef<number>(0);
 
-  // Simple path: left to right
-  const path = [
-    { x: 0, y: height / 2 },
-    { x: width / 2 - 50, y: height / 2 },
-    { x: width / 2 + 50, y: height / 2 },
-    { x: width, y: height / 2 }
-  ];
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // Create a new game instance for the demo
+    const { GameEngine } = require('../engine/GameEngine');
+    const miniGame = new GameEngine();
+    miniGame.money = 10000;
+    miniGame.lives = 100;
+    miniGameRef.current = miniGame;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    // Spawn enemies periodically
-    const spawnEnemy = () => {
-      if (enemies.length < 2) {
-        const enemyType = ENEMY_TYPES[0] || ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
-        if (enemyType) {
-          setEnemies(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            x: path[0].x,
-            y: path[0].y,
-            hp: 100,
-            maxHp: 100,
-            icon: enemyType.icon,
-            color: enemyType.color,
-            progress: 0
-          }]);
+    // Place tower in center after map is ready
+    const placeTower = () => {
+      if (miniGame.path && miniGame.path.length > 0 && miniGame.map && miniGame.map.length > 0) {
+        const centerR = Math.floor(ROWS / 2);
+        const centerC = Math.floor(COLS / 2);
+        
+        // Find a valid spot near center
+        let towerR = centerR;
+        let towerC = centerC;
+        let attempts = 0;
+        
+        while (attempts < 50) {
+          const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
+          const isObstacle = miniGame.map[towerR] && miniGame.map[towerR][towerC] === 'X';
+          if (!isOnPath && !isObstacle && miniGame.map[towerR] && miniGame.map[towerR][towerC] === 0) {
+            break;
+          }
+          towerR = centerR + Math.floor((Math.random() - 0.5) * 4);
+          towerC = centerC + Math.floor((Math.random() - 0.5) * 4);
+          towerR = Math.max(1, Math.min(ROWS - 2, towerR));
+          towerC = Math.max(1, Math.min(COLS - 2, towerC));
+          attempts++;
         }
+
+        const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+        if (towerKey) {
+          miniGame.requestBuildTower(towerR, towerC, towerKey);
+          miniGame.confirmAction();
+        }
+      } else {
+        setTimeout(placeTower, 100);
       }
     };
 
-    // Initial spawn
-    spawnEnemy();
-    const spawnInterval = setInterval(spawnEnemy, 3000);
+    // Start placing tower after a short delay
+    setTimeout(placeTower, 200);
 
     // Game loop
-    const animate = () => {
-      if (!ctx) return;
-
-      // Clear canvas
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, width, height);
-
-      // Draw grid
-      ctx.strokeStyle = 'rgba(100, 100, 100, 0.1)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < width; x += TILE_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
+    const loop = () => {
+      if (miniGameRef.current) {
+        miniGameRef.current.tick();
+        setTick(prev => prev + 1);
       }
-      for (let y = 0; y < height; y += TILE_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-
-      // Draw path
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        ctx.lineTo(path[i].x, path[i].y);
-      }
-      ctx.stroke();
-
-      // Update and draw enemies
-      setEnemies(prev => {
-        const updated = prev.map(enemy => {
-          // Move enemy along path
-          const newProgress = Math.min(1, enemy.progress + 0.005);
-          const pathIndex = Math.floor(newProgress * (path.length - 1));
-          const segmentProgress = (newProgress * (path.length - 1)) % 1;
-          
-          const start = path[pathIndex];
-          const end = path[Math.min(pathIndex + 1, path.length - 1)];
-          const x = start.x + (end.x - start.x) * segmentProgress;
-          const y = start.y + (end.y - start.y) * segmentProgress;
-
-          return { ...enemy, x, y, progress: newProgress };
-        }).filter(e => e.progress < 1); // Remove enemies that reached the end
-
-        return updated;
-      });
-
-      // Draw enemies
-      enemies.forEach(enemy => {
-        // Enemy circle
-        ctx.fillStyle = enemy.color;
-        ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, 12, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Enemy icon
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(enemy.icon, enemy.x, enemy.y);
-
-        // HP bar
-        const barWidth = 30;
-        const barHeight = 4;
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 20, barWidth, barHeight);
-        ctx.fillStyle = '#22c55e';
-        ctx.fillRect(enemy.x - barWidth / 2, enemy.y - 20, (enemy.hp / enemy.maxHp) * barWidth, barHeight);
-      });
-
-      // Tower shooting logic
-      const now = Date.now();
-      const cooldown = tower.cooldown || 50;
-      
-      enemies.forEach(enemy => {
-        const dist = Math.sqrt((enemy.x - towerPos.x) ** 2 + (enemy.y - towerPos.y) ** 2);
-        const range = (tower.range || 2.5) * TILE_SIZE;
-
-        if (dist <= range && now - lastShotTime.current > cooldown) {
-          // Create projectile
-          const projectile: Projectile = {
-            id: Date.now() + Math.random(),
-            x: towerPos.x,
-            y: towerPos.y,
-            tx: enemy.x,
-            ty: enemy.y,
-            progress: 0,
-            color: tower.color || '#3b82f6',
-            style: tower.projectileStyle || 'dot'
-          };
-          
-          setProjectiles(prev => [...prev, projectile]);
-          lastShotTime.current = now;
-
-          // Apply damage
-          const damage = tower.damage || 10;
-          setEnemies(prev => prev.map(e => 
-            e.id === enemy.id 
-              ? { ...e, hp: Math.max(0, e.hp - damage) }
-              : e
-          ));
-        }
-      });
-
-      // Update and draw projectiles
-      setProjectiles(prev => {
-        return prev.map(proj => {
-          const newProgress = Math.min(1, proj.progress + 0.1);
-          const x = proj.x + (proj.tx - proj.x) * newProgress;
-          const y = proj.y + (proj.ty - proj.y) * newProgress;
-          return { ...proj, progress: newProgress, x, y };
-        }).filter(p => p.progress < 1);
-      });
-
-      // Draw projectiles
-      projectiles.forEach(proj => {
-        ctx.fillStyle = proj.color;
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Add trail effect
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-      });
-
-      // Draw tower
-      const towerRange = (tower.range || 2.5) * TILE_SIZE;
-      ctx.strokeStyle = tower.color || '#3b82f6';
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.2;
-      ctx.beginPath();
-      ctx.arc(towerPos.x, towerPos.y, towerRange, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1.0;
-
-      ctx.fillStyle = tower.color || '#3b82f6';
-      ctx.beginPath();
-      ctx.arc(towerPos.x, towerPos.y, 15, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#fff';
-      ctx.font = '20px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(tower.icon || '🏰', towerPos.x, towerPos.y);
-
-      animationFrameRef.current = requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(loop);
     };
+    loop();
 
-    animate();
+    // Spawn enemies periodically
+    const spawnInterval = setInterval(() => {
+      if (miniGameRef.current && miniGameRef.current.path && miniGameRef.current.path.length > 0) {
+        if (miniGameRef.current.enemies.length < 3) {
+          const start = miniGameRef.current.path[0];
+          const enemyType = ENEMY_TYPES[0];
+          if (enemyType) {
+            miniGameRef.current.enemies.push({
+              id: Date.now() + Math.random(),
+              pathIndex: 0,
+              progress: 0,
+              r: start.r,
+              c: start.c,
+              hp: 100,
+              maxHp: 100,
+              baseSpeed: 0.02,
+              speedMultiplier: 1,
+              icon: enemyType.icon,
+              color: enemyType.color,
+              reward: enemyType.reward,
+              scale: 1,
+              frozen: 0,
+              xOffset: 0,
+              yOffset: 0,
+              money: enemyType.reward,
+              damage: 0,
+              statusEffects: []
+            });
+          }
+        }
+      }
+    }, 2000);
 
     return () => {
       clearInterval(spawnInterval);
       cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [tower, width, height, enemies, projectiles, towerPos]);
+  }, [tower]);
 
-  // Remove dead enemies
-  useEffect(() => {
-    setEnemies(prev => prev.filter(e => e.hp > 0));
-  }, [enemies]);
+  const miniGame = miniGameRef.current;
+  if (!miniGame || !miniGame.path || miniGame.path.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-400" style={{ minHeight: height }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
+          <div>Loading demo...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const scaleX = width / (COLS * TILE_SIZE);
+  const scaleY = height / (ROWS * TILE_SIZE);
+  const scale = Math.min(scaleX, scaleY);
 
   return (
-    <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg border-2 border-slate-700 overflow-hidden" style={{ width, height }}>
-      <canvas
-        ref={canvasRef}
+    <div 
+      className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg border-2 border-slate-700 overflow-hidden"
+      style={{ width, height }}
+    >
+      <svg
         width={width}
         height={height}
         className="absolute inset-0"
-      />
+        style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
+      >
+        {/* Grid */}
+        <defs>
+          <pattern id="mini-grid" width={TILE_SIZE} height={TILE_SIZE} patternUnits="userSpaceOnUse">
+            <path d={`M ${TILE_SIZE} 0 L 0 0 0 ${TILE_SIZE}`} fill="none" stroke="rgba(100,100,100,0.1)" strokeWidth="1"/>
+          </pattern>
+        </defs>
+        <rect width={COLS * TILE_SIZE} height={ROWS * TILE_SIZE} fill="url(#mini-grid)" />
+
+        {/* Path */}
+        {miniGame.path.map((point, idx) => {
+          if (idx === 0) return null;
+          const prev = miniGame.path[idx - 1];
+          return (
+            <line
+              key={idx}
+              x1={prev.c * TILE_SIZE + TILE_SIZE / 2}
+              y1={prev.r * TILE_SIZE + TILE_SIZE / 2}
+              x2={point.c * TILE_SIZE + TILE_SIZE / 2}
+              y2={point.r * TILE_SIZE + TILE_SIZE / 2}
+              stroke="#475569"
+              strokeWidth="3"
+            />
+          );
+        })}
+
+        {/* Mines */}
+        {miniGame.mines.map(mine => (
+          <g key={mine.id}>
+            <circle
+              cx={mine.c * TILE_SIZE + TILE_SIZE / 2}
+              cy={mine.r * TILE_SIZE + TILE_SIZE / 2}
+              r={TILE_SIZE / 3}
+              fill="#f59e0b"
+              stroke="#dc2626"
+              strokeWidth="2"
+              opacity="0.8"
+            />
+            <text
+              x={mine.c * TILE_SIZE + TILE_SIZE / 2}
+              y={mine.r * TILE_SIZE + TILE_SIZE / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={TILE_SIZE / 2}
+            >
+              💣
+            </text>
+          </g>
+        ))}
+
+        {/* Towers */}
+        {miniGame.towers.map(t => {
+          const stats = TOWERS[t.key];
+          const x = t.c * TILE_SIZE + TILE_SIZE / 2;
+          const y = t.r * TILE_SIZE + TILE_SIZE / 2;
+          const auraColor = effectManager.getTowerAuraColor(t);
+
+          return (
+            <g key={t.id}>
+              {/* Status Effect Aura */}
+              {auraColor && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={TILE_SIZE * 0.8}
+                  fill="none"
+                  stroke={auraColor}
+                  strokeWidth="2"
+                  opacity="0.6"
+                  className="animate-pulse"
+                />
+              )}
+              {/* Range circle */}
+              <circle
+                cx={x}
+                cy={y}
+                r={stats.range * TILE_SIZE}
+                fill="none"
+                stroke={stats.color}
+                strokeWidth="1"
+                opacity="0.2"
+              />
+              {/* Tower */}
+              <circle
+                cx={x}
+                cy={y}
+                r={TILE_SIZE / 3}
+                fill={stats.color}
+                opacity="0.8"
+              />
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={TILE_SIZE / 2}
+              >
+                {stats.icon}
+              </text>
+              {/* Healing/Buff effect */}
+              {(stats.description.includes('Heal') || stats.description.includes('Medic')) && (
+                <text
+                  x={x + TILE_SIZE / 2}
+                  y={y - TILE_SIZE / 2}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={TILE_SIZE / 3}
+                  fill="#10b981"
+                  className="animate-pulse"
+                >
+                  +
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Enemies */}
+        {miniGame.enemies.map(e => {
+          const x = (e.c + (e.xOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
+          const y = (e.r + (e.yOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
+          const auraColor = effectManager.getEnemyAuraColor(e);
+
+          return (
+            <g key={e.id}>
+              {/* Status Effect Aura */}
+              {auraColor && (
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={TILE_SIZE * 0.6}
+                  fill="none"
+                  stroke={auraColor}
+                  strokeWidth="2"
+                  opacity="0.7"
+                  className="animate-pulse"
+                />
+              )}
+              <circle
+                cx={x}
+                cy={y}
+                r={TILE_SIZE / 4}
+                fill={e.color}
+                opacity="0.9"
+              />
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={TILE_SIZE / 2}
+              >
+                {e.icon}
+              </text>
+              {/* HP Bar */}
+              <rect
+                x={x - TILE_SIZE / 3}
+                y={y - TILE_SIZE / 2 - 5}
+                width={TILE_SIZE * 2 / 3}
+                height={3}
+                fill="#1a1a1a"
+              />
+              <rect
+                x={x - TILE_SIZE / 3}
+                y={y - TILE_SIZE / 2 - 5}
+                width={(e.hp / e.maxHp) * TILE_SIZE * 2 / 3}
+                height={3}
+                fill="#22c55e"
+              />
+            </g>
+          );
+        })}
+
+        {/* Particles */}
+        {miniGame.particles.map(p => {
+          if (p.type === 'text') {
+            return (
+              <text
+                key={p.id}
+                x={p.x * (TILE_SIZE / 60)}
+                y={p.y * (TILE_SIZE / 60) + (p.maxLife - p.life) * (p.vy || 0) * (TILE_SIZE / 60)}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={12 * (p.scale || 1) * (TILE_SIZE / 60)}
+                fill={p.color}
+                opacity={p.life / p.maxLife}
+              >
+                {p.text}
+              </text>
+            );
+          }
+          return null;
+        })}
+
+        {/* Projectiles */}
+        {miniGame.projectiles.map(p => (
+          <ProjectileRenderer
+            key={p.id}
+            projectile={p}
+            tileSize={TILE_SIZE}
+            tick={tick}
+          />
+        ))}
+      </svg>
     </div>
   );
 };
