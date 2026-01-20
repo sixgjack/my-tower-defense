@@ -1,4 +1,3 @@
-// src/engine/data.ts
 import type { TowerStats } from './types';
 
 export interface EnemyType {
