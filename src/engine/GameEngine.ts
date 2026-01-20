@@ -41,6 +41,12 @@ export class GameEngine {
   // Current Theme (for environmental effects)
   currentTheme: any = null;
   
+  // Active Buffs (from roguelike rewards)
+  activeBuffs: Array<{ buff: any; appliedAtWave: number; expiresAtWave?: number }> = [];
+  
+  // Buff Selection State
+  showBuffSelection: boolean = false;
+  
   // Support Tower Limits
   maxSupportTowers: number = 5; // Maximum number of support/healer towers
   supportTowerCount: number = 0; // Current count of support towers
@@ -79,6 +85,8 @@ export class GameEngine {
     this.isGameOver = false;
     this.totalMoneyEarned = 0;
     this.totalEnemiesKilled = 0;
+    this.activeBuffs = [];
+    this.showBuffSelection = false;
     
     // Initialize theme
     const themeIndex = Math.floor((this.wave - 1) / 10) % THEMES.length;
@@ -192,7 +200,86 @@ export class GameEngine {
       this.waveInProgress = false;
       this.wave++;
       this.waveCountdown = 240; // 4 seconds break between waves
+      
+      // Check for buff selection (every 3 waves, starting from wave 3)
+      if (this.wave > 1 && (this.wave - 1) % 3 === 0) {
+          this.showBuffSelection = true;
+      }
+      
+      // Clean up expired buffs
+      this.activeBuffs = this.activeBuffs.filter(b => {
+          if (b.buff.durationType === 'permanent') return true;
+          if (b.expiresAtWave && this.wave > b.expiresAtWave) return false;
+          return true;
+      });
+      
       // Optional: soundSystem.play('wave_clear');
+  }
+  
+  // Apply a selected buff
+  applyBuff(buff: any) {
+      this.activeBuffs.push({
+          buff,
+          appliedAtWave: this.wave,
+          expiresAtWave: buff.durationType === 'wave' && buff.waves 
+              ? this.wave + buff.waves 
+              : undefined
+      });
+      
+      // Apply immediate effects
+      if (buff.livesChange) {
+          this.lives = Math.max(0, this.lives + buff.livesChange);
+      }
+      
+      this.showBuffSelection = false;
+  }
+  
+  // Get active buff multipliers for towers
+  getTowerBuffMultipliers() {
+      const multipliers = {
+          damage: 1.0,
+          attackSpeed: 1.0,
+          range: 1.0,
+          money: 1.0
+      };
+      
+      for (const activeBuff of this.activeBuffs) {
+          const buff = activeBuff.buff;
+          if (buff.damageMultiplier) {
+              multipliers.damage *= (1 + buff.damageMultiplier);
+          }
+          if (buff.attackSpeedMultiplier) {
+              multipliers.attackSpeed *= (1 + buff.attackSpeedMultiplier);
+          }
+          if (buff.rangeMultiplier) {
+              multipliers.range *= (1 + buff.rangeMultiplier);
+          }
+          if (buff.moneyMultiplier) {
+              multipliers.money *= (1 + buff.moneyMultiplier);
+          }
+      }
+      
+      return multipliers;
+  }
+  
+  // Get active buff multipliers for enemies
+  getEnemyBuffMultipliers() {
+      const multipliers = {
+          speed: 1.0,
+          hp: 1.0
+      };
+      
+      for (const activeBuff of this.activeBuffs) {
+          const buff = activeBuff.buff;
+          if (buff.enemySpeedMultiplier) {
+              multipliers.speed *= (1 + buff.enemySpeedMultiplier);
+          }
+          if (buff.enemyHpMultiplier) {
+              multipliers.hp *= (1 + buff.enemyHpMultiplier);
+          }
+      }
+      
+      return multipliers;
   }
   
   spawnBossEnemy(isBigBoss: boolean, _isMiniBoss: boolean) {
@@ -393,8 +480,15 @@ export class GameEngine {
       hp *= this.currentTheme.enemyHpMultiplier;
     }
     
+    // Apply active buff multipliers to enemy HP
+    const enemyBuffs = this.getEnemyBuffMultipliers();
+    hp *= enemyBuffs.hp;
+    
     // Overall speed: slightly increased for better pacing (0.035)
-    const baseSpeed = 0.035 * stats.speed;
+    let baseSpeed = 0.035 * stats.speed;
+    
+    // Apply active buff multipliers to enemy speed
+    baseSpeed *= enemyBuffs.speed;
 
     this.enemies.push({ 
         id: Date.now() + Math.random(), 
@@ -436,6 +530,10 @@ export class GameEngine {
         if (this.currentTheme && this.currentTheme.enemySpeedMultiplier) {
           currentSpeed *= this.currentTheme.enemySpeedMultiplier;
         }
+        
+        // Apply active buff multipliers to enemy speed (for already spawned enemies)
+        const enemyBuffs = this.getEnemyBuffMultipliers();
+        currentSpeed *= enemyBuffs.speed;
         
         // Move along path
         enemy.progress += currentSpeed;
@@ -552,6 +650,10 @@ export class GameEngine {
         if (this.currentTheme && this.currentTheme.towerCooldownMultiplier) {
           effectiveCooldown *= this.currentTheme.towerCooldownMultiplier;
         }
+        
+        // Apply active buff multipliers (attack speed = inverse of cooldown)
+        const buffMultipliers = this.getTowerBuffMultipliers();
+        effectiveCooldown /= buffMultipliers.attackSpeed; // Faster attack = lower cooldown
         
         if (tower.cooldown > 0) tower.cooldown--;
         
@@ -1230,7 +1332,11 @@ export class GameEngine {
         reward += this.currentTheme.moneyBonus;
       }
       
-      this.money += reward;
+      // Apply active buff multipliers
+      const buffMultipliers = this.getTowerBuffMultipliers();
+      reward *= buffMultipliers.money;
+      
+      this.money += Math.floor(reward);
       this.totalMoneyEarned += reward;
       this.totalEnemiesKilled++;
       if(Math.random() > 0.5) this.addTextParticle(e.c, e.r, `+$${reward}`, "#fbbf24");

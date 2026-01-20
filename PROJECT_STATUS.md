@@ -14,18 +14,29 @@
 - **Enemies:** Basic movement with HP scaling.
 - **Render:** Canvas 2D rendering for performance (70+ towers capable).
 
+## Completed Features ✅
+- **Buff System**: Complete buff/debuff system with rarity tiers (common, rare, epic, legendary)
+  - `buffSystem.ts`: Core buff definitions and generation functions
+  - `themeEffects.ts`: Theme-based environmental effects (2-3 effects per theme)
+  - Buff types: damage, attack speed, range, money, enemy speed, enemy HP, lives
+  - Duration types: wave-based (3-10 waves) or permanent
+- **Theme Effects**: Dynamic environmental effects that change every 10 waves
+  - 20+ themes with unique visual styles
+  - Each theme generates 2-3 random buffs/debuffs
+  - Effects apply to towers or enemies based on type
+
 ## Known Issues / Next Steps
 - SoundSystem is currently a placeholder (console.log only).
 - Only tower types have 70 but only 5 stypes of projectiles, need more.
 - also towers are not getting upgraded dmg after upgrading
 - No visual "Game Over" screen (just console log / freeze).
 - develop more themes, at least 20+, and each theme should have some special envirmental effects, such as frosty theme will slow down turrents(shooting speed)
--very detailed effects mechcanism (you may refer to "effect mechcanism example.md")
--need more boss and enermies types at least 50+, with different abilitys, such as deactivating some towers, suddenly move from one side to other side, healing enermies ahead,
+- very detailed effects mechcanism (you may refer to "effect mechcanism example.md")
+- need more boss and enermies types at least 50+, with different abilitys, such as deactivating some towers, suddenly move from one side to other side, healing enermies ahead,
 - need to implement a entrance mobile gam like menu and allow students to establish their accounts with google SSO, also need to build a database to store questions(currently firebase) and students account and their status
 - need to build a ranking leader system
 - need to implement a tower introduction interface, some brief introduction about the tower, what the tower is capable of, and its ability, a instant demo of how the tower attacks the enermies, since i want everytime players can only pick 8 towers into the game
-- a rouge like ability picking menu every 5 waves, where players can 3 pick 1 options to slightly empower their towers, recover hearts, or sth like the game "hades"
+- **TODO: Implement 3-pick-1 roguelike buff selection UI** - The buff system is ready (`generateBuffChoices()` function exists), but the UI component for selecting buffs every 3 waves needs to be created
 - a credit system where player can get after every combat and they can unlock new towers
 - a lucky draw tower system, which may let players to draw some really overpowered towers, using credits earned from the combat
 
@@ -36,4 +47,4 @@ When editing this project:
 2. Do not remove the `MapGenerator` logic; it ensures valid paths.
 3. State is managed in `GameEngine`, not React state. React only re-renders the canvas.
 4. i might update what i want later on.
-- help me git push to my repository from time to time
+help me git push to my repository from upond every code update

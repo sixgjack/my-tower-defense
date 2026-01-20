@@ -5,6 +5,7 @@ import { TOWERS, THEMES } from '../engine/data';
 import { ROWS, COLS } from '../engine/MapGenerator';
 import { QuestionModal } from './QuestionModal';
 import { GameOverModal } from './GameOverModal';
+import { BuffSelectionModal } from './BuffSelectionModal';
 import { soundSystem } from '../engine/SoundSystem';
 import { effectManager } from '../engine/EffectManager';
 import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
@@ -112,6 +113,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
       if (game.isGameOver !== isGameOver) setIsGameOver(game.isGameOver);
       
       if (game.pendingAction && !isModalOpen) setIsModalOpen(true);
+      if (game.showBuffSelection && !showBuffSelection) setShowBuffSelection(true);
       
       // We still tick React to render projectiles/particles and handle spawn/death
       setTick(t => t + 1);
@@ -279,6 +281,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
       )}
 
       <QuestionModal isOpen={isModalOpen} onSuccess={() => { game.confirmAction(); setIsModalOpen(false); }} onClose={() => { game.cancelAction(); setIsModalOpen(false); }} theme={currentTheme.name} questionSetId={questionSetId} />
+      
+      <BuffSelectionModal 
+        isOpen={game.showBuffSelection || showBuffSelection}
+        onSelect={(buff) => {
+          game.applyBuff(buff);
+          setShowBuffSelection(false);
+        }}
+        wave={wave}
+      />
       
       <GameOverModal 
         isOpen={isGameOver}
