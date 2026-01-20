@@ -27,8 +27,8 @@
 
 ## Known Issues / Next Steps
 - SoundSystem is currently a placeholder (console.log only).
-- Only tower types have 70 but only 5 stypes of projectiles, need more.
-- also towers are not getting upgraded dmg after upgrading
+- ✅ Enhanced: Added more diverse projectile styles across towers (energy, plasma, crystal, acid, dart, shuriken, spear, disc, star, bolt, void, holy, dark, etc.)
+- ✅ Fixed: Tower upgrade damage now correctly applies level multipliers
 - No visual "Game Over" screen (just console log / freeze).
 - develop more themes, at least 20+, and each theme should have some special envirmental effects, such as frosty theme will slow down turrents(shooting speed)
 - very detailed effects mechcanism (you may refer to "effect mechcanism example.md")
@@ -36,7 +36,11 @@
 - need to implement a entrance mobile gam like menu and allow students to establish their accounts with google SSO, also need to build a database to store questions(currently firebase) and students account and their status
 - need to build a ranking leader system
 - need to implement a tower introduction interface, some brief introduction about the tower, what the tower is capable of, and its ability, a instant demo of how the tower attacks the enermies, since i want everytime players can only pick 8 towers into the game
+<<<<<<< Current (Your changes)
 - **TODO: Implement 3-pick-1 roguelike buff selection UI** - The buff system is ready (`generateBuffChoices()` function exists), but the UI component for selecting buffs every 3 waves needs to be created
+=======
+- ✅ **3-pick-1 Roguelike Buff Selection**: Complete implementation with UI modal, triggers every 3 waves, applies buffs to towers/enemies
+>>>>>>> Incoming (Background Agent changes)
 - a credit system where player can get after every combat and they can unlock new towers
 - a lucky draw tower system, which may let players to draw some really overpowered towers, using credits earned from the combat
 

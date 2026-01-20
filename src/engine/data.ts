@@ -454,7 +454,7 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'area', color: '#8b5cf6', icon: '🌀',
     description: 'Electromagnetic pulse disables multiple targets at once.',
     areaRadius: 2.0,
-    projectileStyle: 'fire'
+    projectileStyle: 'plasma'
   },
   'MORTAR': {
     name: 'Artillery Battery', cost: 350, damage: 81, range: 4.5, cooldown: 200,
@@ -509,7 +509,7 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#020617', icon: '⚫',
     description: 'Electromagnetic projectile pierces through enemies with burn effect.',
     burnDamage: 20,
-    projectileStyle: 'fire',
+    projectileStyle: 'bolt',
     specialAbility: 'aoe',
     areaRadius: 1.0,
     maxHp: 300
@@ -524,7 +524,7 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Repair Station', cost: 2000, damage: 16, range: 1.6, cooldown: 30,
     type: 'projectile', color: '#a3e635', icon: '🔨',
     description: 'Maintains and repairs nearby structures. Can defend itself.',
-    projectileStyle: 'bullet'
+    projectileStyle: 'crystal'
   },
 
   // ==========================================
@@ -535,7 +535,7 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#ef4444', icon: '🚀',
     description: 'Rapid-fire missile barrage. Overwhelms enemies with volume.',
     projectileSpeed: 0.9,
-    projectileStyle: 'dot'
+    projectileStyle: 'energy'
   },
   'SCHWARZ': {
     name: 'Anti-Tank Rifle', cost: 650, damage: 310, range: 2.4, cooldown: 150,
@@ -613,7 +613,7 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Poison Launcher', cost: 350, damage: 27, range: 3.2, cooldown: 50,
     type: 'projectile', color: '#14b8a6', icon: '🐍',
     description: 'Toxic projectiles deal damage over time to enemies.',
-    projectileStyle: 'poison'
+    projectileStyle: 'acid'
   },
   'CEOBE': {
     name: 'Axe Launcher', cost: 400, damage: 39, range: 2.8, cooldown: 35,
@@ -672,7 +672,7 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Dragon Cannon', cost: 700, damage: 77, range: 1.3, cooldown: 70,
     type: 'aura', color: '#b91c1c', icon: '🐉',
     description: 'Mythical energy aura provides impenetrable defense.',
-    projectileStyle: 'fire'
+    projectileStyle: 'magic'
   },
   'CAIRN': {
     name: 'Shield Generator', cost: 480, damage: 39, range: 1.3, cooldown: 50,
@@ -713,13 +713,13 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Chain Saw', cost: 600, damage: 85, range: 1.6, cooldown: 20,
     type: 'aura', color: '#ea580c', icon: '⚙️',
     description: 'Continuous area damage. Constantly shreds enemies nearby.',
-    projectileStyle: 'fire'
+    projectileStyle: 'saw'
   },
   'VARKARIS': {
     name: 'Multi-Target System', cost: 450, damage: 70, range: 1.3, cooldown: 50,
     type: 'area', color: '#94a3b8', icon: '🐮',
     description: 'Fires simultaneously at multiple enemies in range.',
-    projectileStyle: 'bullet'
+    projectileStyle: 'dart'
   },
   'NASTI': {
     name: 'Drill Cannon', cost: 400, damage: 47, range: 1.3, cooldown: 55,
@@ -731,7 +731,7 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Arrow Volley', cost: 380, damage: 42, range: 1.3, cooldown: 45,
     type: 'projectile', color: '#a8a29e', icon: '🏹',
     description: 'Rapid arrow fire strikes enemies with precision.',
-    projectileStyle: 'arrow'
+    projectileStyle: 'shuriken'
   },
 
   // ==========================================
@@ -789,7 +789,7 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'aura', color: '#fef08a', icon: '🦊',
     description: 'Massive area slow effect. Significantly reduces enemy speed.',
     slowFactor: 0.4,
-    projectileStyle: 'fire',
+    projectileStyle: 'holy',
     specialAbility: 'slow',
     maxHp: 130
   },
@@ -827,25 +827,25 @@ export const TOWERS: Record<string, TowerStats> = {
   // ==========================================
   // SPECIALIZED DEFENSE TOOLS
   // ==========================================
-  'PERFUMER': { name: 'Medic Station', cost: 200, damage: 8, range: 2.4, cooldown: 60, type: 'projectile', color: '#bef264', icon: '💚', description: 'Heals nearby structures (Concept).' },
-  'HARUKA': { name: 'Command Relay', cost: 220, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Routes commands to other defense systems.' },
+  'PERFUMER': { name: 'Medic Station', cost: 200, damage: 8, range: 2.4, cooldown: 60, type: 'projectile', color: '#bef264', icon: '💚', description: 'Heals nearby structures (Concept).', projectileStyle: 'holy' },
+  'HARUKA': { name: 'Command Relay', cost: 220, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Routes commands to other defense systems.', projectileStyle: 'star' },
   'KICHISEI': { name: 'Scatter Gun', cost: 480, damage: 47, range: 2.0, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Fires wide spread of projectiles at multiple angles.', multiTarget: 7, projectileStyle: 'shotgun' },
-  'MATSUKIRI': { name: 'Tactical Rifle', cost: 350, damage: 35, range: 1.3, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Precision strikes with tactical targeting.' },
-  'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🛠️', description: 'Deploys combat drones to engage enemies.' },
-  'LEIZI': { name: 'Chain Lightning', cost: 580, damage: 55, range: 2.8, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Electricity chains between multiple enemies.' },
-  'RECORD_KEEPER': { name: 'Log System', cost: 200, damage: 11, range: 2.4, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Records and tracks enemy movements.' },
-  'TIPPI': { name: 'Scout Drone', cost: 360, damage: 39, range: 2.4, cooldown: 50, type: 'projectile', color: '#86efac', icon: '🐦', description: 'Aerial reconnaissance unit with combat capability.' },
-  'MISS_CHRISTINE': { name: 'Elegant Cannon', cost: 280, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '🐈', description: 'Graceful but deadly precision shots.' },
-  'SANKTA': { name: 'Heavy Defender', cost: 600, damage: 62, range: 1.3, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🥛', description: 'Heavy-caliber rounds for close-range defense.' },
-  'GRACEBEARER': { name: 'Standard Gun', cost: 550, damage: 70, range: 1.3, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '🎖️', description: 'Reliable standard-issue weapon system.' },
-  'CONFESS_47': { name: 'Robot Sentry', cost: 100, damage: 16, range: 1.3, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '🤖', description: 'Automated sentry turret with basic targeting.' },
-  'MON3TR': { name: 'Combat Mech', cost: 400, damage: 155, range: 1.6, cooldown: 60, type: 'projectile', color: '#10b981', icon: '👾', description: 'Deployable mech unit with high damage output.' },
-  'ALANNA': { name: 'Weapon Forge', cost: 350, damage: 39, range: 1.3, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🛠️', description: 'Manufactures and launches custom projectiles.' },
-  'WINDSCOOT': { name: 'Wind Cutter', cost: 400, damage: 62, range: 1.3, cooldown: 40, type: 'projectile', color: '#bae6fd', icon: '🌬️', description: 'Air pressure projectiles slice through enemies.' },
-  'WULFENITE': { name: 'Trap System', cost: 320, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#fde047', icon: '🪤', description: 'Deploys hidden traps that trigger on enemy contact.' },
-  'ENTELECHIA': { name: 'Reaper Cannon', cost: 600, damage: 77, range: 1.3, cooldown: 60, type: 'area', color: '#1e293b', icon: '🌾', description: 'Area damage cannon that harvests enemy health.' },
-  'NOWELL': { name: 'Medic Unit', cost: 250, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '⚕️', description: 'Medical support unit with defensive capabilities.' },
-  'XINGZHU': { name: 'Support Tower', cost: 300, damage: 23, range: 2.4, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🥢', description: 'Provides support fire for nearby defenses.' },
+  'MATSUKIRI': { name: 'Tactical Rifle', cost: 350, damage: 35, range: 1.3, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Precision strikes with tactical targeting.', projectileStyle: 'spear' },
+  'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🛠️', description: 'Deploys combat drones to engage enemies.', projectileStyle: 'disc' },
+  'LEIZI': { name: 'Chain Lightning', cost: 580, damage: 55, range: 2.8, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Electricity chains between multiple enemies.', projectileStyle: 'lightning' },
+  'RECORD_KEEPER': { name: 'Log System', cost: 200, damage: 11, range: 2.4, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Records and tracks enemy movements.', projectileStyle: 'void' },
+  'TIPPI': { name: 'Scout Drone', cost: 360, damage: 39, range: 2.4, cooldown: 50, type: 'projectile', color: '#86efac', icon: '🐦', description: 'Aerial reconnaissance unit with combat capability.', projectileStyle: 'energy' },
+  'MISS_CHRISTINE': { name: 'Elegant Cannon', cost: 280, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '🐈', description: 'Graceful but deadly precision shots.', projectileStyle: 'crystal' },
+  'SANKTA': { name: 'Heavy Defender', cost: 600, damage: 62, range: 1.3, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🥛', description: 'Heavy-caliber rounds for close-range defense.', projectileStyle: 'cannonball' },
+  'GRACEBEARER': { name: 'Standard Gun', cost: 550, damage: 70, range: 1.3, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '🎖️', description: 'Reliable standard-issue weapon system.', projectileStyle: 'plasma' },
+  'CONFESS_47': { name: 'Robot Sentry', cost: 100, damage: 16, range: 1.3, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '🤖', description: 'Automated sentry turret with basic targeting.', projectileStyle: 'bullet' },
+  'MON3TR': { name: 'Combat Mech', cost: 400, damage: 155, range: 1.6, cooldown: 60, type: 'projectile', color: '#10b981', icon: '👾', description: 'Deployable mech unit with high damage output.', projectileStyle: 'rocket' },
+  'ALANNA': { name: 'Weapon Forge', cost: 350, damage: 39, range: 1.3, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🛠️', description: 'Manufactures and launches custom projectiles.', projectileStyle: 'dark' },
+  'WINDSCOOT': { name: 'Wind Cutter', cost: 400, damage: 62, range: 1.3, cooldown: 40, type: 'projectile', color: '#bae6fd', icon: '🌬️', description: 'Air pressure projectiles slice through enemies.', projectileStyle: 'blade' },
+  'WULFENITE': { name: 'Trap System', cost: 320, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#fde047', icon: '🪤', description: 'Deploys hidden traps that trigger on enemy contact.', projectileStyle: 'spike' },
+  'ENTELECHIA': { name: 'Reaper Cannon', cost: 600, damage: 77, range: 1.3, cooldown: 60, type: 'area', color: '#1e293b', icon: '🌾', description: 'Area damage cannon that harvests enemy health.', projectileStyle: 'void' },
+  'NOWELL': { name: 'Medic Unit', cost: 250, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '⚕️', description: 'Medical support unit with defensive capabilities.', projectileStyle: 'holy' },
+  'XINGZHU': { name: 'Support Tower', cost: 300, damage: 23, range: 2.4, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🥢', description: 'Provides support fire for nearby defenses.', projectileStyle: 'star' },
   'TECNO': { name: 'Tech Summoner', cost: 350, damage: 31, range: 2.4, cooldown: 50, type: 'summon', color: '#a5f3fc', icon: '💻', description: 'Summons technological constructs to fight.' },
   'ROSE_SALT': { name: 'Multi-Healer', cost: 280, damage: 0, range: 2.4, cooldown: 60, type: 'aura', color: '#fbcfe8', icon: '🧂', description: 'Heals multiple structures simultaneously.' },
   

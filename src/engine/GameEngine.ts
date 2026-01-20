@@ -596,9 +596,16 @@ export class GameEngine {
         const stats = TOWERS[tower.key];
         
         // Initialize base stats if not set (for existing towers)
-        if (!tower.baseDamage) tower.baseDamage = tower.damage;
-        if (!tower.baseRange) tower.baseRange = tower.range;
-        if (!tower.baseCooldown) tower.baseCooldown = stats.cooldown;
+        // Use level to calculate base stats if they're not set
+        if (!tower.baseDamage) {
+            tower.baseDamage = stats.damage * (tower.level || 1);
+        }
+        if (!tower.baseRange) {
+            tower.baseRange = stats.range * (1 + ((tower.level || 1) - 1) * 0.1);
+        }
+        if (!tower.baseCooldown) {
+            tower.baseCooldown = stats.cooldown / (1 + ((tower.level || 1) - 1) * 0.1);
+        }
         
         // Update status effects (decrease duration, call callbacks)
         effectManager.updateTowerEffects(tower);
@@ -1434,9 +1441,28 @@ export class GameEngine {
             tower.baseDamage = baseStats.damage * tower.level;
             tower.baseRange = baseStats.range * (1 + (tower.level - 1) * 0.1);
             tower.baseCooldown = baseStats.cooldown / (1 + (tower.level - 1) * 0.1);
-            // Recalculate effective stats with status effects
-            tower.damage = effectManager.getEffectiveTowerDamage(tower);
-            tower.range = effectManager.getEffectiveTowerRange(tower);
+            
+            // Recalculate effective stats with status effects and buffs
+            let effectiveDamage = effectManager.getEffectiveTowerDamage(tower);
+            let effectiveRange = effectManager.getEffectiveTowerRange(tower);
+            
+            // Apply theme environmental effects
+            if (this.currentTheme) {
+                if (this.currentTheme.towerDamageMultiplier) {
+                    effectiveDamage *= this.currentTheme.towerDamageMultiplier;
+                }
+                if (this.currentTheme.towerRangeMultiplier) {
+                    effectiveRange *= this.currentTheme.towerRangeMultiplier;
+                }
+            }
+            
+            // Apply active buff multipliers
+            const buffMultipliers = this.getTowerBuffMultipliers();
+            effectiveDamage *= buffMultipliers.damage;
+            effectiveRange *= buffMultipliers.range;
+            
+            tower.damage = effectiveDamage;
+            tower.range = effectiveRange;
             soundSystem.play('upgrade'); 
         }
     } else if (this.pendingAction.type === 'EARN_MONEY') {
