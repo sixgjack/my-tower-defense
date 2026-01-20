@@ -20,9 +20,10 @@ const BOARD_HEIGHT = ROWS * TILE_SIZE;
 interface GameBoardProps {
   onGameEnd?: (result?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number }) => void;
   questionSetId?: string; // Question set identifier for the game mode
+  allowedTowers?: string[]; // List of tower keys that can be built (from loadout selection)
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId = 'mixed' }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId = 'mixed', allowedTowers }) => {
   // --- REACT STATE ---
   const [tick, setTick] = useState(0);
   const [selectedTowerId, setSelectedTowerId] = useState<number | null>(null);
@@ -128,6 +129,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
     e.preventDefault();
     setHoverPos(null);
     if (draggingKey && hoverPos) {
+      // Check if tower is allowed (if allowedTowers is specified)
+      if (allowedTowers && allowedTowers.length > 0 && !allowedTowers.includes(draggingKey)) {
+        setDraggingKey(null);
+        return; // Don't build if not in allowed list
+      }
       game.requestBuildTower(hoverPos.r, hoverPos.c, draggingKey);
       setDraggingKey(null);
     }
@@ -363,7 +369,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
            )}
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {Object.entries(TOWERS).map(([key, tower]) => {
+          {(allowedTowers && allowedTowers.length > 0 
+            ? allowedTowers.map(key => [key, TOWERS[key]] as [string, typeof TOWERS[string]])
+            : Object.entries(TOWERS)
+          ).map(([key, tower]) => {
             const canAfford = money >= tower.cost;
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}

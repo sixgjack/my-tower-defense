@@ -432,429 +432,260 @@ export const THEMES: Theme[] = [
   }
 ];
 
+
 export const TOWERS: Record<string, TowerStats> = {
   // ==========================================
-  // BASIC INFANTRY & LIGHT WEAPONS
+  // 8 BASIC TOWERS (Unlocked by default)
   // ==========================================
-  'ARCHER': {
-    name: 'Auto-Rifle Turret', cost: 50, damage: 8, range: 2.6, cooldown: 50,
+  'BASIC_RIFLE': {
+    name: 'Auto-Rifle', cost: 50, damage: 8, range: 2.5, cooldown: 50,
     type: 'projectile', color: '#fbbf24', icon: '🔫',
-    description: 'Rapid-fire bullets. Fast and reliable for basic defense.',
-    projectileStyle: 'dot'
+    description: 'Basic rapid-fire turret. Reliable single-target damage with moderate range. Perfect for early game defense.',
+    projectileStyle: 'bullet',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.95, projectileSpeed: 1.05 }
   },
-  'CANNON': {
-    name: 'Mortar Cannon', cost: 120, damage: 29, range: 3.1, cooldown: 100,
+  'BASIC_CANNON': {
+    name: 'Mortar', cost: 120, damage: 35, range: 3.5, cooldown: 120,
     type: 'area', color: '#1e293b', icon: '💣',
-    description: 'Explosive shells deal area damage to groups of enemies.',
-    areaRadius: 1.5,
-    projectileStyle: 'arc'
-  },
-  'WIZARD': {
-    name: 'EMP Blaster', cost: 200, damage: 23, range: 2.4, cooldown: 60,
-    type: 'area', color: '#8b5cf6', icon: '🌀',
-    description: 'Electromagnetic pulse disables multiple targets at once.',
-    areaRadius: 2.0,
-    projectileStyle: 'plasma'
-  },
-  'MORTAR': {
-    name: 'Artillery Battery', cost: 350, damage: 81, range: 4.5, cooldown: 200,
-    type: 'area', color: '#475569', icon: '🎯',
-    description: 'Long-range heavy shells. Massive damage but slow reload.',
-    areaRadius: 2.5,
-    projectileStyle: 'arc'
-  },
-  'AIR_DEFENSE': {
-    name: 'SAM Launcher', cost: 180, damage: 55, range: 3.6, cooldown: 40,
-    type: 'projectile', color: '#ef4444', icon: '🚀',
-    description: 'Surface-to-air missiles with high single-target damage.',
-    projectileStyle: 'missile'
-  },
-  'TESLA': {
-    name: 'Shock Generator', cost: 250, damage: 62, range: 1.9, cooldown: 55,
-    type: 'projectile', color: '#facc15', icon: '⚡',
-    description: 'Hidden until enemies approach. Instant electric discharge.',
-    projectileStyle: 'lightning'
-  },
-  'X_BOW': {
-    name: 'Gatling Gun', cost: 500, damage: 6, range: 5.7, cooldown: 6,
-    type: 'projectile', color: '#ec4899', icon: '⚡',
-    description: 'Extremely high rate of fire. Tears through enemies with a hail of bullets.',
-    projectileSpeed: 0.25,
-    projectileStyle: 'arrow_classic'
-  },
-  'INFERNO': {
-    name: 'Flamethrower', cost: 600, damage: 4, range: 3.6, cooldown: 5,
-    type: 'beam', color: '#ef4444', icon: '🌋',
-    description: 'Continuous flame beam. Damage increases the longer it burns.',
-    beamRamp: 0.8
-  },
-  'EAGLE': {
-    name: 'Orbital Strike', cost: 1000, damage: 232, range: 80.2, cooldown: 350,
-    type: 'area', color: '#fff', icon: '🛰️',
-    description: 'Satellite-guided missile strikes anywhere on the battlefield.',
-    areaRadius: 3,
+    description: 'Explosive area damage. Shells arc over obstacles, dealing splash damage to groups. Slow but devastating.',
+    areaRadius: 1.8,
     projectileStyle: 'arc',
-    specialAbility: 'aoe',
-    maxHp: 250
+    upgradeStats: { damage: 1.25, range: 1.08, cooldown: 0.92, areaRadius: 1.15 }
   },
-  'SCATTERSHOT': {
-    name: 'Shotgun Turret', cost: 550, damage: 31, range: 2.4, cooldown: 90,
+  'BASIC_SNIPER': {
+    name: 'Sniper Rifle', cost: 180, damage: 120, range: 5.0, cooldown: 180,
+    type: 'projectile', color: '#ef4444', icon: '🎯',
+    description: 'Long-range precision shots. Extreme single-target damage but very slow reload. Pierces through enemies.',
+    projectileStyle: 'sniper',
+    upgradeStats: { damage: 1.3, range: 1.12, cooldown: 0.88, penetration: 1.2 }
+  },
+  'BASIC_SHOTGUN': {
+    name: 'Shotgun', cost: 150, damage: 25, range: 2.0, cooldown: 90,
     type: 'spread', color: '#d97706', icon: '💥',
-    description: 'Fires multiple pellets in a spread pattern. Hits multiple targets.',
+    description: 'Fires 5 pellets in a wide spread. Hits multiple enemies at close range. High burst damage.',
     multiTarget: 5,
-    projectileStyle: 'shotgun'
+    projectileStyle: 'shotgun',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.93, multiTarget: 1.1 }
   },
-  'MONOLITH': {
-    name: 'Railgun', cost: 1500, damage: 387, range: 4.0, cooldown: 150,
-    type: 'projectile', color: '#020617', icon: '⚫',
-    description: 'Electromagnetic projectile pierces through enemies with burn effect.',
-    burnDamage: 20,
-    projectileStyle: 'bolt',
-    specialAbility: 'aoe',
-    areaRadius: 1.0,
-    maxHp: 300
-  },
-  'SPELL_TOWER': {
-    name: 'Command Center', cost: 300, damage: 0, range: 2.4, cooldown: 1000,
-    type: 'aura', color: '#db2777', icon: '📡',
-    description: 'Provides tactical support and coordination (Coming Soon).',
-    projectileStyle: 'magic'
-  },
-  'BUILDER': {
-    name: 'Repair Station', cost: 2000, damage: 16, range: 1.6, cooldown: 30,
-    type: 'projectile', color: '#a3e635', icon: '🔨',
-    description: 'Maintains and repairs nearby structures. Can defend itself.',
-    projectileStyle: 'crystal'
-  },
-
-  // ==========================================
-  // MISSILE SYSTEMS & GUIDED WEAPONS
-  // ==========================================
-  'EXUSIAI': {
-    name: 'Multi-Missile System', cost: 550, damage: 11, range: 3.2, cooldown: 8,
-    type: 'projectile', color: '#ef4444', icon: '🚀',
-    description: 'Rapid-fire missile barrage. Overwhelms enemies with volume.',
-    projectileSpeed: 0.9,
-    projectileStyle: 'energy'
-  },
-  'SCHWARZ': {
-    name: 'Anti-Tank Rifle', cost: 650, damage: 310, range: 2.4, cooldown: 150,
-    type: 'projectile', color: '#1e1e1e', icon: '🎯',
-    description: 'High-penetration sniper round. Devastating single-shot damage.',
-    projectileStyle: 'sniper'
-  },
-  'LEMUEN': {
-    name: 'Precision Strike', cost: 600, damage: 139, range: 4.9, cooldown: 140,
-    type: 'projectile', color: '#fcd34d', icon: '🎯',
-    description: 'Long-range guided missile. Targets weakest armor points.',
-    projectileStyle: 'sniper'
-  },
-  'SNOW_HUNTER': {
-    name: 'Cryo Cannon', cost: 320, damage: 70, range: 3.2, cooldown: 100,
-    type: 'projectile', color: '#cbd5e1', icon: '❄️',
-    description: 'Freezing projectiles slow enemy movement speed.',
+  'BASIC_FREEZE': {
+    name: 'Cryo Turret', cost: 200, damage: 15, range: 3.0, cooldown: 80,
+    type: 'projectile', color: '#60a5fa', icon: '❄️',
+    description: 'Freezing projectiles slow enemies by 50%. No damage over time, pure crowd control.',
     slowFactor: 0.5,
     projectileStyle: 'ice',
     specialAbility: 'slow',
-    maxHp: 120
+    upgradeStats: { damage: 1.15, range: 1.1, cooldown: 0.92, slowFactor: 1.1 }
   },
-  'SKYBOX': {
-    name: 'Anti-Air Platform', cost: 450, damage: 50, range: 4.0, cooldown: 55,
-    type: 'area', color: '#0ea5e9', icon: '✈️',
-    description: 'Mobile air defense unit. Explosive rockets for aerial threats.',
-    projectileStyle: 'rocket'
+  'BASIC_BURN': {
+    name: 'Flamethrower', cost: 250, damage: 5, range: 3.5, cooldown: 8,
+    type: 'beam', color: '#ef4444', icon: '🌋',
+    description: 'Continuous flame beam in arc shape. Damage ramps up over time. Burns enemies in a wide cone.',
+    beamRamp: 0.5,
+    burnDamage: 8,
+    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.15, burnDamage: 1.2 }
   },
-  'BRIGID': {
-    name: 'Boomerang Launcher', cost: 380, damage: 42, range: 2.8, cooldown: 45,
-    type: 'projectile', color: '#f0abfc', icon: '🪃',
-    description: 'Projectiles return after hitting targets. Double damage potential.',
-    projectileStyle: 'boomerang'
-  },
-  'ROSA': {
-    name: 'Anchoring Trap', cost: 580, damage: 85, range: 4.0, cooldown: 160,
-    type: 'pull', color: '#fff', icon: '⚓',
-    description: 'Launches anchors that immobilize heavy enemies in place.',
-    stunDuration: 30,
+  'BASIC_STUN': {
+    name: 'Stun Cannon', cost: 220, damage: 40, range: 2.8, cooldown: 100,
+    type: 'projectile', color: '#facc15', icon: '⚡',
+    description: 'Electric projectiles stun enemies for 1.5 seconds. Stops enemy movement and abilities.',
+    stunDuration: 90,
+    projectileStyle: 'lightning',
     specialAbility: 'stun',
-    maxHp: 150
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.9, stunDuration: 1.15 }
   },
-  'W': {
-    name: 'Timed Explosive', cost: 600, damage: 155, range: 3.2, cooldown: 120,
+  'BASIC_HEAL': {
+    name: 'Medic Station', cost: 300, damage: 0, range: 2.5, cooldown: 60,
+    type: 'aura', color: '#10b981', icon: '💚',
+    description: 'Heals nearby towers for 20 HP per tick. No damage output, pure support. Essential for tower survival.',
+    upgradeStats: { range: 1.12, cooldown: 0.9, healAmount: 1.25 }
+  },
+
+  // ==========================================
+  // SPECIALIZED DAMAGE TOWERS (22 more)
+  // ==========================================
+  
+  // Multi-target & Chain
+  'CHAIN_LIGHTNING': {
+    name: 'Chain Lightning', cost: 400, damage: 45, range: 3.5, cooldown: 70,
+    type: 'projectile', color: '#fcd34d', icon: '⚡',
+    description: 'Lightning chains between 3-5 enemies. Each chain deals full damage. Excellent against groups.',
+    projectileStyle: 'lightning',
+    multiTarget: 4,
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.92, multiTarget: 1.1 }
+  },
+  'PENETRATOR': {
+    name: 'Railgun', cost: 600, damage: 150, range: 4.5, cooldown: 120,
+    type: 'projectile', color: '#020617', icon: '⚫',
+    description: 'Piercing projectile travels through ALL enemies in a line. Damage decreases by 20% per enemy hit.',
+    projectileStyle: 'bolt',
+    upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, penetration: 1.2 }
+  },
+  'GATLING': {
+    name: 'Gatling Gun', cost: 500, damage: 4, range: 4.0, cooldown: 4,
+    type: 'projectile', color: '#ec4899', icon: '⚡',
+    description: 'Extremely fast attack rate (4ms cooldown). Low damage per shot but overwhelming DPS. Long range.',
+    projectileSpeed: 0.3,
+    projectileStyle: 'arrow_classic',
+    upgradeStats: { damage: 1.15, range: 1.08, cooldown: 0.97, projectileSpeed: 1.05 }
+  },
+  
+  // Area Damage
+  'ARTILLERY': {
+    name: 'Artillery', cost: 450, damage: 90, range: 6.0, cooldown: 200,
+    type: 'area', color: '#475569', icon: '🎯',
+    description: 'Long-range bombardment. Massive area damage (2.5 radius). Very slow but devastating.',
+    areaRadius: 2.5,
+    projectileStyle: 'arc',
+    upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, areaRadius: 1.1 }
+  },
+  'EXPLOSIVE': {
+    name: 'Grenade Launcher', cost: 350, damage: 60, range: 3.0, cooldown: 100,
     type: 'area', color: '#dc2626', icon: '💥',
-    description: 'Delayed detonation grenades. Massive area damage on explosion.',
+    description: 'Timed grenades explode on impact. 2.0 radius splash damage. Good for clustered enemies.',
     areaRadius: 2.0,
     projectileStyle: 'grenade',
-    specialAbility: 'aoe',
-    maxHp: 180
+    upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, areaRadius: 1.12 }
   },
-
-  // ==========================================
-  // ENERGY WEAPONS & BEAMS
-  // ==========================================
-  'TITI': {
-    name: 'Needle Launcher', cost: 300, damage: 35, range: 2.8, cooldown: 60,
-    type: 'projectile', color: '#8b5cf6', icon: '💉',
-    description: 'Precise needle darts. Pierces armor with high accuracy.',
-    projectileStyle: 'needle'
+  
+  // Beam & Continuous
+  'LASER_BEAM': {
+    name: 'Laser Cannon', cost: 550, damage: 12, range: 4.0, cooldown: 5,
+    type: 'beam', color: '#ff5722', icon: '🔴',
+    description: 'Continuous laser beam. Damage ramps up 0.8x per second. Burns enemies in a straight line.',
+    beamRamp: 0.8,
+    burnDamage: 5,
+    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.15 }
   },
-  'AKKORD': {
-    name: 'Artillery Command', cost: 700, damage: 74, range: 6.5, cooldown: 180,
-    type: 'area', color: '#f472b6', icon: '🎼',
-    description: 'Calls in long-range bombardment strikes from off-map.',
-    projectileStyle: 'arc'
+  'INFERNO': {
+    name: 'Inferno Tower', cost: 700, damage: 3, range: 3.0, cooldown: 3,
+    type: 'beam', color: '#ea580c', icon: '👿',
+    description: 'Extreme damage ramp (2.0x per second). Starts weak but becomes devastating. Short range.',
+    beamRamp: 2.0,
+    upgradeStats: { damage: 1.05, range: 1.1, cooldown: 0.98, beamRamp: 1.2 }
   },
-  'IFRIT': {
-    name: 'Laser Cannon', cost: 750, damage: 93, range: 4.0, cooldown: 50,
-    type: 'line', color: '#ff5722', icon: '🔴',
-    description: 'Continuous laser beam burns enemies in a straight line.',
-    burnDamage: 10
-  },
-  'MANTRA': {
-    name: 'Poison Launcher', cost: 350, damage: 27, range: 3.2, cooldown: 50,
+  
+  // Status Effects
+  'POISON_TOWER': {
+    name: 'Toxin Launcher', cost: 320, damage: 20, range: 3.0, cooldown: 60,
     type: 'projectile', color: '#14b8a6', icon: '🐍',
-    description: 'Toxic projectiles deal damage over time to enemies.',
-    projectileStyle: 'acid'
-  },
-  'CEOBE': {
-    name: 'Axe Launcher', cost: 400, damage: 39, range: 2.8, cooldown: 35,
-    type: 'projectile', color: '#fb923c', icon: '🪓',
-    description: 'Rapidly hurls spinning blades at enemies.',
-    projectileStyle: 'blade'
-  },
-  'GOLDENGOLOW': {
-    name: 'Drone Swarm', cost: 450, damage: 16, range: 80.2, cooldown: 20,
-    type: 'projectile', color: '#f9a8d4', icon: '🛸',
-    description: 'Autonomous drones hunt targets across the entire battlefield.',
-    projectileStyle: 'lightning'
-  },
-  'NECRASS': {
-    name: 'Spawner Array', cost: 520, damage: 55, range: 2.4, cooldown: 80,
-    type: 'summon', color: '#4c1d95', icon: '👻',
-    description: 'Deploys combat drones from defeated enemy wreckage.',
-  },
-  'TRAGODIA': {
-    name: 'Shadow Cannon', cost: 310, damage: 31, range: 2.4, cooldown: 55,
-    type: 'projectile', color: '#7e22ce', icon: '🎭',
-    description: 'Dark energy projectiles corrupt enemy systems.',
-    projectileStyle: 'shadow'
-  },
-
-  // ==========================================
-  // HEAVY DEFENSE & FORTIFICATIONS
-  // ==========================================
-  'HOSHIGUMA': {
-    name: 'Rotary Blades', cost: 550, damage: 47, range: 1.3, cooldown: 30,
-    type: 'aura', color: '#22c55e', icon: '🟢',
-    description: 'Spinning sawblades shred all enemies in close proximity.',
-    projectileStyle: 'saw'
-  },
-  'MUDROCK': {
-    name: 'Sledgehammer Turret', cost: 900, damage: 271, range: 1.3, cooldown: 180,
-    type: 'area', color: '#57534e', icon: '🔨',
-    description: 'Massive area-of-effect spin attack. Crushes multiple enemies.',
-    areaRadius: 2.0,
-    projectileStyle: 'cannonball'
-  },
-  'NIAN': {
-    name: 'Heat Emitter', cost: 600, damage: 62, range: 1.3, cooldown: 60,
-    type: 'aura', color: '#ef4444', icon: '🏮',
-    description: 'Radiant heat aura continuously damages nearby enemies.',
+    description: 'Poison projectiles deal 15 damage per second for 3 seconds. Stacks up to 3 times.',
     burnDamage: 15,
-    projectileStyle: 'fire'
+    projectileStyle: 'acid',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.92, burnDamage: 1.2 }
   },
-  'PENANCE': {
-    name: 'Reflector Shield', cost: 620, damage: 108, range: 1.3, cooldown: 90,
-    type: 'projectile', color: '#9f1239', icon: '⚖️',
-    description: 'Deflects incoming attacks back at enemies.',
-    projectileStyle: 'orb'
+  'SLOW_FIELD': {
+    name: 'Slow Field', cost: 400, damage: 5, range: 3.5, cooldown: 15,
+    type: 'aura', color: '#fef08a', icon: '🦊',
+    description: 'Aura slows all enemies by 60%. Minimal damage, maximum crowd control. Large area.',
+    slowFactor: 0.4,
+    specialAbility: 'slow',
+    upgradeStats: { damage: 1.1, range: 1.12, cooldown: 0.93, slowFactor: 1.1 }
   },
-  'YU': {
-    name: 'Dragon Cannon', cost: 700, damage: 77, range: 1.3, cooldown: 70,
-    type: 'aura', color: '#b91c1c', icon: '🐉',
-    description: 'Mythical energy aura provides impenetrable defense.',
-    projectileStyle: 'magic'
+  'STUN_TOWER': {
+    name: 'Stun Turret', cost: 380, damage: 30, range: 3.2, cooldown: 90,
+    type: 'projectile', color: '#facc15', icon: '⚡',
+    description: 'Stuns enemies for 2 seconds. Completely stops movement and abilities. Moderate damage.',
+    stunDuration: 120,
+    projectileStyle: 'lightning',
+    specialAbility: 'stun',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.9, stunDuration: 1.2 }
   },
-  'CAIRN': {
-    name: 'Shield Generator', cost: 480, damage: 39, range: 1.3, cooldown: 50,
-    type: 'projectile', color: '#64748b', icon: '🛡️',
-    description: 'Projects defensive barrier while launching disc projectiles.',
-    projectileStyle: 'disc'
-  },
-  'VETOCHKI': {
-    name: 'Spike Barrage', cost: 510, damage: 50, range: 1.3, cooldown: 60,
-    type: 'projectile', color: '#334155', icon: '🪵',
-    description: 'Fires unstoppable armor-piercing spikes.',
-    projectileStyle: 'spike'
-  },
-
-  // ==========================================
-  // SPECIALIZED COMBAT SYSTEMS
-  // ==========================================
-  'SILVERASH': {
-    name: 'Sword Slash', cost: 1000, damage: 171, range: 2.8, cooldown: 70,
-    type: 'area', color: '#cbd5e1', icon: '🗡️',
-    description: 'Wide-area blade attack cuts through multiple enemies.',
-    projectileStyle: 'blade'
-  },
-  'SURTR': {
-    name: 'Beam Overload', cost: 900, damage: 310, range: 2.0, cooldown: 40,
-    type: 'beam', color: '#f59e0b', icon: '👿',
-    description: 'Massive energy beam. Damage exponentially increases over time.',
-    beamRamp: 2.0
-  },
-  'THORNS': {
-    name: 'Toxin Sprayer', cost: 550, damage: 55, range: 2.4, cooldown: 45,
-    type: 'projectile', color: '#d97706', icon: '🌵',
-    description: 'Poisonous projectiles deal continuous damage over time.',
-    burnDamage: 10,
-    projectileStyle: 'poison'
-  },
-  'BLAZE': {
-    name: 'Chain Saw', cost: 600, damage: 85, range: 1.6, cooldown: 20,
-    type: 'aura', color: '#ea580c', icon: '⚙️',
-    description: 'Continuous area damage. Constantly shreds enemies nearby.',
-    projectileStyle: 'saw'
-  },
-  'VARKARIS': {
-    name: 'Multi-Target System', cost: 450, damage: 70, range: 1.3, cooldown: 50,
-    type: 'area', color: '#94a3b8', icon: '🐮',
-    description: 'Fires simultaneously at multiple enemies in range.',
-    projectileStyle: 'dart'
-  },
-  'NASTI': {
-    name: 'Drill Cannon', cost: 400, damage: 47, range: 1.3, cooldown: 55,
-    type: 'projectile', color: '#475569', icon: '🔩',
-    description: 'Rotating drill projectiles pierce through armor.',
-    projectileStyle: 'needle'
-  },
-  'HADIYA': {
-    name: 'Arrow Volley', cost: 380, damage: 42, range: 1.3, cooldown: 45,
-    type: 'projectile', color: '#a8a29e', icon: '🏹',
-    description: 'Rapid arrow fire strikes enemies with precision.',
-    projectileStyle: 'shuriken'
-  },
-
-  // ==========================================
-  // SUPPORT & CONTROL SYSTEMS
-  // ==========================================
-  'ANGELINA': {
-    name: 'Gravity Field', cost: 400, damage: 19, range: 3.2, cooldown: 20,
-    type: 'projectile', color: '#818cf8', icon: '💫',
-    description: 'Projectiles create gravity wells that slow enemy movement.',
-    slowFactor: 0.7,
-    projectileStyle: 'vortex'
-  },
-  'GLADIITR': {
-    name: 'Vortex Launcher', cost: 500, damage: 62, range: 2.8, cooldown: 90,
+  
+  // Positioning & Control
+  'VORTEX': {
+    name: 'Vortex Launcher', cost: 500, damage: 50, range: 3.5, cooldown: 100,
     type: 'pull', color: '#1e3a8a', icon: '⚓',
-    description: 'Pulls distant enemies closer into combat range.',
+    description: 'Pulls enemies 1.5 tiles closer. Repositions enemies for better targeting. Moderate damage.',
     pullStrength: 1.5,
     projectileStyle: 'vortex',
     specialAbility: 'pull',
-    maxHp: 140
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.9, pullStrength: 1.15 }
   },
-  'WEEDY': {
-    name: 'Ice Cannon', cost: 450, damage: 47, range: 2.4, cooldown: 100,
+  'PUSHER': {
+    name: 'Ice Blast', cost: 450, damage: 35, range: 2.8, cooldown: 80,
     type: 'pull', color: '#2dd4bf', icon: '🌊',
-    description: 'Freezing blasts push enemies backward while slowing them.',
+    description: 'Pushes enemies 2.0 tiles backward. Slows by 40%. Repositions enemies away from base.',
     pullStrength: -2.0,
-    projectileStyle: 'ice'
+    slowFactor: 0.6,
+    projectileStyle: 'ice',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.92, pullStrength: 1.1, slowFactor: 1.1 }
   },
-  'PHANTOM': {
-    name: 'Kunai Thrower', cost: 300, damage: 62, range: 1.6, cooldown: 40,
-    type: 'projectile', color: '#111827', icon: '🐱',
-    description: 'Fast-reloading stealth weapons for quick strikes.',
-    projectileStyle: 'kunai'
-  },
-  'SURFER': {
-    name: 'Water Strike', cost: 250, damage: 35, range: 1.3, cooldown: 30,
-    type: 'projectile', color: '#0ea5e9', icon: '🏄‍♀️',
-    description: 'Rapid water projectiles with freezing effects.',
-    projectileStyle: 'ice'
-  },
-  'PRAMANIX': {
-    name: 'Weakening Field', cost: 350, damage: 23, range: 2.8, cooldown: 60,
-    type: 'aura', color: '#fff', icon: '🔔',
-    description: 'Aura reduces enemy defensive capabilities.',
-    projectileStyle: 'holy'
-  },
-  'ASTGENNE': {
-    name: 'Star Shooter', cost: 380, damage: 31, range: 2.4, cooldown: 50,
-    type: 'projectile', color: '#facc15', icon: '🌟',
-    description: 'Starlight projectiles track and strike enemies.',
-    projectileStyle: 'bloomerang'
-  },
-  'SUZURAN': {
-    name: 'Slow Field', cost: 500, damage: 8, range: 3.2, cooldown: 10,
-    type: 'aura', color: '#fef08a', icon: '🦊',
-    description: 'Massive area slow effect. Significantly reduces enemy speed.',
-    slowFactor: 0.4,
-    projectileStyle: 'holy',
-    specialAbility: 'slow',
-    maxHp: 130
-  },
-
-  // ==========================================
-  // ADVANCED WEAPON SYSTEMS
-  // ==========================================
-  'TOGAWA': {
-    name: 'Neural Beam', cost: 420, damage: 74, range: 2.4, cooldown: 60,
-    type: 'beam', color: '#4c1d95', icon: '🎹',
-    description: 'Psionic energy beam drains enemy health over time.',
-    beamRamp: 0.6
-  },
-  'UMIRI': {
-    name: 'Sonic Blast', cost: 380, damage: 85, range: 1.3, cooldown: 45,
-    type: 'aura', color: '#be185d', icon: '🎸',
-    description: 'Continuous sonic shockwaves damage nearby enemies.',
-  },
-  'MISUMI': {
-    name: 'Support Drone', cost: 300, damage: 0, range: 2.4, cooldown: 60,
-    type: 'aura', color: '#fcd34d', icon: '🎤',
-    description: 'Heals and buffs nearby defenses (Concept).',
-  },
-  'WAKABA': {
-    name: 'Puppet Striker', cost: 400, damage: 66, range: 1.3, cooldown: 40,
-    type: 'projectile', color: '#10b981', icon: '🥒',
-    description: 'Remote-controlled projectiles strike with precision.',
-  },
-  'YUTENJI': {
-    name: 'Shockwave Drums', cost: 450, damage: 100, range: 1.3, cooldown: 80,
-    type: 'area', color: '#fca5a5', icon: '🥁',
-    description: 'Ground-pounding area attacks shake multiple enemies.',
-  },
-
-  // ==========================================
-  // SPECIALIZED DEFENSE TOOLS
-  // ==========================================
-  'PERFUMER': { name: 'Medic Station', cost: 200, damage: 8, range: 2.4, cooldown: 60, type: 'projectile', color: '#bef264', icon: '💚', description: 'Heals nearby structures (Concept).', projectileStyle: 'holy' },
-  'HARUKA': { name: 'Command Relay', cost: 220, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#a5f3fc', icon: '🌊', description: 'Routes commands to other defense systems.', projectileStyle: 'star' },
-  'KICHISEI': { name: 'Scatter Gun', cost: 480, damage: 47, range: 2.0, cooldown: 80, type: 'spread', color: '#fdba74', icon: '🐕', description: 'Fires wide spread of projectiles at multiple angles.', multiTarget: 7, projectileStyle: 'shotgun' },
-  'MATSUKIRI': { name: 'Tactical Rifle', cost: 350, damage: 35, range: 1.3, cooldown: 50, type: 'projectile', color: '#94a3b8', icon: '🐺', description: 'Precision strikes with tactical targeting.', projectileStyle: 'spear' },
-  'RAIDIAN': { name: 'Drone Controller', cost: 300, damage: 27, range: 2.4, cooldown: 55, type: 'summon', color: '#e2e8f0', icon: '🛠️', description: 'Deploys combat drones to engage enemies.', projectileStyle: 'disc' },
-  'LEIZI': { name: 'Chain Lightning', cost: 580, damage: 55, range: 2.8, cooldown: 65, type: 'projectile', color: '#fcd34d', icon: '⚡', description: 'Electricity chains between multiple enemies.', projectileStyle: 'lightning' },
-  'RECORD_KEEPER': { name: 'Log System', cost: 200, damage: 11, range: 2.4, cooldown: 70, type: 'projectile', color: '#fff', icon: '📝', description: 'Records and tracks enemy movements.', projectileStyle: 'void' },
-  'TIPPI': { name: 'Scout Drone', cost: 360, damage: 39, range: 2.4, cooldown: 50, type: 'projectile', color: '#86efac', icon: '🐦', description: 'Aerial reconnaissance unit with combat capability.', projectileStyle: 'energy' },
-  'MISS_CHRISTINE': { name: 'Elegant Cannon', cost: 280, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#f472b6', icon: '🐈', description: 'Graceful but deadly precision shots.', projectileStyle: 'crystal' },
-  'SANKTA': { name: 'Heavy Defender', cost: 600, damage: 62, range: 1.3, cooldown: 50, type: 'projectile', color: '#fca5a5', icon: '🥛', description: 'Heavy-caliber rounds for close-range defense.', projectileStyle: 'cannonball' },
-  'GRACEBEARER': { name: 'Standard Gun', cost: 550, damage: 70, range: 1.3, cooldown: 60, type: 'projectile', color: '#fbbf24', icon: '🎖️', description: 'Reliable standard-issue weapon system.', projectileStyle: 'plasma' },
-  'CONFESS_47': { name: 'Robot Sentry', cost: 100, damage: 16, range: 1.3, cooldown: 30, type: 'projectile', color: '#94a3b8', icon: '🤖', description: 'Automated sentry turret with basic targeting.', projectileStyle: 'bullet' },
-  'MON3TR': { name: 'Combat Mech', cost: 400, damage: 155, range: 1.6, cooldown: 60, type: 'projectile', color: '#10b981', icon: '👾', description: 'Deployable mech unit with high damage output.', projectileStyle: 'rocket' },
-  'ALANNA': { name: 'Weapon Forge', cost: 350, damage: 39, range: 1.3, cooldown: 55, type: 'projectile', color: '#d6d3d1', icon: '🛠️', description: 'Manufactures and launches custom projectiles.', projectileStyle: 'dark' },
-  'WINDSCOOT': { name: 'Wind Cutter', cost: 400, damage: 62, range: 1.3, cooldown: 40, type: 'projectile', color: '#bae6fd', icon: '🌬️', description: 'Air pressure projectiles slice through enemies.', projectileStyle: 'blade' },
-  'WULFENITE': { name: 'Trap System', cost: 320, damage: 31, range: 2.4, cooldown: 45, type: 'projectile', color: '#fde047', icon: '🪤', description: 'Deploys hidden traps that trigger on enemy contact.', projectileStyle: 'spike' },
-  'ENTELECHIA': { name: 'Reaper Cannon', cost: 600, damage: 77, range: 1.3, cooldown: 60, type: 'area', color: '#1e293b', icon: '🌾', description: 'Area damage cannon that harvests enemy health.', projectileStyle: 'void' },
-  'NOWELL': { name: 'Medic Unit', cost: 250, damage: 16, range: 2.4, cooldown: 60, type: 'projectile', color: '#bfdbfe', icon: '⚕️', description: 'Medical support unit with defensive capabilities.', projectileStyle: 'holy' },
-  'XINGZHU': { name: 'Support Tower', cost: 300, damage: 23, range: 2.4, cooldown: 55, type: 'projectile', color: '#fca5a5', icon: '🥢', description: 'Provides support fire for nearby defenses.', projectileStyle: 'star' },
-  'TECNO': { name: 'Tech Summoner', cost: 350, damage: 31, range: 2.4, cooldown: 50, type: 'summon', color: '#a5f3fc', icon: '💻', description: 'Summons technological constructs to fight.' },
-  'ROSE_SALT': { name: 'Multi-Healer', cost: 280, damage: 0, range: 2.4, cooldown: 60, type: 'aura', color: '#fbcfe8', icon: '🧂', description: 'Heals multiple structures simultaneously.' },
   
-  // ==========================================
-  // NEW SUPPORT & BUFF TOWERS
-  // ==========================================
-  'SPEED_BOOSTER': { name: 'Speed Enhancer', cost: 400, damage: 0, range: 2.8, cooldown: 120, type: 'aura', color: '#fbbf24', icon: '⚡', description: 'Increases attack speed of nearby towers by 30%.' },
-  'DAMAGE_AMPLIFIER': { name: 'Damage Amplifier', cost: 500, damage: 0, range: 2.6, cooldown: 150, type: 'aura', color: '#ef4444', icon: '💥', description: 'Boosts damage of nearby towers by 50%.' },
-  'FROST_ENHANCER': { name: 'Frost Enhancer', cost: 450, damage: 0, range: 2.4, cooldown: 140, type: 'aura', color: '#bfdbfe', icon: '❄️', description: 'Grants nearby towers freeze effect on attacks.' },
-  'VENOM_ENHANCER': { name: 'Venom Enhancer', cost: 450, damage: 0, range: 2.4, cooldown: 140, type: 'aura', color: '#14b8a6', icon: '☠️', description: 'Grants nearby towers poison effect on attacks.' },
-  'MINE_LAYER': { name: 'Mine Layer', cost: 600, damage: 50, range: 3.0, cooldown: 200, type: 'projectile', color: '#f59e0b', icon: '💣', description: 'Plants explosive mines on the enemy route. Max 3 mines per level.' },
+  // Support Towers
+  'DAMAGE_BUFF': {
+    name: 'Damage Amplifier', cost: 600, damage: 0, range: 3.0, cooldown: 0,
+    type: 'aura', color: '#ef4444', icon: '💥',
+    description: 'Aura increases nearby tower damage by 50%. No direct damage. Pure support.',
+    upgradeStats: { range: 1.12, buffAmount: 1.1 }
+  },
+  'SPEED_BUFF': {
+    name: 'Speed Enhancer', cost: 550, damage: 0, range: 3.0, cooldown: 0,
+    type: 'aura', color: '#fbbf24', icon: '⚡',
+    description: 'Aura increases nearby tower attack speed by 30%. Reduces cooldown of all towers in range.',
+    upgradeStats: { range: 1.12, buffAmount: 1.1 }
+  },
+  'RANGE_BUFF': {
+    name: 'Range Extender', cost: 500, damage: 0, range: 3.0, cooldown: 0,
+    type: 'aura', color: '#3b82f6', icon: '📡',
+    description: 'Aura increases nearby tower range by 25%. Extends reach of all towers in radius.',
+    upgradeStats: { range: 1.12, buffAmount: 1.1 }
+  },
+  'HEALER': {
+    name: 'Repair Station', cost: 400, damage: 0, range: 2.5, cooldown: 50,
+    type: 'aura', color: '#10b981', icon: '🔨',
+    description: 'Heals nearby towers for 30 HP per tick. Keeps towers alive longer. Essential support.',
+    upgradeStats: { range: 1.12, cooldown: 0.9, healAmount: 1.25 }
+  },
+  
+  // Special Mechanics
+  'BOOMERANG': {
+    name: 'Boomerang', cost: 420, damage: 55, range: 3.0, cooldown: 50,
+    type: 'projectile', color: '#f0abfc', icon: '🪃',
+    description: 'Projectile returns after hitting target. Can hit same enemy twice. Double damage potential.',
+    projectileStyle: 'boomerang',
+    upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.92 }
+  },
+  'MINE_LAYER': {
+    name: 'Mine Layer', cost: 500, damage: 80, range: 3.5, cooldown: 180,
+    type: 'projectile', color: '#f59e0b', icon: '💣',
+    description: 'Plants mines on path. Mines explode when enemies step on them. Max 3 mines. No direct attack.',
+    upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, maxMines: 1.2 }
+  },
+  'ORBITAL': {
+    name: 'Orbital Strike', cost: 1000, damage: 300, range: 80.0, cooldown: 400,
+    type: 'area', color: '#fff', icon: '🛰️',
+    description: 'Strikes anywhere on map. 3.0 radius explosion. Very slow but global range.',
+    areaRadius: 3.0,
+    projectileStyle: 'arc',
+    specialAbility: 'aoe',
+    maxHp: 300,
+    upgradeStats: { damage: 1.35, cooldown: 0.85, areaRadius: 1.1 }
+  },
+  
+  // Unique Abilities
+  'EXECUTIONER': {
+    name: 'Executioner', cost: 800, damage: 200, range: 3.5, cooldown: 150,
+    type: 'projectile', color: '#1e293b', icon: '🌾',
+    description: 'Deals 3x damage to enemies below 30% HP. Executes weakened enemies instantly.',
+    projectileStyle: 'void',
+    upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, executeThreshold: 1.05 }
+  },
+  'BANKER': {
+    name: 'Money Printer', cost: 600, damage: 0, range: 0, cooldown: 300,
+    type: 'farm', color: '#10b981', icon: '💰',
+    description: 'Generates money over time. 50 gold per cycle. No combat ability. Pure economy.',
+    upgradeStats: { moneyPerCycle: 1.2, cooldown: 0.9 }
+  },
+  'WEAKEN': {
+    name: 'Weakening Field', cost: 450, damage: 0, range: 3.0, cooldown: 0,
+    type: 'aura', color: '#fff', icon: '🔔',
+    description: 'Aura reduces enemy armor by 30%. No damage, but makes enemies take more damage from other towers.',
+    upgradeStats: { range: 1.12, debuffAmount: 1.1 }
+  },
+  'SUMMONER': {
+    name: 'Drone Spawner', cost: 650, damage: 40, range: 2.5, cooldown: 120,
+    type: 'summon', color: '#4c1d95', icon: '👻',
+    description: 'Spawns combat drones from defeated enemies. Drones attack nearby enemies. Self-sustaining.',
+    upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.9, droneCount: 1.15 }
+  }
 };

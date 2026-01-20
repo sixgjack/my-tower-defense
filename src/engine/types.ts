@@ -98,6 +98,28 @@ export interface TowerStats {
     multiTarget?: number;
     specialAbility?: 'stun' | 'slow' | 'pull' | 'block' | 'aoe' | 'drag'; // Special abilities
     projectileStyle?: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
+    // Upgrade multipliers per level (e.g., 1.2 = +20% per level)
+    upgradeStats?: {
+        damage?: number;           // Damage multiplier per level
+        range?: number;            // Range multiplier per level
+        cooldown?: number;         // Cooldown multiplier (lower = faster, e.g., 0.95 = 5% faster)
+        areaRadius?: number;       // Area radius multiplier
+        multiTarget?: number;      // Multi-target count multiplier
+        slowFactor?: number;       // Slow effectiveness multiplier
+        stunDuration?: number;     // Stun duration multiplier
+        burnDamage?: number;       // Burn damage multiplier
+        pullStrength?: number;     // Pull strength multiplier
+        beamRamp?: number;         // Beam ramp multiplier
+        projectileSpeed?: number; // Projectile speed multiplier
+        penetration?: number;      // Penetration count multiplier
+        healAmount?: number;       // Heal amount multiplier
+        buffAmount?: number;       // Buff effectiveness multiplier
+        debuffAmount?: number;     // Debuff effectiveness multiplier
+        moneyPerCycle?: number;    // Money generation multiplier
+        maxMines?: number;         // Max mines multiplier
+        droneCount?: number;       // Drone count multiplier
+        executeThreshold?: number; // Execution threshold multiplier
+    };
 }
 
 export interface Tower {

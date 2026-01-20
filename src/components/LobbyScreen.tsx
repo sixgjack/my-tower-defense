@@ -7,6 +7,7 @@ import { LuckyDraw } from './LuckyDraw';
 import { TowerGallery } from './TowerGallery';
 import { EnemyDictionary } from './EnemyDictionary';
 import { ModeSelection, type GameMode } from './ModeSelection';
+import { TowerLoadoutSelection } from './TowerLoadoutSelection';
 import { useLanguage } from '../i18n/useTranslation';
 import { updateStudentStatusAfterGame } from '../services/studentService';
 
@@ -30,9 +31,10 @@ interface LobbyScreenProps {
 }
 
 export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, onSignOut, onStatusUpdate }) => {
-  const [activeView, setActiveView] = useState<'lobby' | 'game' | 'mode-selection' | 'lucky-draw' | 'towers' | 'enemies'>('lobby');
+  const [activeView, setActiveView] = useState<'lobby' | 'game' | 'mode-selection' | 'tower-loadout' | 'lucky-draw' | 'towers' | 'enemies'>('lobby');
   const [showGame, setShowGame] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+  const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
 
   const handleStartCombat = () => {
@@ -41,6 +43,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
 
   const handleModeSelect = (mode: GameMode) => {
     setSelectedMode(mode);
+    setActiveView('tower-loadout');
+  };
+
+  const handleTowerLoadoutConfirm = (towers: string[]) => {
+    setSelectedTowers(towers);
     setShowGame(true);
     setActiveView('game');
   };
@@ -65,7 +72,17 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   };
 
   if (showGame && selectedMode) {
-    return <GameBoard onGameEnd={handleGameEnd} questionSetId={selectedMode.questionSetId} />;
+    return <GameBoard onGameEnd={handleGameEnd} questionSetId={selectedMode.questionSetId} allowedTowers={selectedTowers} />;
+  }
+
+  if (activeView === 'tower-loadout' && selectedMode) {
+    return (
+      <TowerLoadoutSelection
+        unlockedTowers={studentStatus?.unlockedTowers || []}
+        onConfirm={handleTowerLoadoutConfirm}
+        onBack={() => setActiveView('mode-selection')}
+      />
+    );
   }
 
   if (activeView === 'mode-selection') {
