@@ -432,7 +432,6 @@ export const THEMES: Theme[] = [
   }
 ];
 
-
 export const TOWERS: Record<string, TowerStats> = {
   // ==========================================
   // 8 BASIC TOWERS (Unlocked by default)
