@@ -39,7 +39,8 @@ export async function updateStudentStatusAfterGame(
     }
 
     const currentStatus = currentStatusResult.data;
-    const creditsEarned = Math.floor(gameResult.moneyEarned / 10); // 1 credit per 10 money earned
+    // Credits based on waves achieved: 5 credits per wave (wave-based, not money-based)
+    const creditsEarned = gameResult.wave * 5;
     const isNewHighWave = gameResult.wave > (currentStatus.highestWave || 0);
 
     await db.updateStudentStatus(userId, {

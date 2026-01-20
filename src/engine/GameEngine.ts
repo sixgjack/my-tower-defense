@@ -27,7 +27,7 @@ export class GameEngine {
   projectiles: Projectile[] = [];
   particles: Particle[] = [];
 
-  money: number = 600;
+  money: number = 500; // Reduced starting money for better balance
   lives: number = 20;
   wave: number = 1;
   gameSpeed: number = 1;
@@ -72,7 +72,7 @@ export class GameEngine {
 
   startNewGame() {
     this.wave = 1;
-    this.money = 600;
+    this.money = 500; // Reduced starting money for better balance
     this.lives = 20;
     this.towers = [];
     this.enemies = [];
@@ -359,11 +359,11 @@ export class GameEngine {
   // --- MAP & PATH ---
 
   changeMap() {
-      // 1. Refund Towers (70% value)
+      // 1. Refund Towers (30% value - reduced from 70%)
       let refundTotal = 0;
       this.towers.forEach(t => {
           const cost = TOWERS[t.key].cost;
-          refundTotal += Math.floor(cost * (t.level || 1) * 0.7);
+          refundTotal += Math.floor(cost * (t.level || 1) * 0.3);
       });
       
       if (refundTotal > 0) {
@@ -1484,7 +1484,13 @@ export class GameEngine {
                stats.description.includes('Medic') || stats.description.includes('Support')));
           
           let v = stats.cost; 
-          this.money += Math.floor(v * 0.7);
+          // Calculate total investment (base cost + upgrade costs)
+          let invest = stats.cost;
+          for(let i = 1; i < (t.level || 1); i++) {
+              invest += Math.floor(stats.cost * 1.5 * i);
+          }
+          // Sell for 40% of total investment (reduced from 70%)
+          this.money += Math.floor(invest * 0.4);
           this.towers.splice(idx, 1);
           
           // Decrement support tower count
