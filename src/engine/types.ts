@@ -12,7 +12,7 @@ export interface PathNode extends Coordinate {
 }
 
 // --- VISUALS ---
-export type ParticleType = 'text' | 'shockwave' | 'projectile' | 'spark' | 'smoke' | 'muzzle' | 'line' | 'flame' | 'debris' | 'star' | 'impact' | 'heal' | 'freeze' | 'poison_cloud' | 'electric' | 'magic_burst' | 'shadow_cloud' | 'void_ring' | 'holy_light' | 'trail' | 'blast' | 'splash' | 'shard' | 'beam' | 'ripple';
+export type ParticleType = 'text' | 'shockwave' | 'projectile' | 'spark' | 'smoke' | 'muzzle' | 'line' | 'flame' | 'debris' | 'star' | 'impact' | 'heal' | 'freeze' | 'poison_cloud' | 'electric' | 'magic_burst' | 'shadow_cloud' | 'void_ring' | 'holy_light' | 'trail' | 'blast' | 'splash' | 'shard' | 'beam' | 'ripple' | 'buff' | 'aura';
 
 // --- STATUS EFFECTS ---
 export interface ActiveStatusEffect {

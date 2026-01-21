@@ -39,6 +39,15 @@ export async function updateStudentStatusAfterGame(
     }
 
     const currentStatus = currentStatusResult.data;
+    
+    // Ensure 8 basic towers are unlocked (for existing players who might not have them)
+    const basicTowers = [
+      'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
+      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
+    ];
+    const currentUnlocked = currentStatus.unlockedTowers || [];
+    const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];
+    
     // Credits based on waves achieved: 5 credits per wave (wave-based, not money-based)
     const creditsEarned = gameResult.wave * 5;
     const isNewHighWave = gameResult.wave > (currentStatus.highestWave || 0);
@@ -51,7 +60,8 @@ export async function updateStudentStatusAfterGame(
         totalMoneyEarned: gameResult.moneyEarned,
         credits: creditsEarned,
         highestWave: isNewHighWave ? gameResult.wave : 0
-      }
+      },
+      unlockedTowers: allUnlocked // Ensure basic towers are always unlocked
     });
   } catch (error) {
     console.error('Error updating student status:', error);

@@ -43,6 +43,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
   const [waveCountdown, setWaveCountdown] = useState(game.waveCountdown);
   const [waveInProgress, setWaveInProgress] = useState(game.waveInProgress);
   const [isGameOver, setIsGameOver] = useState(game.isGameOver);
+  const [showBuffSelection, setShowBuffSelection] = useState(game.showBuffSelection);
   
   // Language State
   const [language, setLanguage] = useState<'en' | 'zh'>(i18n.getLanguage());
@@ -267,6 +268,42 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
           const size = 35 * p.scale * (1 - p.life / p.maxLife);
           return <div key={p.id} className="absolute pointer-events-none rounded-full border z-30"
             style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, borderWidth: 1, opacity: p.life/p.maxLife }} />;
+      }
+      if (p.type === 'heal') {
+          return <div key={p.id} className="absolute pointer-events-none z-40 font-bold text-lg"
+            style={{ 
+                left: p.x - 8, 
+                top: p.y - 8, 
+                color: p.color, 
+                opacity: p.life/p.maxLife,
+                textShadow: `0 0 4px ${p.color}`,
+                transform: `translateY(${(p.maxLife - p.life) * -0.5}px)`
+            }}>+</div>;
+      }
+      if (p.type === 'buff') {
+          const size = 12 * p.scale;
+          return <div key={p.id} className="absolute pointer-events-none z-40 rounded-full"
+            style={{ 
+                left: p.x - size/2, 
+                top: p.y - size/2, 
+                width: size, 
+                height: size, 
+                background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
+                opacity: p.life/p.maxLife,
+                boxShadow: `0 0 ${size}px ${p.color}`
+            }} />;
+      }
+      if (p.type === 'aura') {
+          const size = 20 * p.scale * (1 - p.life / p.maxLife * 0.5);
+          return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
+            style={{ 
+                left: p.x - size/2, 
+                top: p.y - size/2, 
+                width: size, 
+                height: size, 
+                background: `radial-gradient(circle, ${p.color}40 0%, transparent 70%)`,
+                opacity: p.life/p.maxLife
+            }} />;
       }
       return null;
   };
@@ -525,9 +562,45 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
              const sellPrice = Math.floor(invest * Math.max(0.5, 0.85 - (t.level * 0.05)));
              const upgradeCost = Math.floor(stats.cost * 1.5 * t.level);
              const auraColor = effectManager.getTowerAuraColor(t);
+             
+             // Check if this is a support/aura tower
+             const isSupportTower = stats.damage === 0 || 
+                 (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || 
+                  stats.description.includes('buff') || stats.description.includes('Buff') || 
+                  stats.description.includes('Medic') || stats.description.includes('Support') ||
+                  stats.description.includes('Amplifier') || stats.description.includes('Enhancer') ||
+                  stats.description.includes('Extender')));
+             
+             // Determine aura type color for support towers
+             const getSupportAuraColor = () => {
+                 if (t.key === 'DAMAGE_BUFF' || stats.description.includes('Damage') || stats.description.includes('Amplifier')) return '#ef4444'; // Red
+                 if (t.key === 'SPEED_BUFF' || stats.description.includes('Speed') || stats.description.includes('attack speed')) return '#fbbf24'; // Yellow
+                 if (t.key === 'RANGE_BUFF' || stats.description.includes('Range') || stats.description.includes('Extender')) return '#3b82f6'; // Blue
+                 if (t.key === 'HEALER' || t.key === 'BASIC_HEAL' || stats.description.includes('Heal') || stats.description.includes('Medic')) return '#10b981'; // Green
+                 if (stats.description.includes('Slow') || stats.description.includes('slow')) return '#60a5fa'; // Light blue
+                 if (stats.description.includes('Weaken')) return '#a855f7'; // Purple
+                 return stats.color;
+             };
+             const supportAuraColor = isSupportTower ? getSupportAuraColor() : null;
 
              return (
                  <div key={t.id} className="absolute z-10" style={{ left: t.c * TILE_SIZE, top: t.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
+                     {/* Support Tower Aura Range Indicator */}
+                     {isSupportTower && (
+                         <div 
+                             className="absolute rounded-full pointer-events-none"
+                             style={{
+                                 width: t.range * TILE_SIZE * 2,
+                                 height: t.range * TILE_SIZE * 2,
+                                 top: TILE_SIZE/2 - t.range * TILE_SIZE,
+                                 left: TILE_SIZE/2 - t.range * TILE_SIZE,
+                                 background: `radial-gradient(circle, ${supportAuraColor}20 0%, ${supportAuraColor}05 70%, transparent 100%)`,
+                                 border: `1px dashed ${supportAuraColor}40`,
+                                 zIndex: -1,
+                                 animation: 'pulse 2s ease-in-out infinite'
+                             }}
+                         />
+                     )}
                      {/* Status Effect Aura */}
                      {auraColor && (
                          <div className="absolute inset-0 rounded-full pointer-events-none animate-pulse"

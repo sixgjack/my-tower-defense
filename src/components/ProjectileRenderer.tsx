@@ -27,9 +27,23 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
 
   switch (p.style) {
     case 'lightning':
+      // Enhanced lightning with multiple branches
       const midX = (sx + tx) / 2 + (Math.random() - 0.5) * 30;
       const midY = (sy + ty) / 2 + (Math.random() - 0.5) * 30;
-      return <g><polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke={p.color} strokeWidth="4" fill="none" opacity="0.6" /><polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke="#fff" strokeWidth="1" fill="none" /></g>;
+      const branch1X = midX + (Math.random() - 0.5) * 20;
+      const branch1Y = midY + (Math.random() - 0.5) * 20;
+      return <g>
+        {/* Main bolt */}
+        <polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke={p.color} strokeWidth="5" fill="none" opacity="0.4" />
+        <polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke="#facc15" strokeWidth="3" fill="none" opacity="0.7" />
+        <polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke="#fff" strokeWidth="1.5" fill="none" />
+        {/* Branch */}
+        <polyline points={`${midX},${midY} ${branch1X},${branch1Y}`} stroke="#facc15" strokeWidth="2" fill="none" opacity="0.5" />
+        {/* Glow at target */}
+        <circle cx={tx} cy={ty} r={8} fill="#facc15" opacity="0.4">
+          <animate attributeName="r" values="8;12;8" dur="0.2s" repeatCount="indefinite" />
+        </circle>
+      </g>;
     
     case 'arc': {
       const { cx, cy, arcHeight } = getArcPosition();
@@ -64,7 +78,15 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
       return <g transform={`translate(${px}, ${py})`}><circle r={5} fill="#7c3aed" opacity="0.8"><animate attributeName="r" values="5;6;5" dur="0.4s" repeatCount="indefinite" /></circle><circle r={3} fill="#a78bfa" /></g>;
     
     case 'ice':
-      return <g transform={`translate(${px}, ${py}) rotate(${tick * 5})`}><polygon points="0,-7 4,0 0,7 -4,0" fill="#60a5fa" stroke="#93c5fd" strokeWidth="1" /><circle r={2} fill="white" /></g>;
+      // Enhanced ice projectile with frost trail
+      return <g transform={`translate(${px}, ${py}) rotate(${tick * 5})`}>
+        <circle r={10} fill="#60a5fa" opacity="0.2">
+          <animate attributeName="r" values="10;14;10" dur="0.5s" repeatCount="indefinite" />
+        </circle>
+        <polygon points="0,-7 4,0 0,7 -4,0" fill="#60a5fa" stroke="#93c5fd" strokeWidth="1.5" />
+        <polygon points="0,-5 3,0 0,5 -3,0" fill="#bfdbfe" opacity="0.8" />
+        <circle r={2} fill="white" />
+      </g>;
     
     case 'acid':
       return <g transform={`translate(${px}, ${py})`}><circle r={4} fill="#10b981" opacity="0.9"><animate attributeName="r" values="4;5;4" dur="0.3s" repeatCount="indefinite" /></circle><circle r={2} fill="#34d399" /></g>;
@@ -166,7 +188,20 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
       return <g transform={`translate(${px}, ${py})`}><circle r={6} fill="#1e1e1e" opacity="0.9"><animate attributeName="r" values="6;7;6" dur="0.5s" repeatCount="indefinite" /></circle><circle r={4} fill={p.color} opacity="0.5" /></g>;
     
     case 'vortex':
-      return <g transform={`translate(${px}, ${py}) rotate(${tick * 30})`}><path d="M 0,-8 Q 8,0 0,8 Q -8,0 0,-8" fill="none" stroke={p.color} strokeWidth="2" opacity="0.8"><animate attributeName="d" values="M 0,-8 Q 8,0 0,8 Q -8,0 0,-8; M 0,-6 Q 6,0 0,6 Q -6,0 0,-6; M 0,-8 Q 8,0 0,8 Q -8,0 0,-8" dur="0.5s" repeatCount="indefinite" /></path><circle r={3} fill={p.color} opacity="0.6" /></g>;
+      // Enhanced vortex with pull effect visualization
+      return <g transform={`translate(${px}, ${py}) rotate(${tick * 30})`}>
+        <circle r={15} fill="none" stroke={p.color} strokeWidth="1" opacity="0.3" strokeDasharray="4 2">
+          <animate attributeName="r" values="15;8;15" dur="0.8s" repeatCount="indefinite" />
+        </circle>
+        <circle r={10} fill="none" stroke={p.color} strokeWidth="1.5" opacity="0.5" strokeDasharray="3 2">
+          <animate attributeName="r" values="10;5;10" dur="0.6s" repeatCount="indefinite" />
+        </circle>
+        <path d="M 0,-8 Q 8,0 0,8 Q -8,0 0,-8" fill="none" stroke={p.color} strokeWidth="2" opacity="0.8">
+          <animate attributeName="d" values="M 0,-8 Q 8,0 0,8 Q -8,0 0,-8; M 0,-6 Q 6,0 0,6 Q -6,0 0,-6; M 0,-8 Q 8,0 0,8 Q -8,0 0,-8" dur="0.5s" repeatCount="indefinite" />
+        </path>
+        <circle r={4} fill={p.color} opacity="0.8" />
+        <circle r={2} fill="#fff" opacity="0.9" />
+      </g>;
     
     case 'arrow_classic':
       return <g transform={`translate(${px}, ${py}) rotate(${angle})`}><path d="M 8,0 L -6,5 L -2,0 L -6,-5 Z" fill={p.color} stroke="white" strokeWidth="0.5" /><line x1={-12} y1={0} x2={-6} y2={0} stroke={p.color} strokeWidth="2" /></g>;

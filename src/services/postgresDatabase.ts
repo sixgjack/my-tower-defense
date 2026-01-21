@@ -138,7 +138,8 @@ export async function addQuestion(question: Omit<Question, 'id' | 'createdAt'>):
         question.category || null
       ]
     );
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
     
     return { success: true, data: rows[0]?.id };
   } catch (error: any) {
@@ -154,8 +155,9 @@ export async function getQuestion(questionId: number): Promise<DatabaseResult<Qu
       [questionId]
     );
     
-    const rows = result as unknown as any[];
-    if (rows.length === 0) {
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
+    if (!Array.isArray(rows) || rows.length === 0) {
       return { success: false, error: 'Question not found' };
     }
     
@@ -182,7 +184,12 @@ export async function getAllQuestions(): Promise<DatabaseResult<Question[]>> {
   try {
     const database = await getDb();
     const result = await database.query('SELECT * FROM questions ORDER BY created_at DESC');
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
+    
+    if (!Array.isArray(rows)) {
+      return { success: true, data: [] };
+    }
     
     return {
       success: true,
@@ -209,7 +216,12 @@ export async function getQuestionsBySet(questionSetId: string): Promise<Database
       'SELECT * FROM questions WHERE question_set_id = $1 ORDER BY created_at DESC',
       [questionSetId]
     );
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
+    
+    if (!Array.isArray(rows)) {
+      return { success: true, data: [] };
+    }
     
     return {
       success: true,
@@ -359,9 +371,10 @@ export async function getStudentStatus(userId: string): Promise<DatabaseResult<S
       'SELECT * FROM students WHERE user_id = $1',
       [userId]
     );
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
     
-    if (rows.length === 0) {
+    if (!Array.isArray(rows) || rows.length === 0) {
       return { success: false, error: 'Student not found' };
     }
     
@@ -540,7 +553,8 @@ export async function addQuestionSet(questionSet: Omit<QuestionSet, 'id' | 'crea
         questionSet.createdBy || null
       ]
     );
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
     
     return { success: true, data: rows[0]?.id };
   } catch (error: any) {
@@ -552,7 +566,12 @@ export async function getAllQuestionSets(): Promise<DatabaseResult<QuestionSet[]
   try {
     const database = await getDb();
     const result = await database.query('SELECT * FROM question_sets ORDER BY created_at DESC');
-    const rows = result as unknown as any[];
+    // PGlite returns { rows: any[] } structure
+    const rows = (result as any).rows || result || [];
+    
+    if (!Array.isArray(rows)) {
+      return { success: true, data: [] };
+    }
     
     return {
       success: true,
@@ -629,9 +648,10 @@ export async function exportAllData(): Promise<DatabaseResult<any>> {
   try {
     const [questions, studentsResult, questionSets] = await Promise.all([
       getAllQuestions(),
-      getDb().then(async db => {
-        const result = await db.query('SELECT * FROM students');
-        return result as unknown as any[];
+      getDb().then(async database => {
+        const result = await database.query('SELECT * FROM students');
+        // PGlite returns { rows: any[] } structure
+        return (result as any).rows || result || [];
       }),
       getAllQuestionSets()
     ]);
@@ -640,13 +660,13 @@ export async function exportAllData(): Promise<DatabaseResult<any>> {
       return { success: false, error: 'Failed to export data' };
     }
 
-    const students = await studentsResult;
+    const students = Array.isArray(studentsResult) ? studentsResult : [];
     
     return {
       success: true,
       data: {
         questions: questions.data || [],
-        students: (students || []).map((row: any) => ({
+        students: students.map((row: any) => ({
           userId: row.user_id,
           totalGames: row.total_games,
           totalWaves: row.total_waves,

@@ -20,15 +20,21 @@ export interface QuestionSet extends GameMode {
 export const getAllQuestionSets = async (): Promise<QuestionSet[]> => {
   try {
     const result = await db.getAllQuestionSets();
-    if (!result.success || !result.data) {
+    if (!result.success) {
       throw new Error(result.error || 'Failed to fetch question sets');
+    }
+    
+    // Handle empty or undefined data
+    const data = result.data || [];
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
     }
     
     // Get question counts for each set
     const setsWithCounts = await Promise.all(
-      result.data.map(async (set) => {
+      data.map(async (set) => {
         const questionsResult = await db.getQuestionsBySet(set.name || '');
-        const questionCount = questionsResult.success && questionsResult.data 
+        const questionCount = questionsResult.success && questionsResult.data && Array.isArray(questionsResult.data)
           ? questionsResult.data.length 
           : 0;
         

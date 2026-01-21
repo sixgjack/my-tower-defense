@@ -28,7 +28,11 @@ export const MenuScreen: React.FC = () => {
       if (status) {
         setStudentStatus(status);
       } else {
-        // Create new student status
+        // Create new student status with 8 basic towers unlocked
+        const basicTowers = [
+          'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
+          'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
+        ];
         const newStatus: StudentStatus = {
           totalGames: 0,
           totalWaves: 0,
@@ -36,7 +40,7 @@ export const MenuScreen: React.FC = () => {
           totalMoneyEarned: 0,
           highestWave: 0,
           credits: 0,
-          unlockedTowers: [],
+          unlockedTowers: basicTowers,
           lastPlayed: new Date().toISOString()
         };
         await createStudentStatus(uid, newStatus);

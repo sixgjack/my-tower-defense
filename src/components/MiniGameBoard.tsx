@@ -1,7 +1,7 @@
 // src/components/MiniGameBoard.tsx
 // Mini version of GameBoard for tower live demo - uses actual GameEngine
 import React, { useEffect, useRef, useState } from 'react';
-import { game } from '../engine/GameEngine';
+import { GameEngine } from '../engine/GameEngine';
 import { TOWERS, ENEMY_TYPES } from '../engine/data';
 import { ROWS, COLS } from '../engine/MapGenerator';
 import type { TowerStats } from '../engine/types';

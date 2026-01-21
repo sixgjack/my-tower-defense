@@ -44,6 +44,125 @@ export interface StatusEffect {
 
 // Status Effect Registry
 export const ENEMY_STATUS_EFFECTS: Record<string, StatusEffect> = {
+    // Stunned - Complete disable (for stun towers)
+    'stunned': {
+        id: 'stunned',
+        name: 'Stunned',
+        type: 'disable',
+        duration: 90, // 1.5 seconds at 60fps
+        stackCount: 1,
+        priority: 10, // Highest priority
+        visualAura: '#facc15', // Yellow
+        soundEffect: 'stun',
+        modifiers: {
+            speed: -1.0, // -100% speed = completely stopped
+        },
+    },
+    
+    // Frozen - Complete freeze (for freeze towers)
+    'frozen': {
+        id: 'frozen',
+        name: 'Frozen',
+        type: 'disable',
+        duration: 120, // 2 seconds
+        stackCount: 1,
+        priority: 9,
+        visualAura: '#60a5fa', // Blue
+        soundEffect: 'freeze',
+        modifiers: {
+            speed: -1.0, // -100% speed = completely stopped
+        },
+    },
+    
+    // Slowed - Movement slow (for slow towers)
+    'slowed': {
+        id: 'slowed',
+        name: 'Slowed',
+        type: 'debuff',
+        duration: 180, // 3 seconds
+        stackCount: 3, // Can stack 3 times
+        priority: 6,
+        visualAura: '#93c5fd', // Light blue
+        soundEffect: 'freeze',
+        modifiers: {
+            speed: -0.2, // -20% speed per stack
+        },
+    },
+    
+    // Burning - DOT effect
+    'burning': {
+        id: 'burning',
+        name: 'Burning',
+        type: 'damage',
+        duration: 180, // 3 seconds
+        stackCount: 3, // Can stack 3 times
+        priority: 5,
+        visualAura: '#ef4444', // Red
+        soundEffect: 'burn',
+        tickDamage: 3, // 3 damage per tick per stack
+    },
+    
+    // Poisoned - DOT effect with slow
+    'poisoned': {
+        id: 'poisoned',
+        name: 'Poisoned',
+        type: 'damage',
+        duration: 240, // 4 seconds
+        stackCount: 3,
+        priority: 5,
+        visualAura: '#10b981', // Green
+        soundEffect: 'poison',
+        tickDamage: 2, // 2 damage per tick per stack
+        modifiers: {
+            speed: -0.1, // -10% speed per stack
+        },
+    },
+    
+    // Pulled - Being pulled toward tower
+    'pulled': {
+        id: 'pulled',
+        name: 'Pulled',
+        type: 'debuff',
+        duration: 30, // 0.5 seconds
+        stackCount: 1,
+        priority: 8,
+        visualAura: '#1e3a8a', // Dark blue
+        soundEffect: 'pull',
+        modifiers: {
+            speed: -0.5, // -50% speed while being pulled
+        },
+    },
+    
+    // Pushed - Being pushed backward
+    'pushed': {
+        id: 'pushed',
+        name: 'Pushed',
+        type: 'debuff',
+        duration: 30, // 0.5 seconds
+        stackCount: 1,
+        priority: 8,
+        visualAura: '#2dd4bf', // Teal
+        soundEffect: 'push',
+        modifiers: {
+            speed: -0.5, // -50% speed while being pushed
+        },
+    },
+    
+    // Weakened - Armor reduction
+    'weakened': {
+        id: 'weakened',
+        name: 'Weakened',
+        type: 'debuff',
+        duration: 300, // 5 seconds
+        stackCount: 5,
+        priority: 4,
+        visualAura: '#a855f7', // Purple
+        soundEffect: 'debuff',
+        modifiers: {
+            defense: -0.1, // -10% defense per stack
+        },
+    },
+    
     // Frostbite - Slow + DOT (extends our current frozen)
     'frostbite': {
         id: 'frostbite',

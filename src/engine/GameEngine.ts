@@ -523,6 +523,14 @@ export class GameEngine {
         // Update status effects (decrease duration, apply tick damage/healing)
         effectManager.updateEnemyEffects(enemy);
         
+        // Execute enemy abilities (teleport, heal, etc.)
+        this.executeEnemyAbilities(enemy);
+        
+        // Decrease ability cooldown
+        if (enemy.abilityCooldown && enemy.abilityCooldown > 0) {
+            enemy.abilityCooldown--;
+        }
+        
         // Calculate effective speed based on status effects
         let currentSpeed = effectManager.getEffectiveEnemySpeed(enemy, enemy.baseSpeed);
         
@@ -697,7 +705,7 @@ export class GameEngine {
         }
         
         // Healer/Support towers - heal/buff nearby towers instead of attacking
-        if (stats.damage === 0 || (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Medic') || stats.description.includes('Support')))) {
+        if (stats.damage === 0 || (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Medic') || stats.description.includes('Support') || stats.description.includes('Amplifier') || stats.description.includes('Enhancer') || stats.description.includes('Extender')))) {
             if (tower.cooldown <= 0) {
                 tower.cooldown = effectiveCooldown;
                 // Find nearby towers to heal/buff
@@ -706,48 +714,83 @@ export class GameEngine {
                     const dist = Math.sqrt((nearbyTower.r - tower.r)**2 + (nearbyTower.c - tower.c)**2);
                     if (dist <= tower.range) {
                         // Heal towers - green + sign effect
-                        if (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('Medic')) {
-                            const healAmount = 5;
+                        if (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('Medic') || stats.description.includes('Repair')) {
+                            const healAmount = 5 + (tower.level - 1) * 2; // Scale with level
                             nearbyTower.hp = Math.min((nearbyTower.maxHp || 100), (nearbyTower.hp || 100) + healAmount);
                             // Green + sign particle
                             this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'heal', '#10b981');
                             this.addTextParticle(nearbyTower.c, nearbyTower.r, `+${healAmount}`, '#10b981');
-                            // Visual + sign on tower
-                            this.particles.push({
-                                id: Math.random(),
-                                x: nearbyTower.c * 60 + 30,
-                                y: nearbyTower.r * 60 + 30,
-                                vx: 0,
-                                vy: -1,
-                                life: 30,
-                                maxLife: 30,
-                                color: '#10b981',
-                                scale: 1.5,
-                                type: 'heal',
-                                text: '+' // Show + sign
-                            });
                         }
-                        // Buff towers - only apply to towers, not enemies
-                        if (stats.description.includes('Speed') || stats.description.includes('speed') || tower.key === 'SPEED_BOOSTER') {
-                            effectManager.applyEffectToTower(nearbyTower, 'haste');
-                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#fbbf24');
-                        } else if (stats.description.includes('Damage') || stats.description.includes('damage') || stats.description.includes('Amplifier') || tower.key === 'DAMAGE_AMPLIFIER') {
-                            effectManager.applyEffectToTower(nearbyTower, 'power_boost');
-                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#ef4444');
-                        } else if (stats.description.includes('Frost') || stats.description.includes('frost') || tower.key === 'FROST_ENHANCER') {
-                            effectManager.applyEffectToTower(nearbyTower, 'frost_aura');
-                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#bfdbfe');
-                        } else if (stats.description.includes('Venom') || stats.description.includes('venom') || stats.description.includes('Poison') || tower.key === 'VENOM_ENHANCER') {
-                            effectManager.applyEffectToTower(nearbyTower, 'venom_aura');
-                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#14b8a6');
-                        } else if (stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Command') || stats.description.includes('Support')) {
-                            // Generic buff - apply damage boost
-                            effectManager.applyEffectToTower(nearbyTower, 'rage');
-                            this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'buff', '#fbbf24');
+                        
+                        // Speed/Attack Speed Buff
+                        if (stats.description.includes('Speed') || stats.description.includes('speed') || stats.description.includes('attack speed') || tower.key === 'SPEED_BUFF') {
+                            effectManager.applyEffectToTower(nearbyTower, 'haste', 120); // 2 second duration
+                            if (Math.random() < 0.1) { // Only show particle occasionally
+                                this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'star', '#fbbf24');
+                            }
+                        }
+                        
+                        // Damage Buff
+                        if (stats.description.includes('Damage') || stats.description.includes('damage') || stats.description.includes('Amplifier') || tower.key === 'DAMAGE_BUFF') {
+                            effectManager.applyEffectToTower(nearbyTower, 'power_boost', 120); // 2 second duration
+                            if (Math.random() < 0.1) {
+                                this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'star', '#ef4444');
+                            }
+                        }
+                        
+                        // Range Buff
+                        if (stats.description.includes('Range') || stats.description.includes('range') || stats.description.includes('Extender') || tower.key === 'RANGE_BUFF') {
+                            effectManager.applyEffectToTower(nearbyTower, 'range_boost', 120); // 2 second duration
+                            if (Math.random() < 0.1) {
+                                this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'star', '#3b82f6');
+                            }
+                        }
+                        
+                        // Frost Aura - makes attacks apply freeze
+                        if (stats.description.includes('Frost') || stats.description.includes('frost') || tower.key === 'FROST_ENHANCER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'frost_aura', 120);
+                            if (Math.random() < 0.1) {
+                                this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'freeze', '#bfdbfe');
+                            }
+                        }
+                        
+                        // Venom Aura - makes attacks apply poison
+                        if (stats.description.includes('Venom') || stats.description.includes('venom') || stats.description.includes('Poison') || tower.key === 'VENOM_ENHANCER') {
+                            effectManager.applyEffectToTower(nearbyTower, 'venom_aura', 120);
+                            if (Math.random() < 0.1) {
+                                this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'poison_cloud', '#14b8a6');
+                            }
                         }
                     }
                 }
             }
+            
+            // Slow Field - affects enemies in range (not towers)
+            if (stats.description.includes('Slow') || stats.description.includes('slow') || tower.key === 'SLOW_FIELD') {
+                for (const enemy of this.enemies) {
+                    const dist = Math.sqrt((enemy.r - tower.r)**2 + (enemy.c - tower.c)**2);
+                    if (dist <= tower.range) {
+                        effectManager.applyEffectToEnemy(enemy, 'slowed');
+                        if (Math.random() < 0.02) {
+                            this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'freeze', '#60a5fa');
+                        }
+                    }
+                }
+            }
+            
+            // Weakening Field - affects enemies in range
+            if (stats.description.includes('Weaken') || stats.description.includes('armor') || tower.key === 'WEAKEN') {
+                for (const enemy of this.enemies) {
+                    const dist = Math.sqrt((enemy.r - tower.r)**2 + (enemy.c - tower.c)**2);
+                    if (dist <= tower.range) {
+                        effectManager.applyEffectToEnemy(enemy, 'weakened');
+                        if (Math.random() < 0.02) {
+                            this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'shadow_cloud', '#a855f7');
+                        }
+                    }
+                }
+            }
+            
             return; // Don't attack enemies
         }
         
@@ -758,14 +801,37 @@ export class GameEngine {
             tower.angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90) % 360; // Convert to degrees, adjust for sprite orientation
             
             if (stats.type === 'beam') {
-                // Continuous Laser
+                // Continuous Laser/Beam
                 tower.targetId = target.id;
-                const damage = tower.damage * 0.1;
-                applyDamageToEnemy(target, damage);
-                // Apply freeze effect for ice/beam towers
-                if (stats.projectileStyle === 'ice' || stats.projectileStyle === 'lightning') {
-                    effectManager.applyEffectToEnemy(target, 'frostbite');
+                
+                // Beam ramp damage - damage increases over time while targeting same enemy
+                if (!tower.damageCharge) tower.damageCharge = 0;
+                if (tower.targetId === target.id) {
+                    tower.damageCharge = Math.min(tower.damageCharge + (stats.beamRamp || 0.5), 10); // Max 10x ramp
+                } else {
+                    tower.damageCharge = 0; // Reset on target change
                 }
+                
+                const rampMultiplier = 1 + tower.damageCharge;
+                const damage = tower.damage * 0.1 * rampMultiplier;
+                applyDamageToEnemy(target, damage);
+                
+                // Apply status effects based on beam type
+                if (stats.projectileStyle === 'ice') {
+                    effectManager.applyEffectToEnemy(target, 'frostbite');
+                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'freeze', '#60a5fa');
+                } else if (stats.projectileStyle === 'lightning') {
+                    // Lightning has chance to stun
+                    if (Math.random() < 0.05) {
+                        effectManager.applyEffectToEnemy(target, 'stunned');
+                    }
+                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
+                } else if (stats.burnDamage && stats.burnDamage > 0) {
+                    // Fire beam applies burn
+                    effectManager.applyEffectToEnemy(target, 'burning');
+                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'flame', '#ef4444');
+                }
+                
                 if (target.hp <= 0) this.killEnemy(target);
             } else if (tower.cooldown <= 0) {
                 // Shoot (reset cooldown to effective cooldown)
@@ -896,11 +962,45 @@ export class GameEngine {
                 if (stats.specialAbility) {
                     if (stats.specialAbility === 'stun' && stats.stunDuration) {
                         effectManager.applyEffectToEnemy(target, 'stunned');
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
                     } else if (stats.specialAbility === 'slow' && stats.slowFactor) {
-                        effectManager.applyEffectToEnemy(target, 'frostbite');
+                        effectManager.applyEffectToEnemy(target, 'slowed');
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'freeze', '#60a5fa');
                     } else if (stats.specialAbility === 'pull' && stats.pullStrength) {
-                        // Pull effect handled in updateEnemies via status effects
-                        effectManager.applyEffectToEnemy(target, 'battle_surge'); // Use existing effect or create new
+                        // Pull enemy toward tower
+                        effectManager.applyEffectToEnemy(target, 'pulled');
+                        const pullAmount = stats.pullStrength;
+                        // Calculate direction from enemy to tower
+                        const dx = tower.c - target.c;
+                        const dy = tower.r - target.r;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > 0.1) {
+                            // Move enemy backward on path (reduce progress/pathIndex)
+                            if (pullAmount > 0) {
+                                // Pull toward tower (reduce pathIndex)
+                                target.progress -= pullAmount * 0.3;
+                                if (target.progress < 0) {
+                                    target.pathIndex = Math.max(0, target.pathIndex - 1);
+                                    target.progress = 1 + target.progress;
+                                    if (target.pathIndex >= 0 && this.path[target.pathIndex]) {
+                                        target.r = this.path[target.pathIndex].r;
+                                        target.c = this.path[target.pathIndex].c;
+                                    }
+                                }
+                            } else {
+                                // Push away from tower (increase pathIndex) - negative pullStrength
+                                target.progress += Math.abs(pullAmount) * 0.3;
+                                if (target.progress >= 1) {
+                                    target.pathIndex = Math.min(this.path.length - 2, target.pathIndex + 1);
+                                    target.progress = target.progress - 1;
+                                    if (target.pathIndex < this.path.length && this.path[target.pathIndex]) {
+                                        target.r = this.path[target.pathIndex].r;
+                                        target.c = this.path[target.pathIndex].c;
+                                    }
+                                }
+                            }
+                        }
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'ripple', pullAmount > 0 ? '#1e3a8a' : '#2dd4bf');
                     } else if (stats.specialAbility === 'aoe' && stats.areaRadius) {
                         // AOE damage to nearby enemies
                         for (const e of this.enemies) {
@@ -911,6 +1011,26 @@ export class GameEngine {
                                 if (e.hp <= 0) this.killEnemy(e);
                             }
                         }
+                        this.createExplosion(target.c * 60 + 30, target.r * 60 + 30, stats.color, stats.areaRadius, 'blast');
+                    }
+                }
+                
+                // Apply burn damage for fire towers
+                if (stats.burnDamage && stats.burnDamage > 0) {
+                    effectManager.applyEffectToEnemy(target, 'burning');
+                }
+                
+                // Apply effects from tower aura buffs
+                if (tower.statusEffects) {
+                    // Frost aura - apply freeze to enemies
+                    if (tower.statusEffects.some((effect: { effectId: string }) => effect.effectId === 'frost_aura')) {
+                        effectManager.applyEffectToEnemy(target, 'frostbite');
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'freeze', '#60a5fa');
+                    }
+                    // Venom aura - apply poison to enemies
+                    if (tower.statusEffects.some((effect: { effectId: string }) => effect.effectId === 'venom_aura')) {
+                        effectManager.applyEffectToEnemy(target, 'poisoned');
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'poison_cloud', '#10b981');
                     }
                 }
             }
@@ -1436,11 +1556,36 @@ export class GameEngine {
         if (tower) { 
             this.money -= cost; 
             tower.level++;
-            // Update damage and range to reflect new level
+            // Update stats using upgradeStats multipliers
             const baseStats = TOWERS[tower.key];
-            tower.baseDamage = baseStats.damage * tower.level;
-            tower.baseRange = baseStats.range * (1 + (tower.level - 1) * 0.1);
-            tower.baseCooldown = baseStats.cooldown / (1 + (tower.level - 1) * 0.1);
+            const upgradeStats = baseStats.upgradeStats || {};
+            
+            // Apply upgrade multipliers (multiply base value by multiplier^level)
+            const levelMultiplier = (mult: number) => Math.pow(mult, tower.level - 1);
+            
+            // Damage upgrade
+            if (upgradeStats.damage) {
+                tower.baseDamage = baseStats.damage * levelMultiplier(upgradeStats.damage);
+            } else {
+                tower.baseDamage = baseStats.damage * tower.level; // Fallback
+            }
+            
+            // Range upgrade
+            if (upgradeStats.range) {
+                tower.baseRange = baseStats.range * levelMultiplier(upgradeStats.range);
+            } else {
+                tower.baseRange = baseStats.range * (1 + (tower.level - 1) * 0.1); // Fallback
+            }
+            
+            // Cooldown upgrade (lower is better, so we divide)
+            if (upgradeStats.cooldown) {
+                tower.baseCooldown = baseStats.cooldown / levelMultiplier(upgradeStats.cooldown);
+            } else {
+                tower.baseCooldown = baseStats.cooldown / (1 + (tower.level - 1) * 0.1); // Fallback
+            }
+            
+            // Update other stats if they have upgrade multipliers
+            // Note: These are stored in baseStats, we'll apply them when needed
             
             // Recalculate effective stats with status effects and buffs
             let effectiveDamage = effectManager.getEffectiveTowerDamage(tower);
@@ -1483,7 +1628,6 @@ export class GameEngine {
                stats.description.includes('buff') || stats.description.includes('Buff') || 
                stats.description.includes('Medic') || stats.description.includes('Support')));
           
-          let v = stats.cost; 
           // Calculate total investment (base cost + upgrade costs)
           let invest = stats.cost;
           for(let i = 1; i < (t.level || 1); i++) {

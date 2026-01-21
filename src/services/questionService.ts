@@ -28,10 +28,10 @@ export const bulkImportQuestions = async (questions: Omit<Question, 'id' | 'crea
  */
 export const getAllQuestions = async (): Promise<Question[]> => {
   const result = await db.getAllQuestions();
-  if (!result.success || !result.data) {
+  if (!result.success) {
     throw new Error(result.error || 'Failed to fetch questions');
   }
-  return result.data;
+  return result.data || [];
 };
 
 /**
@@ -39,10 +39,10 @@ export const getAllQuestions = async (): Promise<Question[]> => {
  */
 export const getQuestionsBySet = async (questionSetId: string): Promise<Question[]> => {
   const result = await db.getQuestionsBySet(questionSetId);
-  if (!result.success || !result.data) {
+  if (!result.success) {
     throw new Error(result.error || 'Failed to fetch questions');
   }
-  return result.data;
+  return result.data || [];
 };
 
 /**

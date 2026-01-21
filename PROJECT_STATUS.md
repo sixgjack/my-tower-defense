@@ -27,9 +27,12 @@
 
 ## Known Issues / Next Steps
 - SoundSystem is currently a placeholder (console.log only).
-- reduce tower types down to 30 but with unique abilities,stun enermies, attacking multiple enermies at once, planting mines only without attack enermies directly, burn enermies, positioning enermies, slowing down enermies, sniping enermies, aoe dmg enermies, shoots projectiles that penertrates all the way through enermies,噴火槍 dealing aoe dmg in a arc shape, shooting lightnting bolts chains which may attack more than one unit, shot gun , infernal tower settings, xbow setting,  including buffing other towers, healling other towers, only apply effects on enermies without damaging them. make sure the attack interval, shooting range have great difference whem implementation
--rework on the tower discribtion, instead of only health, speed and dmg, but different ascpects in the above descriptions
--rework on the tower upgrade system, now towers have more than only health, speed and dmg to upgrade, work on the aspects,
+- ✅ **Tower Reduction**: Reduced from 70+ to 30 curated towers with unique abilities
+  - 8 basic towers unlocked by default (Auto-Rifle, Mortar, Sniper, Shotgun, Cryo, Flamethrower, Stun, Medic)
+  - 22 specialized towers covering: chain attacks, penetration, area damage, beams, status effects, positioning, support, special mechanics
+  - All towers have unique abilities: stun, slow, burn, poison, pull/push, buff, heal, chain, penetrate, mine layer, orbital strike, executioner, banker, weaken, summoner
+- ✅ **Tower Descriptions**: Reworked to focus on unique aspects and abilities rather than just stats
+- ✅ **Upgrade System**: Reworked with upgradeStats interface - each tower upgrades multiple aspects (damage, range, cooldown, areaRadius, multiTarget, slowFactor, stunDuration, burnDamage, pullStrength, beamRamp, etc.) with exponential scaling
 - rework on the visuals based on the above amendments
 - desgin 8 basic towers for player use, than playes may unlock new towers through lucky draw
 -make a 
