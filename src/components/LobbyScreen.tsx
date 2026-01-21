@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import { GameBoard } from './GameBoard';
-import { PhaserGameBoard } from './PhaserGameBoard';
 import { LuckyDraw } from './LuckyDraw';
 import { TowerGallery } from './TowerGallery';
 import { EnemyDictionary } from './EnemyDictionary';
@@ -36,7 +35,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const [showGame, setShowGame] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
-  const [usePhaser, setUsePhaser] = useState(false); // Toggle between React and Phaser rendering
   const { language, setLanguage, t } = useLanguage();
 
   const handleStartCombat = () => {
@@ -74,9 +72,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   };
 
   if (showGame && selectedMode) {
-    if (usePhaser) {
-      return <PhaserGameBoard onGameEnd={handleGameEnd} questionSetId={selectedMode.questionSetId} allowedTowers={selectedTowers} />;
-    }
     return <GameBoard onGameEnd={handleGameEnd} questionSetId={selectedMode.questionSetId} allowedTowers={selectedTowers} />;
   }
 
@@ -142,18 +137,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {/* Renderer Toggle */}
-                <button
-                  onClick={() => setUsePhaser(!usePhaser)}
-                  className={`px-4 py-2 backdrop-blur-md text-white rounded-xl transition-all border font-semibold text-sm ${
-                    usePhaser 
-                      ? 'bg-green-500/20 hover:bg-green-500/30 border-green-500/30' 
-                      : 'bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/30'
-                  }`}
-                  title={language === 'zh-TW' ? '切換渲染器' : 'Toggle Renderer'}
-                >
-                  {usePhaser ? '🎮 Phaser' : '⚛️ React'}
-                </button>
                 {/* Language Toggle */}
                 <button
                   onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
