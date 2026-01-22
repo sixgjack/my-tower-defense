@@ -748,6 +748,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
 
               {/* BEAMS / LASERS */}
               {game.towers.filter(t => TOWERS[t.key].type === 'beam' && t.targetId).map(t => {
+                    const stats = TOWERS[t.key];
                     const target = game.enemies.find(e => e.id === t.targetId);
                     if(!target) return null;
                     const sx = t.c * TILE_SIZE + TILE_SIZE/2;
@@ -755,7 +756,95 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                     const ex = (target.c + (target.xOffset||0)) * TILE_SIZE + TILE_SIZE/2;
                     const ey = (target.r + (target.yOffset||0)) * TILE_SIZE + TILE_SIZE/2;
                     
-                    return ( <g key={t.id}> <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={TOWERS[t.key].color} strokeWidth="3" opacity="0.5" /> <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="white" strokeWidth="1" strokeDasharray="5" className="animate-dash" /> <circle cx={ex} cy={ey} r={Math.random()*4+2} fill="white" /> </g> );
+                    // Ramp intensity based on damage charge
+                    const ramp = Math.min(1, (t.damageCharge || 0) / 5);
+                    const beamWidth = 3 + ramp * 6;
+                    const glowWidth = beamWidth + 8;
+                    
+                    // Different beam styles based on tower type
+                    if (stats.projectileStyle === 'ice') {
+                      // Ice beam - blue with frost effect
+                      return (
+                        <g key={t.id}>
+                          {/* Outer frost glow */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#60a5fa" strokeWidth={glowWidth} opacity={0.15 + ramp * 0.1} />
+                          {/* Main beam */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#93c5fd" strokeWidth={beamWidth} opacity={0.7} />
+                          {/* Crystal center */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={beamWidth * 0.3} opacity={0.8} />
+                          {/* Frost particles */}
+                          {Array.from({ length: 5 }).map((_, i) => {
+                            const t_pos = (i + 0.5) / 5;
+                            const px = sx + (ex - sx) * t_pos + (Math.sin(tick * 0.1 + i) * 8);
+                            const py = sy + (ey - sy) * t_pos + (Math.cos(tick * 0.1 + i) * 8);
+                            return <circle key={i} cx={px} cy={py} r={2 + Math.random() * 2} fill="#bfdbfe" opacity={0.6} />;
+                          })}
+                          {/* Freeze effect at target */}
+                          <circle cx={ex} cy={ey} r={12 + ramp * 8} fill="#60a5fa" opacity={0.3}>
+                            <animate attributeName="r" values={`${10+ramp*6};${14+ramp*10};${10+ramp*6}`} dur="0.5s" repeatCount="indefinite" />
+                          </circle>
+                        </g>
+                      );
+                    } else if (stats.projectileStyle === 'lightning') {
+                      // Lightning beam - electric with branches
+                      const jitter = 15 + ramp * 10;
+                      const mx = (sx + ex) / 2 + (Math.sin(tick * 0.5) * jitter);
+                      const my = (sy + ey) / 2 + (Math.cos(tick * 0.5) * jitter);
+                      const mx2 = (sx + mx) / 2 + (Math.cos(tick * 0.7) * jitter * 0.5);
+                      const my2 = (sy + my) / 2 + (Math.sin(tick * 0.7) * jitter * 0.5);
+                      const mx3 = (mx + ex) / 2 + (Math.sin(tick * 0.3) * jitter * 0.5);
+                      const my3 = (my + ey) / 2 + (Math.cos(tick * 0.3) * jitter * 0.5);
+                      
+                      return (
+                        <g key={t.id}>
+                          {/* Glow */}
+                          <polyline 
+                            points={`${sx},${sy} ${mx2},${my2} ${mx},${my} ${mx3},${my3} ${ex},${ey}`}
+                            fill="none" stroke="#fcd34d" strokeWidth={8} opacity={0.2}
+                          />
+                          {/* Main bolt */}
+                          <polyline 
+                            points={`${sx},${sy} ${mx2},${my2} ${mx},${my} ${mx3},${my3} ${ex},${ey}`}
+                            fill="none" stroke="#facc15" strokeWidth={3 + ramp * 2} opacity={0.8}
+                          />
+                          {/* White core */}
+                          <polyline 
+                            points={`${sx},${sy} ${mx2},${my2} ${mx},${my} ${mx3},${my3} ${ex},${ey}`}
+                            fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.9}
+                          />
+                          {/* Branch */}
+                          <line 
+                            x1={mx} y1={my} 
+                            x2={mx + Math.sin(tick * 0.4) * 25} y2={my + Math.cos(tick * 0.4) * 25}
+                            stroke="#fcd34d" strokeWidth={2} opacity={0.5}
+                          />
+                          {/* Impact spark */}
+                          <circle cx={ex} cy={ey} r={10 + ramp * 6} fill="#facc15" opacity={0.5}>
+                            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="0.1s" repeatCount="indefinite" />
+                          </circle>
+                        </g>
+                      );
+                    } else {
+                      // Fire/laser beam - hot colors with glow
+                      const color = stats.color;
+                      return (
+                        <g key={t.id}>
+                          {/* Outer glow */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={color} strokeWidth={glowWidth} opacity={0.2 + ramp * 0.2} />
+                          {/* Core beam */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={color} strokeWidth={beamWidth} opacity={0.6 + ramp * 0.4} />
+                          {/* White hot center */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={beamWidth * 0.4} opacity={0.5 + ramp * 0.5} />
+                          {/* Animated dash for energy flow */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={1} strokeDasharray="10 5" opacity={0.7} style={{ strokeDashoffset: tick * 2 }} />
+                          {/* Impact glow at target */}
+                          <circle cx={ex} cy={ey} r={8 + ramp * 12} fill={color} opacity={0.4}>
+                            <animate attributeName="r" values={`${8+ramp*10};${12+ramp*16};${8+ramp*10}`} dur="0.3s" repeatCount="indefinite" />
+                          </circle>
+                          <circle cx={ex} cy={ey} r={(8 + ramp * 12) * 0.5} fill="#ffffff" opacity={0.3} />
+                        </g>
+                      );
+                    }
               })}
           </svg>
 
