@@ -1273,21 +1273,22 @@ export class GameEngine {
           
         case 'deactivate_towers':
           if (timeSinceLastUse > 250 && Math.random() > 0.97) {
-            // Deactivate nearby towers for 3 seconds (180 ticks)
+            // Deactivate nearby towers for 1.5 seconds (90 ticks) - balanced duration
             const nearbyTowers = this.towers.filter(t => {
               const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
-              return dist <= 3;
+              return dist <= 2.5; // Slightly reduced range
             });
             
             nearbyTowers.forEach(tower => {
               if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'stunned')) {
-                effectManager.applyEffectToTower(tower, 'stunned', 180);
+                effectManager.applyEffectToTower(tower, 'stunned', 90); // Reduced from 180 to 90 (1.5s)
               }
             });
             
             enemy.lastAbilityUse = this.tickCount;
-            enemy.abilityCooldown = 300;
+            enemy.abilityCooldown = 400; // Increased cooldown for balance
             this.addTextParticle(enemy.c, enemy.r, 'DISABLE!', "#ef4444");
+            this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'electric', '#6366f1');
             soundSystem.play('stun');
           }
           break;
@@ -1396,22 +1397,23 @@ export class GameEngine {
           break;
           
         case 'slow_towers':
-          if (timeSinceLastUse > 150 && Math.random() > 0.94) {
-            // Slow down nearby towers
+          if (timeSinceLastUse > 180 && Math.random() > 0.94) {
+            // Slow down nearby towers for 2 seconds (120 ticks) - balanced
             const nearbyTowers = this.towers.filter(t => {
               const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
-              return dist <= 4;
+              return dist <= 3; // Reduced range
             });
             
             nearbyTowers.forEach(tower => {
               if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'firerate_debuff')) {
-                effectManager.applyEffectToTower(tower, 'firerate_debuff', 240); // 4 seconds
+                effectManager.applyEffectToTower(tower, 'firerate_debuff', 120); // Reduced from 240 to 120 (2s)
               }
             });
             
             enemy.lastAbilityUse = this.tickCount;
-            enemy.abilityCooldown = 200;
+            enemy.abilityCooldown = 250;
             this.addTextParticle(enemy.c, enemy.r, 'SLOW!', "#3b82f6");
+            this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'freeze', '#60a5fa');
             soundSystem.play('debuff');
           }
           break;

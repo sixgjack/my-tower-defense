@@ -612,6 +612,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                               }}
                          />
                      )}
+                     
+                     {/* Tower Disabled/Stunned Effect */}
+                     {t.statusEffects && t.statusEffects.some((e: any) => e.effectId === 'stunned') && (
+                         <>
+                             <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
+                                 <div className="text-3xl animate-bounce">💫</div>
+                             </div>
+                             <div className="absolute inset-0 rounded-lg pointer-events-none z-10 bg-indigo-600/30 animate-pulse" />
+                             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-indigo-300 bg-indigo-900/80 px-2 py-0.5 rounded whitespace-nowrap z-30">
+                                 DISABLED
+                             </div>
+                         </>
+                     )}
+                     
+                     {/* Tower Slowed Effect */}
+                     {t.statusEffects && t.statusEffects.some((e: any) => e.effectId === 'firerate_debuff') && !t.statusEffects.some((e: any) => e.effectId === 'stunned') && (
+                         <>
+                             <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
+                                 <div className="text-2xl opacity-70">🐌</div>
+                             </div>
+                             <div className="absolute inset-0 rounded-lg pointer-events-none z-10 bg-blue-500/20" />
+                             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-blue-300 bg-blue-900/80 px-2 py-0.5 rounded whitespace-nowrap z-30">
+                                 SLOWED
+                             </div>
+                         </>
+                     )}
+                     
                      {/* Health Bar */}
                      {t.maxHp && t.maxHp > 0 && (
                          <div className="absolute -top-1 left-0 right-0 h-1 bg-slate-700 rounded-full overflow-hidden z-10">
