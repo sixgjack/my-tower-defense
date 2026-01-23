@@ -24,6 +24,13 @@ export class EffectManager {
             console.warn(`Unknown enemy effect: ${effectId}`);
             return false;
         }
+        
+        // CC Immunity check - immune enemies resist stuns, slows, freezes
+        const ccEffects = ['stunned', 'frozen', 'slowed', 'frostbite', 'pulled', 'pushed'];
+        if ((enemy as any).isCCImmune && ccEffects.includes(effectId)) {
+            // Visual feedback that effect was resisted
+            return false;
+        }
 
         // Initialize statusEffects array if needed
         if (!enemy.statusEffects) {

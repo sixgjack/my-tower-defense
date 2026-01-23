@@ -39,7 +39,7 @@ export interface Particle {
 }
 
 // --- ENEMIES ---
-export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield' | 'attack_towers';
+export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield' | 'attack_towers' | 'cc_immune' | 'speed_aura' | 'shield_allies' | 'area_disable';
 
 export type BossType = 'mini' | 'big';
 

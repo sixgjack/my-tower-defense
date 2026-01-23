@@ -47,6 +47,9 @@ export class GameEngine {
   // Buff Selection State
   showBuffSelection: boolean = false;
   
+  // Enemy Dictionary Tracking
+  encounteredEnemyNames: Set<string> = new Set();
+  
   // Support Tower Limits
   maxSupportTowers: number = 5; // Maximum number of support/healer towers
   supportTowerCount: number = 0; // Current count of support towers
@@ -490,7 +493,7 @@ export class GameEngine {
     // Apply active buff multipliers to enemy speed
     baseSpeed *= enemyBuffs.speed;
 
-    this.enemies.push({ 
+    const enemy = { 
         id: Date.now() + Math.random(), 
         pathIndex: 0, progress: 0.0, 
         r: this.path[0].r, c: this.path[0].c, 
@@ -512,10 +515,18 @@ export class GameEngine {
         isInvisible: (stats.abilities && stats.abilities.includes('invisible')) || false,
         isFlying: (stats.abilities && stats.abilities.includes('fly')) || false,
         isBurrowed: (stats.abilities && stats.abilities.includes('burrow')) || false,
+        isCCImmune: (stats.abilities && stats.abilities.includes('cc_immune')) || false,
         bossType: undefined,
         bossShieldHp: undefined,
-        statusEffects: []
-    });
+        statusEffects: [],
+        name: stats.name // Track enemy name for dictionary
+    };
+    this.enemies.push(enemy);
+    
+    // Track enemy encounter for dictionary
+    if (stats.name && !this.encounteredEnemyNames.has(stats.name)) {
+      this.encounteredEnemyNames.add(stats.name);
+    }
   }
 
   updateEnemies() {
@@ -717,9 +728,8 @@ export class GameEngine {
                         if (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('Medic') || stats.description.includes('Repair')) {
                             const healAmount = 5 + (tower.level - 1) * 2; // Scale with level
                             nearbyTower.hp = Math.min((nearbyTower.maxHp || 100), (nearbyTower.hp || 100) + healAmount);
-                            // Green + sign particle
+                            // Green heal particle (no text to avoid clutter)
                             this.addParticle(nearbyTower.c * 60 + 30, nearbyTower.r * 60 + 30, 'heal', '#10b981');
-                            this.addTextParticle(nearbyTower.c, nearbyTower.r, `+${healAmount}`, '#10b981');
                         }
                         
                         // Speed/Attack Speed Buff
@@ -806,14 +816,28 @@ export class GameEngine {
                 
                 // Beam ramp damage - damage increases over time while targeting same enemy
                 if (!tower.damageCharge) tower.damageCharge = 0;
-                if (tower.targetId === target.id) {
-                    tower.damageCharge = Math.min(tower.damageCharge + (stats.beamRamp || 0.5), 10); // Max 10x ramp
+                if (!tower.beamDuration) tower.beamDuration = 0;
+                
+                if (tower.lastTargetId === target.id) {
+                    tower.damageCharge = Math.min(tower.damageCharge + (stats.beamRamp || 0.3), 5); // Max 5x ramp (reduced from 10x)
+                    tower.beamDuration++;
+                    
+                    // Beam overheats after 300 ticks (5 seconds) - needs cooldown
+                    if (tower.beamDuration > 300) {
+                      tower.damageCharge = Math.max(0, tower.damageCharge - 0.5); // Decay damage
+                      if (tower.beamDuration > 360) { // After 6s, force reset
+                        tower.beamDuration = 0;
+                        tower.damageCharge = 0;
+                      }
+                    }
                 } else {
                     tower.damageCharge = 0; // Reset on target change
+                    tower.beamDuration = 0;
                 }
+                tower.lastTargetId = target.id;
                 
                 const rampMultiplier = 1 + tower.damageCharge;
-                const damage = tower.damage * 0.1 * rampMultiplier;
+                const damage = tower.damage * 0.08 * rampMultiplier; // Reduced base multiplier from 0.1 to 0.08
                 applyDamageToEnemy(target, damage);
                 
                 // Apply status effects based on beam type
@@ -1272,23 +1296,45 @@ export class GameEngine {
           break;
           
         case 'deactivate_towers':
-          if (timeSinceLastUse > 250 && Math.random() > 0.97) {
-            // Deactivate nearby towers for 1.5 seconds (90 ticks) - balanced duration
+          if (timeSinceLastUse > 300 && Math.random() > 0.96) {
+            // Deactivate nearby towers for 3 seconds (180 ticks) - significant impact
             const nearbyTowers = this.towers.filter(t => {
               const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
-              return dist <= 2.5; // Slightly reduced range
+              return dist <= 2; // 2x2 area effect
             });
             
             nearbyTowers.forEach(tower => {
               if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'stunned')) {
-                effectManager.applyEffectToTower(tower, 'stunned', 90); // Reduced from 180 to 90 (1.5s)
+                effectManager.applyEffectToTower(tower, 'stunned', 180); // 3 seconds
               }
             });
             
             enemy.lastAbilityUse = this.tickCount;
-            enemy.abilityCooldown = 400; // Increased cooldown for balance
-            this.addTextParticle(enemy.c, enemy.r, 'DISABLE!', "#ef4444");
-            this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'electric', '#6366f1');
+            enemy.abilityCooldown = 500; // Long cooldown
+            this.addTextParticle(enemy.c, enemy.r, '⚡', "#6366f1");
+            // Visual effect for area disable
+            for (const t of nearbyTowers) {
+              this.addParticle(t.c * 60 + 30, t.r * 60 + 30, 'electric', '#6366f1');
+            }
+            soundSystem.play('stun');
+          }
+          break;
+          
+        case 'area_disable':
+          // New ability: Disables towers in a fixed 2x2 tile range
+          if (timeSinceLastUse > 400 && Math.random() > 0.95) {
+            const affectedTowers = this.towers.filter(t => {
+              return Math.abs(t.r - enemy.r) <= 1 && Math.abs(t.c - enemy.c) <= 1;
+            });
+            
+            affectedTowers.forEach(tower => {
+              effectManager.applyEffectToTower(tower, 'stunned', 240); // 4 seconds
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 600;
+            this.addTextParticle(enemy.c, enemy.r, '💫', "#8b5cf6");
+            this.createExplosion(enemy.c * 60 + 30, enemy.r * 60 + 30, '#8b5cf6', 1.5, 'wave');
             soundSystem.play('stun');
           }
           break;
@@ -1305,12 +1351,14 @@ export class GameEngine {
             nearbyEnemies.forEach((e: any) => {
               const heal = e.maxHp * 0.15; // Heal 15% max HP
               e.hp = Math.min(e.hp + heal, e.maxHp);
-              this.addTextParticle(e.c, e.r, `+${Math.floor(heal)}`, "#10b981");
+              // Visual particle only (no text to avoid clutter)
+              this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'heal', '#10b981');
             });
             
             enemy.lastAbilityUse = this.tickCount;
             enemy.abilityCooldown = 150;
-            this.addTextParticle(enemy.c, enemy.r, 'HEAL!', "#10b981");
+            // Show heart emoji instead of text
+            this.addTextParticle(enemy.c, enemy.r, '💚', "#10b981");
             soundSystem.play('heal');
           }
           break;
@@ -1397,24 +1445,72 @@ export class GameEngine {
           break;
           
         case 'slow_towers':
-          if (timeSinceLastUse > 180 && Math.random() > 0.94) {
-            // Slow down nearby towers for 2 seconds (120 ticks) - balanced
+          if (timeSinceLastUse > 200 && Math.random() > 0.93) {
+            // Slow down nearby towers for 3 seconds (180 ticks)
             const nearbyTowers = this.towers.filter(t => {
               const dist = Math.sqrt((t.r - enemy.r)**2 + (t.c - enemy.c)**2);
-              return dist <= 3; // Reduced range
+              return dist <= 3;
             });
             
             nearbyTowers.forEach(tower => {
               if (!tower.statusEffects || !tower.statusEffects.find((e: any) => e.effectId === 'firerate_debuff')) {
-                effectManager.applyEffectToTower(tower, 'firerate_debuff', 120); // Reduced from 240 to 120 (2s)
+                effectManager.applyEffectToTower(tower, 'firerate_debuff', 180); // 3 seconds
               }
             });
             
             enemy.lastAbilityUse = this.tickCount;
-            enemy.abilityCooldown = 250;
-            this.addTextParticle(enemy.c, enemy.r, 'SLOW!', "#3b82f6");
+            enemy.abilityCooldown = 300;
+            this.addTextParticle(enemy.c, enemy.r, '🐌', "#60a5fa");
             this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'freeze', '#60a5fa');
             soundSystem.play('debuff');
+          }
+          break;
+          
+        case 'speed_aura':
+          // Speed up nearby allies
+          if (timeSinceLastUse > 100) {
+            const nearbyAllies = this.enemies.filter(e => {
+              if (e.id === enemy.id || e.hp <= 0) return false;
+              const dist = Math.sqrt((e.r - enemy.r)**2 + (e.c - enemy.c)**2);
+              return dist <= 3;
+            });
+            
+            nearbyAllies.forEach((ally: any) => {
+              if (!ally.hasSpeedBuff) {
+                ally.speedMultiplier = (ally.speedMultiplier || 1.0) * 1.3; // 30% speed boost
+                ally.hasSpeedBuff = true;
+                this.addParticle(ally.c * 60 + 30, ally.r * 60 + 30, 'spark', '#fbbf24');
+              }
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            // Visual aura around speed buffer
+            if (this.tickCount % 30 === 0) {
+              this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'buff', '#fbbf24');
+            }
+          }
+          break;
+          
+        case 'shield_allies':
+          // Give shield to nearby allies
+          if (timeSinceLastUse > 300 && Math.random() > 0.92) {
+            const nearbyAllies = this.enemies.filter(e => {
+              if (e.id === enemy.id || e.hp <= 0) return false;
+              const dist = Math.sqrt((e.r - enemy.r)**2 + (e.c - enemy.c)**2);
+              return dist <= 4;
+            });
+            
+            nearbyAllies.slice(0, 3).forEach((ally: any) => {
+              if (!ally.shieldHp) {
+                ally.shieldHp = ally.maxHp * 0.3; // 30% of max HP as shield
+                this.addParticle(ally.c * 60 + 30, ally.r * 60 + 30, 'shockwave', '#60a5fa');
+              }
+            });
+            
+            enemy.lastAbilityUse = this.tickCount;
+            enemy.abilityCooldown = 400;
+            this.addTextParticle(enemy.c, enemy.r, '🛡️', "#60a5fa");
+            soundSystem.play('buff');
           }
           break;
           
@@ -1720,6 +1816,16 @@ export class GameEngine {
           p.life--; 
       });
       this.particles = this.particles.filter(p => p.life > 0);
+  }
+  
+  // Get encountered enemy names for dictionary
+  getEncounteredEnemies(): string[] {
+    return Array.from(this.encounteredEnemyNames);
+  }
+  
+  // Clear encountered enemies (for new session)
+  clearEncounteredEnemies() {
+    this.encounteredEnemyNames.clear();
   }
 }
 

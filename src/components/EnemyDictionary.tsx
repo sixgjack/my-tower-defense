@@ -191,15 +191,16 @@ export const EnemyDictionary: React.FC<EnemyDictionaryProps> = ({ onBack, encoun
                         {enemy.abilities && enemy.abilities.length > 0 && (
                           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4">
                             <div className="text-red-300 font-bold mb-2">
-                              {t('enemy.specialAbilities')} / Special Abilities
+                              {t('enemy.specialAbilities')}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {enemy.abilities.map((ability, idx) => (
                                 <div
                                   key={idx}
-                                  className="px-3 py-1 bg-red-500/30 rounded-full text-white text-sm capitalize"
+                                  className="px-3 py-1 bg-red-500/30 rounded-full text-white text-sm"
+                                  title={ability.replace(/_/g, ' ')}
                                 >
-                                  {ability.replace(/_/g, ' ')}
+                                  {t(`ability.${ability}`)}
                                 </div>
                               ))}
                             </div>

@@ -20,6 +20,7 @@ export interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies: string[];
   lastPlayed: string;
 }
 
@@ -48,6 +49,11 @@ export async function updateStudentStatusAfterGame(
     const currentUnlocked = currentStatus.unlockedTowers || [];
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];
     
+    // Merge encountered enemies with previously encountered ones
+    const currentEncountered = currentStatus.encounteredEnemies || [];
+    const newEncountered = gameResult.encounteredEnemies || [];
+    const allEncountered = [...new Set([...currentEncountered, ...newEncountered])];
+    
     // Credits based on waves achieved: 5 credits per wave (wave-based, not money-based)
     const creditsEarned = gameResult.wave * 5;
     const isNewHighWave = gameResult.wave > (currentStatus.highestWave || 0);
@@ -61,7 +67,8 @@ export async function updateStudentStatusAfterGame(
         credits: creditsEarned,
         highestWave: isNewHighWave ? gameResult.wave : 0
       },
-      unlockedTowers: allUnlocked // Ensure basic towers are always unlocked
+      unlockedTowers: allUnlocked, // Ensure basic towers are always unlocked
+      encounteredEnemies: allEncountered // Save all encountered enemies
     });
   } catch (error) {
     console.error('Error updating student status:', error);

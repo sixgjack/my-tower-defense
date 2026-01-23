@@ -52,7 +52,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     setActiveView('game');
   };
 
-  const handleGameEnd = async (gameResult?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number }) => {
+  const handleGameEnd = async (gameResult?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number; encounteredEnemies?: string[] }) => {
     setShowGame(false);
     setActiveView('lobby');
     setSelectedMode(null);

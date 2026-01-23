@@ -18,7 +18,7 @@ const BOARD_WIDTH = COLS * TILE_SIZE;
 const BOARD_HEIGHT = ROWS * TILE_SIZE;
 
 interface GameBoardProps {
-  onGameEnd?: (result?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number }) => void;
+  onGameEnd?: (result?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number; encounteredEnemies: string[] }) => void;
   questionSetId?: string; // Question set identifier for the game mode
   allowedTowers?: string[]; // List of tower keys that can be built (from loadout selection)
 }
@@ -346,7 +346,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
               wave: game.wave,
               towersBuilt: game.towers.length,
               enemiesKilled: game.totalEnemiesKilled,
-              moneyEarned: game.totalMoneyEarned
+              moneyEarned: game.totalMoneyEarned,
+              encounteredEnemies: game.getEncounteredEnemies()
             });
           }
         }}
@@ -379,7 +380,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   wave: game.wave,
                   towersBuilt: game.towers.length,
                   enemiesKilled: game.totalEnemiesKilled,
-                  moneyEarned: game.totalMoneyEarned
+                  moneyEarned: game.totalMoneyEarned,
+                  encounteredEnemies: game.getEncounteredEnemies()
                 });
               }
             }}
@@ -712,6 +714,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                            }}
                       />
                   )}
+                  {/* Shield indicator */}
+                  {e.shieldHp && e.shieldHp > 0 && (
+                    <div className="absolute inset-0 rounded-full pointer-events-none animate-pulse"
+                         style={{
+                           border: '3px solid #60a5fa',
+                           boxShadow: '0 0 10px #60a5fa, inset 0 0 8px rgba(96, 165, 250, 0.3)',
+                           width: TILE_SIZE * 0.9,
+                           height: TILE_SIZE * 0.9,
+                           left: '50%',
+                           top: '50%',
+                           transform: 'translate(-50%, -50%)'
+                         }}
+                    />
+                  )}
+                  
+                  {/* CC Immune indicator */}
+                  {e.isCCImmune && (
+                    <div className="absolute -top-2 -right-2 text-xs bg-purple-600 rounded-full w-4 h-4 flex items-center justify-center" title="CC Immune">
+                      🛡️
+                    </div>
+                  )}
+                  
+                  {/* Speed Aura indicator */}
+                  {e.abilities?.includes('speed_aura') && (
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px]">⚡</div>
+                  )}
+                  
+                  {/* Shield Allies indicator */}
+                  {e.abilities?.includes('shield_allies') && (
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px]">🛡️</div>
+                  )}
+                  
                   <div className="w-8 h-1 bg-slate-800 rounded-full overflow-hidden mb-0.5 border border-slate-600">
                       <div 
                         className="h-full bg-rose-500 will-change-[width]" 
@@ -723,6 +757,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                       />
                   </div>
                   <div className="text-2xl drop-shadow-md">{e.icon}</div>
+                  
+                  {/* Boss indicator */}
+                  {e.bossType && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-yellow-400 bg-slate-900/80 px-1 rounded">
+                      BOSS
+                    </div>
+                  )}
               </div>
               );
           })}

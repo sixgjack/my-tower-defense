@@ -114,6 +114,30 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Necrotic Plague", hp: 180, speed: 0.65, reward: 29, color: "#7c2d12", icon: "🦠", abilities: ['poison_aura', 'regenerate', 'spawn_minions'], abilityCooldown: 500, minWave: 5 },
     { name: "Void Reaper", hp: 350, speed: 0.3, reward: 57, color: "#000000", icon: "🌑", abilities: ['invisible', 'teleport', 'damage_reflect'], abilityCooldown: 360, minWave: 8 },
     { name: "Titanium Behemoth", hp: 650, speed: 0.08, reward: 107, color: "#94a3b8", icon: "🗿", isBoss: true, abilities: ['attack_towers', 'shield', 'damage_reflect', 'regenerate'], abilityCooldown: 200, minWave: 15, moneyBonus: 4.0 }, // Much slower
+    
+    // ==========================================
+    // NEW ENEMIES WITH SPECIAL ABILITIES (v2)
+    // ==========================================
+    // CC Immune enemies - cannot be slowed, frozen, or stunned
+    { name: "Juggernaut", hp: 480, speed: 0.35, reward: 78, color: "#374151", icon: "🦾", abilities: ['cc_immune', 'charge'], minWave: 10, description: 'Immune to crowd control effects' },
+    { name: "Unstoppable Force", hp: 600, speed: 0.28, reward: 98, color: "#1f2937", icon: "💪", isBoss: true, abilities: ['cc_immune', 'berserk', 'regenerate'], minWave: 15, moneyBonus: 3.5, description: 'Cannot be slowed or stunned' },
+    { name: "Phase Shifter", hp: 200, speed: 0.8, reward: 33, color: "#8b5cf6", icon: "🔮", abilities: ['cc_immune', 'teleport', 'invisible'], abilityCooldown: 300, minWave: 8, description: 'Phases through all effects' },
+    
+    // Area Disable enemies - disable towers in 2x2 area
+    { name: "EMP Drone", hp: 150, speed: 0.6, reward: 25, color: "#3b82f6", icon: "📡", abilities: ['area_disable', 'fly'], abilityCooldown: 400, minWave: 6, description: 'Disables all towers in 2x2 area' },
+    { name: "Pulse Bomber", hp: 280, speed: 0.4, reward: 46, color: "#6366f1", icon: "💫", abilities: ['area_disable', 'explode'], abilityCooldown: 500, minWave: 9, description: 'Creates EMP pulse disabling nearby towers' },
+    
+    // Speed Aura enemies - speed up nearby allies
+    { name: "War Drummer", hp: 180, speed: 0.5, reward: 29, color: "#f59e0b", icon: "🥁", abilities: ['speed_aura', 'berserk'], abilityCooldown: 200, minWave: 5, description: 'Speeds up nearby allies by 30%' },
+    { name: "Rally Banner", hp: 220, speed: 0.35, reward: 36, color: "#fbbf24", icon: "🚩", abilities: ['speed_aura', 'heal_allies'], abilityCooldown: 250, minWave: 7, description: 'Inspires allies to move faster' },
+    
+    // Shield Allies enemies - give shield to nearby allies
+    { name: "Guardian Angel", hp: 200, speed: 0.45, reward: 33, color: "#60a5fa", icon: "👼", abilities: ['shield_allies', 'fly', 'heal_allies'], abilityCooldown: 350, minWave: 6, description: 'Shields nearby allies' },
+    { name: "Fortress", hp: 400, speed: 0.2, reward: 65, color: "#475569", icon: "🏰", abilities: ['shield_allies', 'shield', 'damage_reflect'], abilityCooldown: 400, minWave: 10, description: 'Projects shields to allies' },
+    
+    // Combined special abilities
+    { name: "Warlord Commander", hp: 350, speed: 0.38, reward: 57, color: "#dc2626", icon: "👑", isBoss: true, abilities: ['speed_aura', 'shield_allies', 'deactivate_towers'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0, description: 'Commands nearby enemies' },
+    { name: "Nexus Lord", hp: 700, speed: 0.15, reward: 115, color: "#4c1d95", icon: "🌟", isBoss: true, abilities: ['cc_immune', 'area_disable', 'shield_allies', 'teleport'], abilityCooldown: 350, minWave: 20, moneyBonus: 5.0, description: 'Master of control immunity' },
 ];
 
 export interface Theme {

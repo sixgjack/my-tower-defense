@@ -10,53 +10,66 @@
 ## Current Features
 - **Pathing:** Auto-generated path using "Drunkard's Walk" algorithm.
 - **Waves:** Logic for wave countdowns, increasing difficulty, and boss waves.
-- **Towers:** "SNIPER" type implemented (Instant hit).
-- **Enemies:** Basic movement with HP scaling.
-- **Render:** Canvas 2D rendering for performance (70+ towers capable).
+- **Towers:** Multiple tower types with unique abilities (projectile, area, beam, spread, pull, aura)
+- **Enemies:** 100+ enemy types with various abilities
+- **Render:** Canvas 2D + SVG hybrid rendering for performance
 
 ## Completed Features ✅
+
+### Core Systems
 - **Buff System**: Complete buff/debuff system with rarity tiers (common, rare, epic, legendary)
-  - `buffSystem.ts`: Core buff definitions and generation functions
-  - `themeEffects.ts`: Theme-based environmental effects (2-3 effects per theme)
-  - Buff types: damage, attack speed, range, money, enemy speed, enemy HP, lives
-  - Duration types: wave-based (3-10 waves) or permanent
-- **Theme Effects**: Dynamic environmental effects that change every 10 waves
-  - 20+ themes with unique visual styles
-  - Each theme generates 2-3 random buffs/debuffs
-  - Effects apply to towers or enemies based on type
+- **Theme Effects**: 20+ themes with unique environmental effects
+- **3-pick-1 Roguelike Buff Selection**: Triggers every 3 waves
+
+### Tower System
+- ✅ **8 Basic Towers**: Auto-Rifle, Mortar, Sniper, Shotgun, Cryo, Flamethrower, Stun, Medic
+- ✅ **22 Specialized Towers**: Chain Lightning, Railgun, Gatling, Artillery, etc.
+- ✅ **Tower Loadout Selection**: Players select 8 towers before battle
+- ✅ **Support Towers**: Speed Buff, Damage Buff, Range Buff, Frost/Venom Enhancers, Healer
+- ✅ **Beam Attack Balance**: Max 5x damage ramp (reduced from 10x), overheat after 5 seconds
+- ✅ **Tower Status Effects Visuals**: Stunned/Disabled shows 💫 icon, Slowed shows 🐌 icon
+
+### Enemy System
+- ✅ **100+ Enemy Types**: Including bosses with special abilities
+- ✅ **New Enemy Abilities (v2)**:
+  - `cc_immune`: Immune to stuns, slows, freezes (Juggernaut, Unstoppable Force, Phase Shifter)
+  - `area_disable`: Disables towers in 2x2 area (EMP Drone, Pulse Bomber)
+  - `speed_aura`: Speeds up nearby allies by 30% (War Drummer, Rally Banner)
+  - `shield_allies`: Grants shields to nearby allies (Guardian Angel, Fortress)
+- ✅ **Enemy Ability Visuals**: Shield indicator, CC immune badge, ability icons
+- ✅ **Enemy Encyclopedia (敵人圖鑑)**: Now properly tracks and saves encountered enemies
+
+### Localization (i18n)
+- ✅ **Bilingual Support**: English + Traditional Chinese (繁體中文)
+- ✅ **Tower Names & Descriptions**: Translated for all towers
+- ✅ **Enemy Abilities**: Translated (teleport, deactivate_towers, heal_allies, etc.)
+- ✅ **Status Effects**: Translated (stunned, frozen, slowed, burning, etc.)
+- ✅ **UI Elements**: Lucky Draw, Rarity, Difficulty, Filters all translated
+
+### Balance Changes
+- ✅ **Tower Stun Duration**: Enemy `deactivate_towers` now stuns for 3 seconds (was 1.5s)
+- ✅ **Tower Slow Duration**: Enemy `slow_towers` now slows for 3 seconds (was 2s)
+- ✅ **Beam Attack**: Max 5x ramp, overheats after 5 seconds, damage reduced to 0.08x base
+- ✅ **Healing Effects**: No longer show text particles (cleaner visuals)
+
+### Credits System
+- ✅ **Credits Based on Waves**: wave * 5 credits per game
+- ✅ **Lucky Draw**: Spend 100 credits to draw towers
+
+## In Progress 🚧
+- **Battle Shop System**: Integration with lucky draw every 3 waves
+- **Lucky Draw Rarity**: Individual rarity per option (not uniform)
+- **Tower Live Demo**: Needs improvement for tower selection preview
 
 ## Known Issues / Next Steps
-- SoundSystem is currently a placeholder (console.log only).
-- ✅ **Tower Reduction**: Reduced from 70+ to 30 curated towers with unique abilities
-  - 8 basic towers unlocked by default (Auto-Rifle, Mortar, Sniper, Shotgun, Cryo, Flamethrower, Stun, Medic)
-  - 22 specialized towers covering: chain attacks, penetration, area damage, beams, status effects, positioning, support, special mechanics
-  - All towers have unique abilities: stun, slow, burn, poison, pull/push, buff, heal, chain, penetrate, mine layer, orbital strike, executioner, banker, weaken, summoner
-- ✅ **Tower Descriptions**: Reworked to focus on unique aspects and abilities rather than just stats
-- ✅ **Upgrade System**: Reworked with upgradeStats interface - each tower upgrades multiple aspects (damage, range, cooldown, areaRadius, multiTarget, slowFactor, stunDuration, burnDamage, pullStrength, beamRamp, etc.) with exponential scaling
-- rework on the visuals based on the above amendments
-- desgin 8 basic towers for player use, than playes may unlock new towers through lucky draw
--make a 
-- grant mini boss and big boss the ability to affect towers, including attack towers , stunning towers, have double health bars, have sheid bars, slowing down tower attack speed, move very fast, split into half when die, etc.)
-update visual effects and avoid 
-- also towers are not getting upgraded dmg after upgrading
-- No visual "Game Over" screen (just console log / freeze).
-- develop more themes, at least 20+, and each theme should have some special envirmental effects, such as frosty theme will slow down turrents(shooting speed)
-- very detailed effects mechcanism (you may refer to "effect mechcanism example.md")
-- need more boss and enermies types at least 50+, with different abilitys, such as deactivating some towers, suddenly move from one side to other side, healing enermies ahead, run very fast, attract towers firepower, have sheild)
-- need to implement a entrance mobile gam like menu and allow students to establish their accounts with google SSO, also need to build a database to store questions(currently firebase) and students account and their status
-- need to build a ranking leader system
-- ✅ **Tower Loadout Selection**: Complete implementation - players must select 8 towers before battle
-- ✅ **3-pick-1 Roguelike Buff Selection**: Complete implementation with UI modal, triggers every 3 waves
-- ✅ **Credits System**: Credits now based on waves achieved (wave * 5)
-- **TODO: Tower Live Demo**: Live demo preview in tower selection needs to show tower attacking enemies
-- a credit system where player can get after every combat and they can unlock new towers
-- a lucky draw tower system, which may let players to draw some really overpowered towers, using credits earned from the combat
-
+- SoundSystem is currently a placeholder (console.log only)
+- No visual "Game Over" screen (just console log / freeze)
+- Need ranking leaderboard system
+- Lucky draw system needs better tower selection algorithm
 
 ## Instruction for AI Agent
 When editing this project:
 1. Always preserve the `game.tick()` loop in `GameBoard.tsx`.
 2. Do not remove the `MapGenerator` logic; it ensures valid paths.
 3. State is managed in `GameEngine`, not React state. React only re-renders the canvas.
-4. i might update what i want later on.
-help me git push to my repository from upond every code update
+4. Run `git push` after every major update.

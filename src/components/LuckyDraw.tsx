@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import * as db from '../services/postgresDatabase';
 import { TOWERS } from '../engine/data';
+import { useLanguage } from '../i18n/useTranslation';
 
 interface LuckyDrawProps {
   user: GoogleUser;
@@ -49,10 +50,11 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
   const [drawnTower, setDrawnTower] = useState<string | null>(null);
   const [drawnRarity, setDrawnRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'idle' | 'spinning' | 'reveal'>('idle');
+  const { language, t } = useLanguage();
 
   const handleDraw = async () => {
     if (credits < DRAW_COST) {
-      alert('Not enough credits! Need 100 credits to draw.');
+      alert(t('luckyDraw.notEnough'));
       return;
     }
 
@@ -110,11 +112,8 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
     legendary: 'from-yellow-500 to-orange-500'
   };
 
-  const rarityNames = {
-    common: 'Common',
-    rare: 'Rare',
-    epic: 'Epic',
-    legendary: 'Legendary'
+  const getRarityName = (rarity: string) => {
+    return t(`rarity.${rarity}`);
   };
 
   return (
@@ -124,13 +123,13 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              🎰 Lucky Draw
+              {t('luckyDraw.title')}
             </h1>
             <button
               onClick={onBack}
               className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg transition-all backdrop-blur-sm border border-slate-600"
             >
-              ← Back
+              {t('luckyDraw.back')}
             </button>
           </div>
 
@@ -140,14 +139,14 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
               {animationPhase === 'idle' && (
                 <div className="text-center">
                   <div className="text-8xl mb-4">🎁</div>
-                  <p className="text-slate-400">Click Draw to get a tower!</p>
+                  <p className="text-slate-400">{t('luckyDraw.clickToDraw')}</p>
                 </div>
               )}
               
               {animationPhase === 'spinning' && (
                 <div className="text-center animate-spin">
                   <div className="text-8xl mb-4">⚡</div>
-                  <p className="text-slate-300 font-bold">Drawing...</p>
+                  <p className="text-slate-300 font-bold">{t('luckyDraw.drawing')}</p>
                 </div>
               )}
 
@@ -159,7 +158,7 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
                   </div>
                   <div className="text-lg text-white/90 mb-4">{TOWERS[drawnTower].description}</div>
                   <div className={`inline-block px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white font-bold`}>
-                    {rarityNames[drawnRarity]}
+                    {getRarityName(drawnRarity)}
                   </div>
                 </div>
               )}
@@ -175,37 +174,37 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
                   : 'bg-slate-700 text-slate-400 cursor-not-allowed'
               }`}
             >
-              {isDrawing ? 'Drawing...' : `Draw (${DRAW_COST} credits)`}
+              {isDrawing ? t('luckyDraw.drawing') : `${language === 'zh-TW' ? '抽獎' : 'Draw'} (${DRAW_COST} ${language === 'zh-TW' ? '積分' : 'credits'})`}
             </button>
 
             {/* Credits Display */}
             <div className="mt-4 text-center text-slate-300">
-              Your Credits: <span className="text-yellow-400 font-bold text-xl">{credits}</span>
+              {t('luckyDraw.yourCredits')} <span className="text-yellow-400 font-bold text-xl">{credits}</span>
             </div>
           </div>
 
           {/* Rarity Info */}
           <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-white font-bold mb-4">Rarity Chances</h3>
+            <h3 className="text-white font-bold mb-4">{t('luckyDraw.rarityChances')}</h3>
             <div className="grid grid-cols-4 gap-4 text-sm">
               <div className="text-center">
                 <div className="text-2xl mb-2">⚪</div>
-                <div className="text-slate-300">Common</div>
+                <div className="text-slate-300">{t('rarity.common')}</div>
                 <div className="text-slate-400">{RARITY_WEIGHTS.common}%</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl mb-2">🔵</div>
-                <div className="text-blue-300">Rare</div>
+                <div className="text-blue-300">{t('rarity.rare')}</div>
                 <div className="text-blue-400">{RARITY_WEIGHTS.rare}%</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl mb-2">🟣</div>
-                <div className="text-purple-300">Epic</div>
+                <div className="text-purple-300">{t('rarity.epic')}</div>
                 <div className="text-purple-400">{RARITY_WEIGHTS.epic}%</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl mb-2">🟡</div>
-                <div className="text-yellow-300">Legendary</div>
+                <div className="text-yellow-300">{t('rarity.legendary')}</div>
                 <div className="text-yellow-400">{RARITY_WEIGHTS.legendary}%</div>
               </div>
             </div>

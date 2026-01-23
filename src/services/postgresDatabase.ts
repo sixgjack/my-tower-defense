@@ -71,8 +71,17 @@ async function initDatabase(): Promise<void> {
           highest_wave INTEGER DEFAULT 0,
           credits INTEGER DEFAULT 0,
           unlocked_towers JSONB DEFAULT '[]',
+          encountered_enemies JSONB DEFAULT '[]',
           last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        
+        -- Add encountered_enemies column if it doesn't exist (for existing databases)
+        DO $$ 
+        BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'students' AND column_name = 'encountered_enemies') THEN
+            ALTER TABLE students ADD COLUMN encountered_enemies JSONB DEFAULT '[]';
+          END IF;
+        END $$;
 
         CREATE TABLE IF NOT EXISTS question_sets (
           id SERIAL PRIMARY KEY,
@@ -361,6 +370,7 @@ export interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies: string[];
   lastPlayed: string;
 }
 
@@ -392,6 +402,9 @@ export async function getStudentStatus(userId: string): Promise<DatabaseResult<S
         unlockedTowers: typeof row.unlocked_towers === 'string' 
           ? JSON.parse(row.unlocked_towers) 
           : (row.unlocked_towers || []),
+        encounteredEnemies: typeof row.encountered_enemies === 'string'
+          ? JSON.parse(row.encountered_enemies)
+          : (row.encountered_enemies || []),
         lastPlayed: row.last_played
       }
     };
@@ -507,6 +520,10 @@ export async function updateStudentStatus(
       if (regularUpdates.unlockedTowers !== undefined) {
         setClauses.push(`unlocked_towers = $${paramIndex++}`);
         values.push(JSON.stringify(regularUpdates.unlockedTowers));
+      }
+      if ((regularUpdates as any).encounteredEnemies !== undefined) {
+        setClauses.push(`encountered_enemies = $${paramIndex++}`);
+        values.push(JSON.stringify((regularUpdates as any).encounteredEnemies));
       }
 
       if (setClauses.length > 0) {
