@@ -321,23 +321,53 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
 
         {/* Particles */}
         {miniGame.particles.map(p => {
+          const scaleFactor = TILE_SIZE / 60;
+          const px = p.x * scaleFactor;
+          const py = p.y * scaleFactor;
+          const alpha = p.life / p.maxLife;
+          const size = (p.scale || 1) * 3 * scaleFactor;
+          
           if (p.type === 'text') {
             return (
               <text
                 key={p.id}
-                x={p.x * (TILE_SIZE / 60)}
-                y={p.y * (TILE_SIZE / 60) + (p.maxLife - p.life) * (p.vy || 0) * (TILE_SIZE / 60)}
+                x={px}
+                y={py + (p.maxLife - p.life) * (p.vy || 0) * scaleFactor}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize={12 * (p.scale || 1) * (TILE_SIZE / 60)}
+                fontSize={12 * (p.scale || 1) * scaleFactor}
                 fill={p.color}
-                opacity={p.life / p.maxLife}
+                opacity={alpha}
               >
                 {p.text}
               </text>
             );
           }
-          return null;
+          
+          // Render visual particles
+          switch (p.type) {
+            case 'spark':
+            case 'flame':
+              return <circle key={p.id} cx={px} cy={py} r={size} fill={p.color} opacity={alpha} />;
+            case 'smoke':
+              return <circle key={p.id} cx={px} cy={py} r={size * 2} fill={p.color} opacity={alpha * 0.4} />;
+            case 'freeze':
+              return <circle key={p.id} cx={px} cy={py} r={size} fill="#60a5fa" opacity={alpha} />;
+            case 'electric':
+              return <rect key={p.id} x={px - size/2} y={py - size/2} width={size} height={size} fill="#facc15" opacity={alpha} />;
+            case 'shockwave':
+              const shockSize = 20 * scaleFactor * (1 - p.life / p.maxLife);
+              return <circle key={p.id} cx={px} cy={py} r={shockSize} fill="none" stroke={p.color} strokeWidth={1} opacity={alpha} />;
+            case 'heal':
+              return (
+                <g key={p.id} opacity={alpha}>
+                  <rect x={px - 4 * scaleFactor} y={py - 1 * scaleFactor} width={8 * scaleFactor} height={2 * scaleFactor} fill="#10b981" />
+                  <rect x={px - 1 * scaleFactor} y={py - 4 * scaleFactor} width={2 * scaleFactor} height={8 * scaleFactor} fill="#10b981" />
+                </g>
+              );
+            default:
+              return <circle key={p.id} cx={px} cy={py} r={size} fill={p.color} opacity={alpha} />;
+          }
         })}
 
         {/* Projectiles */}
@@ -349,6 +379,53 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
             tick={tick}
           />
         ))}
+
+        {/* Beams / Lasers */}
+        {miniGame.towers.filter(t => TOWERS[t.key]?.type === 'beam' && t.targetId).map(t => {
+          const stats = TOWERS[t.key];
+          const target = miniGame.enemies.find(e => e.id === t.targetId);
+          if (!target) return null;
+          
+          const sx = t.c * TILE_SIZE + TILE_SIZE / 2;
+          const sy = t.r * TILE_SIZE + TILE_SIZE / 2;
+          const ex = (target.c + (target.xOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
+          const ey = (target.r + (target.yOffset || 0)) * TILE_SIZE + TILE_SIZE / 2;
+          
+          const ramp = Math.min(1, (t.damageCharge || 0) / 5);
+          const beamWidth = 2 + ramp * 3;
+          
+          if (stats.projectileStyle === 'ice') {
+            return (
+              <g key={`beam-${t.id}`}>
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#60a5fa" strokeWidth={beamWidth + 3} opacity={0.2} />
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#93c5fd" strokeWidth={beamWidth} opacity={0.7} />
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={1} opacity={0.8} />
+                <circle cx={ex} cy={ey} r={6 + ramp * 4} fill="#60a5fa" opacity={0.3} />
+              </g>
+            );
+          } else if (stats.projectileStyle === 'lightning') {
+            const jitter = 8 + ramp * 5;
+            const mx = (sx + ex) / 2 + (Math.sin(tick * 0.5) * jitter);
+            const my = (sy + ey) / 2 + (Math.cos(tick * 0.5) * jitter);
+            return (
+              <g key={`beam-${t.id}`}>
+                <polyline points={`${sx},${sy} ${mx},${my} ${ex},${ey}`} fill="none" stroke="#fcd34d" strokeWidth={4} opacity={0.3} />
+                <polyline points={`${sx},${sy} ${mx},${my} ${ex},${ey}`} fill="none" stroke="#facc15" strokeWidth={2 + ramp} opacity={0.8} />
+                <polyline points={`${sx},${sy} ${mx},${my} ${ex},${ey}`} fill="none" stroke="#ffffff" strokeWidth={1} opacity={0.9} />
+                <circle cx={ex} cy={ey} r={5 + ramp * 3} fill="#facc15" opacity={0.5} />
+              </g>
+            );
+          } else {
+            return (
+              <g key={`beam-${t.id}`}>
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={stats.color} strokeWidth={beamWidth + 3} opacity={0.2 + ramp * 0.2} />
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={stats.color} strokeWidth={beamWidth} opacity={0.6 + ramp * 0.4} />
+                <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={1} opacity={0.5 + ramp * 0.5} />
+                <circle cx={ex} cy={ey} r={5 + ramp * 6} fill={stats.color} opacity={0.4} />
+              </g>
+            );
+          }
+        })}
       </svg>
     </div>
   );

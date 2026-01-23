@@ -45,14 +45,10 @@ update visual effects and avoid
 - need more boss and enermies types at least 50+, with different abilitys, such as deactivating some towers, suddenly move from one side to other side, healing enermies ahead, run very fast, attract towers firepower, have sheild)
 - need to implement a entrance mobile gam like menu and allow students to establish their accounts with google SSO, also need to build a database to store questions(currently firebase) and students account and their status
 - need to build a ranking leader system
-<<<<<<< Current (Your changes)
-- need to implement a tower introduction interface, some brief introduction about the tower, what the tower is capable of, and its ability, a instant demo of how the tower attacks the enermies, since i want everytime players can only pick 8 towers into the game
-- **TODO: Implement 3-pick-1 roguelike buff selection UI** - The buff system is ready (`generateBuffChoices()` function exists), but the UI component for selecting buffs every 3 waves needs to be created
-=======
-- ✅ **Tower Loadout Selection**: Complete implementation - players must select 8 towers before battle, with live demo preview, tower stats, and personality descriptions. GameBoard restricts building to only selected towers.
-- ✅ **3-pick-1 Roguelike Buff Selection**: Complete implementation with UI modal, triggers every 3 waves, applies buffs to towers/enemies
-- ✅ **Credits System**: Credits now based on waves achieved (wave * 5) instead of money earned
->>>>>>> Incoming (Background Agent changes)
+- ✅ **Tower Loadout Selection**: Complete implementation - players must select 8 towers before battle
+- ✅ **3-pick-1 Roguelike Buff Selection**: Complete implementation with UI modal, triggers every 3 waves
+- ✅ **Credits System**: Credits now based on waves achieved (wave * 5)
+- **TODO: Tower Live Demo**: Live demo preview in tower selection needs to show tower attacking enemies
 - a credit system where player can get after every combat and they can unlock new towers
 - a lucky draw tower system, which may let players to draw some really overpowered towers, using credits earned from the combat
 
