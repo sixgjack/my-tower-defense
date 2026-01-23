@@ -30,46 +30,113 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
   useEffect(() => {
     // Create a new game instance for the demo
     const miniGame = new GameEngine();
-    miniGame.money = 10000;
-    miniGame.lives = 100;
+    miniGame.money = 100000; // Plenty of money
+    miniGame.lives = 999;
     miniGameRef.current = miniGame;
 
-    // Place tower in center after map is ready
+    // Helper to spawn an enemy
+    const spawnEnemy = () => {
+      if (!miniGameRef.current || !miniGameRef.current.path || miniGameRef.current.path.length === 0) return;
+      if (miniGameRef.current.enemies.length >= 5) return; // Max 5 enemies
+      
+      const start = miniGameRef.current.path[0];
+      const enemyTypeIndex = Math.floor(Math.random() * Math.min(3, ENEMY_TYPES.length));
+      const enemyType = ENEMY_TYPES[enemyTypeIndex];
+      if (enemyType) {
+        miniGameRef.current.enemies.push({
+          id: Date.now() + Math.random(),
+          pathIndex: 0,
+          progress: 0,
+          r: start.r,
+          c: start.c,
+          hp: 150, // Higher HP so they last longer
+          maxHp: 150,
+          baseSpeed: 0.015, // Slightly slower so tower can hit them
+          speedMultiplier: 1,
+          icon: enemyType.icon,
+          color: enemyType.color,
+          reward: enemyType.reward,
+          scale: 1,
+          frozen: 0,
+          xOffset: 0,
+          yOffset: 0,
+          money: enemyType.reward,
+          damage: 0,
+          statusEffects: []
+        });
+      }
+    };
+
+    // Place tower after map is ready
     const placeTower = () => {
       if (miniGame.path && miniGame.path.length > 0 && miniGame.map && miniGame.map.length > 0) {
-        const centerR = Math.floor(ROWS / 2);
-        const centerC = Math.floor(COLS / 2);
+        // Find middle of the path
+        const pathMidIndex = Math.floor(miniGame.path.length / 2);
+        const pathMid = miniGame.path[pathMidIndex];
         
-        // Find a valid spot near center
-        let towerR = centerR;
-        let towerC = centerC;
-        let attempts = 0;
+        // Find a valid spot adjacent to the path
+        const offsets = [
+          { r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 },
+          { r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 }
+        ];
         
-        while (attempts < 50) {
+        let placed = false;
+        for (const offset of offsets) {
+          const towerR = pathMid.r + offset.r;
+          const towerC = pathMid.c + offset.c;
+          
+          if (towerR < 0 || towerR >= ROWS || towerC < 0 || towerC >= COLS) continue;
+          
+          const cell = miniGame.map[towerR]?.[towerC];
           const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
-          const isObstacle = miniGame.map[towerR] && miniGame.map[towerR][towerC] === 'X';
-          if (!isOnPath && !isObstacle && miniGame.map[towerR] && miniGame.map[towerR][towerC] === 0) {
-            break;
+          
+          // Valid spot: empty grass (0), not on path, not blocked
+          if (cell === 0 && !isOnPath) {
+            const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+            if (towerKey) {
+              miniGame.requestBuildTower(towerR, towerC, towerKey);
+              miniGame.confirmAction();
+              placed = true;
+              
+              // Spawn initial enemies
+              setTimeout(() => {
+                spawnEnemy();
+                spawnEnemy();
+              }, 100);
+              break;
+            }
           }
-          towerR = centerR + Math.floor((Math.random() - 0.5) * 4);
-          towerC = centerC + Math.floor((Math.random() - 0.5) * 4);
-          towerR = Math.max(1, Math.min(ROWS - 2, towerR));
-          towerC = Math.max(1, Math.min(COLS - 2, towerC));
-          attempts++;
         }
-
-        const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
-        if (towerKey) {
-          miniGame.requestBuildTower(towerR, towerC, towerKey);
-          miniGame.confirmAction();
+        
+        if (!placed) {
+          // Fallback: try random spots
+          for (let attempts = 0; attempts < 30; attempts++) {
+            const towerR = Math.floor(Math.random() * (ROWS - 2)) + 1;
+            const towerC = Math.floor(Math.random() * (COLS - 2)) + 1;
+            const cell = miniGame.map[towerR]?.[towerC];
+            const isOnPath = miniGame.path.some(p => p.r === towerR && p.c === towerC);
+            
+            if (cell === 0 && !isOnPath) {
+              const towerKey = Object.keys(TOWERS).find(key => TOWERS[key].name === tower.name);
+              if (towerKey) {
+                miniGame.requestBuildTower(towerR, towerC, towerKey);
+                miniGame.confirmAction();
+                setTimeout(() => {
+                  spawnEnemy();
+                  spawnEnemy();
+                }, 100);
+                break;
+              }
+            }
+          }
         }
       } else {
-        setTimeout(placeTower, 100);
+        setTimeout(placeTower, 50);
       }
     };
 
     // Start placing tower after a short delay
-    setTimeout(placeTower, 200);
+    setTimeout(placeTower, 100);
 
     // Game loop
     const loop = () => {
@@ -81,38 +148,10 @@ export const MiniGameBoard: React.FC<MiniGameBoardProps> = ({
     };
     loop();
 
-    // Spawn enemies periodically
+    // Spawn enemies periodically (faster rate)
     const spawnInterval = setInterval(() => {
-      if (miniGameRef.current && miniGameRef.current.path && miniGameRef.current.path.length > 0) {
-        if (miniGameRef.current.enemies.length < 3) {
-          const start = miniGameRef.current.path[0];
-          const enemyType = ENEMY_TYPES[0];
-          if (enemyType) {
-            miniGameRef.current.enemies.push({
-              id: Date.now() + Math.random(),
-              pathIndex: 0,
-              progress: 0,
-              r: start.r,
-              c: start.c,
-              hp: 100,
-              maxHp: 100,
-              baseSpeed: 0.02,
-              speedMultiplier: 1,
-              icon: enemyType.icon,
-              color: enemyType.color,
-              reward: enemyType.reward,
-              scale: 1,
-              frozen: 0,
-              xOffset: 0,
-              yOffset: 0,
-              money: enemyType.reward,
-              damage: 0,
-              statusEffects: []
-            });
-          }
-        }
-      }
-    }, 2000);
+      spawnEnemy();
+    }, 1200);
 
     return () => {
       clearInterval(spawnInterval);
