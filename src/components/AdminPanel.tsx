@@ -36,8 +36,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
     correct: '',
     questionSetId: 'math-basics',
     difficulty: 'easy' as 'easy' | 'medium' | 'hard',
-    category: ''
+    category: '',
+    imageUrl: '' // Base64 or URL for question image
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Handle image file upload - converts to base64
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 2MB for base64 storage)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image size must be less than 2MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setNewQuestion(prev => ({ ...prev, imageUrl: base64 }));
+        setImagePreview(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image URL input
+  const handleImageUrlInput = (url: string) => {
+    setNewQuestion(prev => ({ ...prev, imageUrl: url }));
+    setImagePreview(url);
+  };
+
+  // Clear image
+  const clearImage = () => {
+    setNewQuestion(prev => ({ ...prev, imageUrl: '' }));
+    setImagePreview(null);
+  };
 
   useEffect(() => {
     loadQuestions();
@@ -81,7 +115,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         correct: q.correct,
         questionSetId: q.questionSetId || 'mixed',
         difficulty: q.difficulty || 'medium',
-        category: q.category || ''
+        category: q.category || '',
+        imageUrl: q.imageUrl || q.image || '' // Support both imageUrl and image field names
       }));
 
       const result = await bulkImportQuestions(validQuestions);
@@ -117,7 +152,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         correct: newQuestion.correct,
         questionSetId: newQuestion.questionSetId,
         difficulty: newQuestion.difficulty,
-        category: newQuestion.category || undefined
+        category: newQuestion.category || undefined,
+        imageUrl: newQuestion.imageUrl || undefined
       }]);
       
       setNewQuestion({
@@ -126,8 +162,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         correct: '',
         questionSetId: 'math-basics',
         difficulty: 'easy',
-        category: ''
+        category: '',
+        imageUrl: ''
       });
+      setImagePreview(null);
       setShowAddForm(false);
       await loadQuestions();
       alert('Question added successfully!');
@@ -177,7 +215,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         correct: "4",
         questionSetId: "math-basics",
         difficulty: "easy",
-        category: "arithmetic"
+        category: "arithmetic",
+        imageUrl: "" // Optional: URL or base64 data URL for question image
       },
       {
         question: "What is the capital of France?",
@@ -185,7 +224,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         correct: "Paris",
         questionSetId: "science-fundamentals",
         difficulty: "easy",
-        category: "geography"
+        category: "geography",
+        imageUrl: "https://example.com/france-map.jpg" // Optional image URL
       }
     ];
 
@@ -409,6 +449,59 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
                   />
                 </div>
 
+                {/* Image Upload Section */}
+                <div>
+                  <label className="block text-white mb-2">Question Image (optional):</label>
+                  <div className="space-y-3">
+                    {/* File Upload */}
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-all"
+                      >
+                        📷 Upload Image
+                      </label>
+                      <span className="text-slate-400 text-sm">Max 2MB (JPG, PNG, GIF)</span>
+                    </div>
+                    
+                    {/* URL Input */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">or</span>
+                      <input
+                        type="text"
+                        value={newQuestion.imageUrl.startsWith('data:') ? '' : newQuestion.imageUrl}
+                        onChange={(e) => handleImageUrlInput(e.target.value)}
+                        placeholder="Paste image URL here..."
+                        className="flex-1 p-3 bg-black/80 border border-white/20 rounded-lg text-white"
+                      />
+                    </div>
+                    
+                    {/* Image Preview */}
+                    {imagePreview && (
+                      <div className="relative">
+                        <img 
+                          src={imagePreview} 
+                          alt="Question preview" 
+                          className="max-h-48 rounded-lg border border-white/20"
+                        />
+                        <button
+                          onClick={clearImage}
+                          className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <button
                   onClick={handleAddQuestion}
                   disabled={loading}
@@ -464,7 +557,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
                           <span>Set: {q.questionSetId}</span>
                           {q.difficulty && <span>Difficulty: {q.difficulty}</span>}
                           {q.category && <span>Category: {q.category}</span>}
+                          {q.imageUrl && <span className="text-blue-400">📷 Has Image</span>}
                         </div>
+                        {/* Image thumbnail preview */}
+                        {q.imageUrl && (
+                          <img 
+                            src={q.imageUrl} 
+                            alt="Question" 
+                            className="mt-2 max-h-20 rounded border border-white/20"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        )}
                       </div>
                       <button
                         onClick={() => q.id && handleDelete(q.id)}

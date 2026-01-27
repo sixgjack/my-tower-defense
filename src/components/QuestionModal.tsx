@@ -87,6 +87,21 @@ export const QuestionModal = ({ isOpen, onClose, onSuccess, theme, questionSetId
           <div className="text-white animate-pulse font-mono">Connecting to neural network...</div>
         ) : currentQ ? (
           <>
+            {/* Question Image (if available) */}
+            {currentQ.imageUrl && (
+              <div className="mb-4 flex justify-center">
+                <img 
+                  src={currentQ.imageUrl} 
+                  alt="Question" 
+                  className="max-h-48 rounded-lg border-2 border-gray-600 shadow-lg"
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
             <p className="text-white text-lg mb-8 font-mono border-l-4 border-gray-500 pl-4 leading-relaxed">
               {currentQ.question}
             </p>

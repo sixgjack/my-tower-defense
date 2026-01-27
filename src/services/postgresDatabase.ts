@@ -57,10 +57,19 @@ async function initDatabase(): Promise<void> {
           question_set_id TEXT NOT NULL,
           difficulty TEXT,
           category TEXT,
+          image_url TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE INDEX IF NOT EXISTS idx_questions_set_id ON questions(question_set_id);
+        
+        -- Add image_url column if it doesn't exist (for existing databases)
+        DO $$ 
+        BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'questions' AND column_name = 'image_url') THEN
+            ALTER TABLE questions ADD COLUMN image_url TEXT;
+          END IF;
+        END $$;
 
         CREATE TABLE IF NOT EXISTS students (
           user_id TEXT PRIMARY KEY,
@@ -128,6 +137,7 @@ export interface Question {
   questionSetId: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   category?: string;
+  imageUrl?: string; // URL or base64 data URL for question image
   createdAt?: string;
 }
 
@@ -135,8 +145,8 @@ export async function addQuestion(question: Omit<Question, 'id' | 'createdAt'>):
   try {
     const database = await getDb();
     const result = await database.query(
-      `INSERT INTO questions (question, options, correct, question_set_id, difficulty, category)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO questions (question, options, correct, question_set_id, difficulty, category, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
       [
         question.question,
@@ -144,7 +154,8 @@ export async function addQuestion(question: Omit<Question, 'id' | 'createdAt'>):
         question.correct,
         question.questionSetId,
         question.difficulty || null,
-        question.category || null
+        question.category || null,
+        question.imageUrl || null
       ]
     );
     // PGlite returns { rows: any[] } structure
@@ -210,6 +221,7 @@ export async function getAllQuestions(): Promise<DatabaseResult<Question[]>> {
         questionSetId: row.question_set_id,
         difficulty: row.difficulty,
         category: row.category,
+        imageUrl: row.image_url,
         createdAt: row.created_at
       }))
     };
@@ -242,6 +254,7 @@ export async function getQuestionsBySet(questionSetId: string): Promise<Database
         questionSetId: row.question_set_id,
         difficulty: row.difficulty,
         category: row.category,
+        imageUrl: row.image_url,
         createdAt: row.created_at
       }))
     };
