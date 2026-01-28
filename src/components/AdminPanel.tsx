@@ -30,6 +30,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
   const [selectedSet, setSelectedSet] = useState<string>('all');
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [importMode, setImportMode] = useState<'csv' | 'json'>('csv'); // CSV is more user-friendly
   const [newQuestion, setNewQuestion] = useState({
     question: '',
     options: ['', '', '', ''],
@@ -207,7 +208,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
     }
   };
 
-  const downloadTemplate = () => {
+  // CSV Template - User-friendly format (works with Excel/Google Sheets)
+  const downloadCsvTemplate = () => {
+    const csvContent = `Question,Option A,Option B,Option C,Option D,Correct Answer,Question Set,Difficulty,Category,Image URL
+"What is 2 + 2?",3,4,5,6,4,math-basics,easy,arithmetic,
+"What is the capital of France?",London,Berlin,Paris,Madrid,Paris,science-fundamentals,easy,geography,https://example.com/france-map.jpg
+"Which planet is known as the Red Planet?",Earth,Mars,Jupiter,Venus,Mars,science-fundamentals,medium,astronomy,`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'questions-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // JSON Template - For advanced users
+  const downloadJsonTemplate = () => {
     const template = [
       {
         question: "What is 2 + 2?",
@@ -216,7 +234,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         questionSetId: "math-basics",
         difficulty: "easy",
         category: "arithmetic",
-        imageUrl: "" // Optional: URL or base64 data URL for question image
+        imageUrl: ""
       },
       {
         question: "What is the capital of France?",
@@ -225,7 +243,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         questionSetId: "science-fundamentals",
         difficulty: "easy",
         category: "geography",
-        imageUrl: "https://example.com/france-map.jpg" // Optional image URL
+        imageUrl: "https://example.com/france-map.jpg"
       }
     ];
 
@@ -236,6 +254,118 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
     a.download = 'questions-template.json';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Parse CSV content to questions array
+  const parseCsv = (csvText: string): any[] => {
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have a header row and at least one data row');
+    }
+
+    // Parse header to find column indices
+    const header = lines[0].toLowerCase();
+    const questions: any[] = [];
+
+    // Process each data row
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Parse CSV line (handles quoted fields with commas)
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim()); // Push last value
+
+      // Map to question object
+      // Expected format: Question, Option A, Option B, Option C, Option D, Correct Answer, Question Set, Difficulty, Category, Image URL
+      if (values.length >= 6) {
+        const question = {
+          question: values[0],
+          options: [values[1], values[2], values[3], values[4]].filter(o => o && o.trim()),
+          correct: values[5],
+          questionSetId: values[6] || 'mixed',
+          difficulty: values[7] || 'medium',
+          category: values[8] || '',
+          imageUrl: values[9] || ''
+        };
+
+        // Validate: must have question text, at least 2 options, and correct answer
+        if (question.question && question.options.length >= 2 && question.correct) {
+          questions.push(question);
+        }
+      }
+    }
+
+    return questions;
+  };
+
+  // Handle CSV import
+  const handleCsvImport = async () => {
+    if (!jsonInput.trim()) {
+      alert('Please paste CSV data or upload a CSV file');
+      return;
+    }
+
+    setLoading(true);
+    setImportResult(null);
+
+    try {
+      const questions = parseCsv(jsonInput);
+      
+      if (questions.length === 0) {
+        throw new Error('No valid questions found in CSV. Check the format.');
+      }
+
+      const result = await bulkImportQuestions(questions);
+      setImportResult(result);
+      setJsonInput('');
+      await loadQuestions();
+    } catch (error: any) {
+      setImportResult({
+        success: 0,
+        failed: 1,
+        errors: [error.message]
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle file upload (CSV or JSON)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setJsonInput(content);
+      
+      // Auto-detect format
+      if (file.name.endsWith('.csv') || content.includes(',') && !content.trim().startsWith('[')) {
+        setImportMode('csv');
+      } else {
+        setImportMode('json');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = '';
   };
 
   return (
@@ -311,31 +441,109 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
             <div className="bg-black/60 rounded-xl p-6 mb-8 border border-white/20">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-white">Bulk Import Questions</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={downloadCsvTemplate}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+                  >
+                    📊 Download Excel/CSV Template
+                  </button>
+                  <button
+                    onClick={downloadJsonTemplate}
+                    className="px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-all text-sm"
+                  >
+                    JSON Template
+                  </button>
+                </div>
+              </div>
+
+              {/* Format Toggle */}
+              <div className="flex gap-2 mb-4">
                 <button
-                  onClick={downloadTemplate}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+                  onClick={() => setImportMode('csv')}
+                  className={`px-4 py-2 rounded-lg transition-all ${
+                    importMode === 'csv' 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
                 >
-                  Download Template
+                  📊 CSV / Excel (Recommended)
+                </button>
+                <button
+                  onClick={() => setImportMode('json')}
+                  className={`px-4 py-2 rounded-lg transition-all ${
+                    importMode === 'json' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {'{ }'} JSON (Advanced)
                 </button>
               </div>
+
+              {/* File Upload */}
+              <div className="mb-4">
+                <input
+                  type="file"
+                  accept=".csv,.json,.txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-all"
+                >
+                  📁 Upload File (.csv or .json)
+                </label>
+                <span className="ml-3 text-slate-400 text-sm">or paste content below</span>
+              </div>
+
+              {/* Format Instructions */}
+              {importMode === 'csv' && (
+                <div className="mb-4 p-3 bg-green-900/30 border border-green-600/30 rounded-lg">
+                  <p className="text-green-300 text-sm mb-2">
+                    <strong>CSV Format (Excel/Google Sheets compatible):</strong>
+                  </p>
+                  <p className="text-slate-300 text-xs font-mono">
+                    Question, Option A, Option B, Option C, Option D, Correct Answer, Question Set, Difficulty, Category, Image URL
+                  </p>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Tip: Create in Excel/Sheets → Save As CSV → Upload or copy-paste here
+                  </p>
+                </div>
+              )}
+
+              {importMode === 'json' && (
+                <div className="mb-4 p-3 bg-blue-900/30 border border-blue-600/30 rounded-lg">
+                  <p className="text-blue-300 text-sm">
+                    <strong>JSON Format:</strong> Array of question objects with question, options[], correct, questionSetId, difficulty, category, imageUrl
+                  </p>
+                </div>
+              )}
               
               <div className="mb-4">
-                <label className="block text-white mb-2">JSON Format:</label>
+                <label className="block text-white mb-2">
+                  {importMode === 'csv' ? 'Paste CSV Data:' : 'Paste JSON Data:'}
+                </label>
                 <textarea
                   value={jsonInput}
                   onChange={(e) => setJsonInput(e.target.value)}
-                  placeholder='[{"question": "What is 2+2?", "options": ["3", "4", "5", "6"], "correct": "4", "questionSetId": "math-basics", "difficulty": "easy", "category": "arithmetic"}]'
-                  className="w-full h-64 p-4 bg-black/80 border border-white/20 rounded-lg text-white font-mono text-sm"
+                  placeholder={importMode === 'csv' 
+                    ? 'Question,Option A,Option B,Option C,Option D,Correct Answer,Question Set,Difficulty,Category,Image URL\n"What is 2+2?",3,4,5,6,4,math-basics,easy,arithmetic,'
+                    : '[{"question": "What is 2+2?", "options": ["3", "4", "5", "6"], "correct": "4", "questionSetId": "math-basics", "difficulty": "easy"}]'
+                  }
+                  className="w-full h-48 p-4 bg-black/80 border border-white/20 rounded-lg text-white font-mono text-sm"
                 />
               </div>
 
               <div className="flex gap-4">
                 <button
-                  onClick={handleBulkImport}
+                  onClick={importMode === 'csv' ? handleCsvImport : handleBulkImport}
                   disabled={loading}
                   className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Importing...' : 'Import Questions'}
+                  {loading ? 'Importing...' : `Import ${importMode.toUpperCase()} Questions`}
                 </button>
                 <button
                   onClick={() => setJsonInput('')}
