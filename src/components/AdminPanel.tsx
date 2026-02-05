@@ -9,6 +9,8 @@ import {
   deleteAllQuestions,
   type Question
 } from '../services/questionService';
+import { googleDriveService } from '../services/googleDriveService';
+import { GoogleDriveSettings } from './GoogleDriveSettings';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -41,6 +43,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
     imageUrl: '' // Base64 or URL for question image
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showGDriveSettings, setShowGDriveSettings] = useState(false);
+  const [gdriveConnected, setGdriveConnected] = useState(false);
+  const [uploadingToGDrive, setUploadingToGDrive] = useState(false);
+
+  // Check Google Drive connection status on mount
+  useEffect(() => {
+    setGdriveConnected(googleDriveService.isAuthenticated());
+  }, []);
+
+  // Handle image upload to Google Drive
+  const handleGoogleDriveUpload = async (file: File) => {
+    if (!googleDriveService.isAuthenticated()) {
+      alert('Please connect to Google Drive first in settings.');
+      setShowGDriveSettings(true);
+      return;
+    }
+
+    setUploadingToGDrive(true);
+    try {
+      const result = await googleDriveService.uploadFile(file);
+      if (result.success && result.directLink) {
+        setNewQuestion(prev => ({ ...prev, imageUrl: result.directLink! }));
+        setImagePreview(result.directLink);
+        alert('Image uploaded to Google Drive successfully!');
+      } else {
+        alert('Upload failed: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error: any) {
+      alert('Upload failed: ' + error.message);
+    } finally {
+      setUploadingToGDrive(false);
+    }
+  };
 
   // Handle image file upload - converts to base64
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -661,8 +696,54 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
                 <div>
                   <label className="block text-white mb-2">Question Image (optional):</label>
                   <div className="space-y-3">
-                    {/* File Upload */}
-                    <div className="flex items-center gap-4">
+                    {/* Google Drive Status & Settings */}
+                    <div className={`p-3 rounded-lg flex items-center justify-between ${gdriveConnected ? 'bg-green-900/20 border border-green-600/30' : 'bg-slate-800/50 border border-white/10'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={gdriveConnected ? 'text-green-400' : 'text-slate-400'}>
+                          {gdriveConnected ? '✓ Google Drive Connected' : '○ Google Drive Not Connected'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowGDriveSettings(true)}
+                        className="text-blue-400 hover:text-blue-300 text-sm"
+                      >
+                        ⚙️ Settings
+                      </button>
+                    </div>
+
+                    {/* Upload Options */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Google Drive Upload (Recommended) */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleGoogleDriveUpload(file);
+                          e.target.value = '';
+                        }}
+                        className="hidden"
+                        id="gdrive-upload"
+                        disabled={!gdriveConnected || uploadingToGDrive}
+                      />
+                      <label
+                        htmlFor="gdrive-upload"
+                        className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                          gdriveConnected 
+                            ? 'bg-green-600 hover:bg-green-700 text-white' 
+                            : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {uploadingToGDrive ? (
+                          <>
+                            <span className="animate-spin">⟳</span> Uploading...
+                          </>
+                        ) : (
+                          <>📁 Upload to Google Drive</>
+                        )}
+                      </label>
+
+                      {/* Local Base64 Upload (Fallback) */}
                       <input
                         type="file"
                         accept="image/*"
@@ -674,9 +755,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
                         htmlFor="image-upload"
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-all"
                       >
-                        📷 Upload Image
+                        📷 Local Upload
                       </label>
-                      <span className="text-slate-400 text-sm">Max 2MB (JPG, PNG, GIF)</span>
+                      <span className="text-slate-400 text-sm">Max 2MB</span>
                     </div>
                     
                     {/* URL Input */}
@@ -705,6 +786,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
                         >
                           ✕
                         </button>
+                        {newQuestion.imageUrl.includes('drive.google.com') && (
+                          <span className="absolute bottom-2 left-2 bg-green-600/80 text-white text-xs px-2 py-1 rounded">
+                            📁 Google Drive
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -794,6 +880,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
           </div>
         </div>
       </div>
+
+      {/* Google Drive Settings Modal */}
+      {showGDriveSettings && (
+        <GoogleDriveSettings 
+          onClose={() => {
+            setShowGDriveSettings(false);
+            setGdriveConnected(googleDriveService.isAuthenticated());
+          }} 
+        />
+      )}
     </div>
   );
 };
