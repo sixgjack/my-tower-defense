@@ -23,6 +23,7 @@ dist-ssr
 # Godot 4 (when added under godot/ or project root)
 .godot/
 *.uid
+godot/dist/
 
 # Editor directories and files
 .vscode/*

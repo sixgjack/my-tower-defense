@@ -44,7 +44,7 @@ horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="Center"]
 layout_mode = 2
-text = "Godot 4 客戶端 · 與網頁版並存 · 手機／平板／桌面"
+text = "Godot 4 客戶端 · 與 React 網頁版並存 · 可匯出 Web／Android／iOS"
 horizontal_alignment = 1
 autowrap_mode = 3
 
