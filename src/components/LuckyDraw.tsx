@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import * as db from '../services/postgresDatabase';
+import { isGoogleAuthDisabled } from '../config/authMode';
 import { TOWERS } from '../engine/data';
 import { useLanguage } from '../i18n/useTranslation';
 
@@ -73,33 +74,34 @@ export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, onBack, onS
     setDrawnTower(towerKey);
     setAnimationPhase('reveal');
 
-    // Update credits and unlock tower
-    try {
-      const statusResult = await db.getStudentStatus(user.uid);
-      
-      if (statusResult.success && statusResult.data) {
-        const currentStatus = statusResult.data;
-        const unlockedTowers = currentStatus.unlockedTowers || [];
-        
-        if (!unlockedTowers.includes(towerKey)) {
-          await db.updateStudentStatus(user.uid, {
-            increment: {
-              credits: -DRAW_COST
-            },
-            unlockedTowers: [...unlockedTowers, towerKey]
-          });
-          await onStatusUpdate();
-        } else {
-          await db.updateStudentStatus(user.uid, {
-            increment: {
-              credits: -DRAW_COST
-            }
-          });
-          await onStatusUpdate();
+    if (!isGoogleAuthDisabled()) {
+      try {
+        const statusResult = await db.getStudentStatus(user.uid);
+
+        if (statusResult.success && statusResult.data) {
+          const currentStatus = statusResult.data;
+          const unlockedTowers = currentStatus.unlockedTowers || [];
+
+          if (!unlockedTowers.includes(towerKey)) {
+            await db.updateStudentStatus(user.uid, {
+              increment: {
+                credits: -DRAW_COST
+              },
+              unlockedTowers: [...unlockedTowers, towerKey]
+            });
+            await onStatusUpdate();
+          } else {
+            await db.updateStudentStatus(user.uid, {
+              increment: {
+                credits: -DRAW_COST
+              }
+            });
+            await onStatusUpdate();
+          }
         }
+      } catch (error) {
+        console.error('Error updating credits:', error);
       }
-    } catch (error) {
-      console.error('Error updating credits:', error);
     }
 
     setIsDrawing(false);

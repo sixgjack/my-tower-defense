@@ -10,6 +10,7 @@ import { ModeSelection, type GameMode } from './ModeSelection';
 import { TowerLoadoutSelection } from './TowerLoadoutSelection';
 import { useLanguage } from '../i18n/useTranslation';
 import { updateStudentStatusAfterGame } from '../services/studentService';
+import { isGoogleAuthDisabled } from '../config/authMode';
 
 interface StudentStatus {
   totalGames: number;
@@ -57,16 +58,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     setActiveView('lobby');
     setSelectedMode(null);
     
-    // Update student status after game
-    if (gameResult && user) {
+    if (gameResult && user && !isGoogleAuthDisabled()) {
       try {
         await updateStudentStatusAfterGame(user.uid, gameResult);
         await onStatusUpdate();
       } catch (error) {
         console.error('Error updating student status:', error);
       }
-    }
-    if (gameResult) {
+    } else if (gameResult) {
       await onStatusUpdate();
     }
   };
