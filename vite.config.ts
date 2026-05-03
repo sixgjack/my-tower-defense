@@ -8,10 +8,12 @@ export default defineConfig({
     host: true, // This exposes the app to the network
     allowedHosts: ['tower.cpss.edu.hk'],
     port: 5173,
+    strictPort: true,
   },
   preview: {
     host: true,
     port: 4173,
+    strictPort: true,
   },
   resolve: {
     dedupe: ['react', 'react-dom']
