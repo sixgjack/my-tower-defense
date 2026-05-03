@@ -25,6 +25,10 @@ dist-ssr
 *.uid
 godot/dist/
 
+# Godot Web export for Vite (npm run dev / npm run build) — keep directory only
+public/godot/*
+!public/godot/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

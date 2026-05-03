@@ -4,6 +4,12 @@ import { signInWithGoogle, signOut, onAuthStateChanged, type GoogleUser } from '
 import { getStudentStatus, createStudentStatus } from '../services/studentService';
 import { LobbyScreen } from './LobbyScreen';
 
+/** Same-origin Godot HTML5 export (Vite serves `public/godot/` — dev :5173, preview :4173). */
+const viteBase = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const GODOT_WEB_HREF = `${viteBase}godot/index.html`;
+
 interface StudentStatus {
   totalGames: number;
   totalWaves: number;
@@ -185,6 +191,18 @@ export const MenuScreen: React.FC = () => {
                   </svg>
                   <span className="text-lg">CONTINUE WITH GOOGLE</span>
                 </button>
+
+                <a
+                  href={GODOT_WEB_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex w-full items-center justify-center border-2 border-cyan-500/60 bg-cyan-950/40 px-4 py-3 text-sm font-mono font-bold text-cyan-300 transition hover:border-cyan-400 hover:bg-cyan-900/50"
+                >
+                  🕹️ GODOT WEB (PIXEL) — same site :5173
+                </a>
+                <p className="mt-2 text-center text-xs text-slate-500 font-mono">
+                  Export Godot → Web to <code className="text-slate-400">public/godot/</code> first.
+                </p>
               </div>
             ) : (
               /* User Menu Section */
@@ -236,6 +254,15 @@ export const MenuScreen: React.FC = () => {
                   >
                     ⚡ ENTER LOBBY
                   </button>
+
+                  <a
+                    href={GODOT_WEB_HREF}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center border-2 border-cyan-500/70 bg-cyan-950/50 py-3 px-6 rounded font-bold text-cyan-200 font-mono transition hover:border-cyan-400 hover:bg-cyan-900/60"
+                  >
+                    🕹️ GODOT WEB (PIXEL)
+                  </a>
                   
                   <button
                     onClick={handleSignOut}

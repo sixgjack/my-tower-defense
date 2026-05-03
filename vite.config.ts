@@ -7,7 +7,11 @@ export default defineConfig({
   server: {
     host: true, // This exposes the app to the network
     allowedHosts: ['tower.cpss.edu.hk'],
-    port: 5173  // Default Vite port
+    port: 5173,
+  },
+  preview: {
+    host: true,
+    port: 4173,
   },
   resolve: {
     dedupe: ['react', 'react-dom']

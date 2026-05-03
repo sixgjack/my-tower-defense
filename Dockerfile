@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Godot Web: export from godot/ to public/godot/ before build if you ship the WASM client.
 # Project "npm run build" runs tsc first; use vite build in Docker until TS is clean
 RUN npx vite build
 
