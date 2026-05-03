@@ -3,7 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, signOut, onAuthStateChanged, type GoogleUser } from '../services/googleAuth';
 import { getStudentStatus, createStudentStatus } from '../services/studentService';
 import { LobbyScreen } from './LobbyScreen';
-import { DEMO_LOCAL_USER_ID, isGoogleAuthDisabled } from '../config/authMode';
+import {
+  DEMO_LOCAL_USER_ID,
+  isGoogleAuthDisabled,
+  isGoogleAuthDisabledByEnv,
+  setSkipGoogleAuthSession,
+} from '../config/authMode';
 
 /** Same-origin Godot HTML5 export (Vite serves `public/godot/` — dev :5173, preview :4173). */
 const viteBase = import.meta.env.BASE_URL.endsWith('/')
@@ -88,6 +93,13 @@ export const MenuScreen: React.FC = () => {
     }
 
     const unsubscribe = onAuthStateChanged(async (currentUser) => {
+      if (isGoogleAuthDisabled()) {
+        setUser(DEMO_GOOGLE_USER);
+        setStudentStatus(DEMO_STUDENT_STATUS);
+        setLoading(false);
+        return;
+      }
+
       setUser(currentUser);
       setLoading(false);
 
@@ -111,11 +123,21 @@ export const MenuScreen: React.FC = () => {
     }
   };
 
+  const handleSkipGoogleSignIn = () => {
+    setSkipGoogleAuthSession(true);
+    localStorage.removeItem('google_user');
+    localStorage.removeItem('google_access_token');
+    setUser(DEMO_GOOGLE_USER);
+    setStudentStatus(DEMO_STUDENT_STATUS);
+    setLoading(false);
+  };
+
   const handleSignOut = async () => {
-    if (isGoogleAuthDisabled()) {
+    if (isGoogleAuthDisabledByEnv()) {
       return;
     }
     try {
+      setSkipGoogleAuthSession(false);
       await signOut();
       setStudentStatus(null);
     } catch (error) {
@@ -172,7 +194,14 @@ export const MenuScreen: React.FC = () => {
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
         {isGoogleAuthDisabled() && (
           <div className="mb-4 max-w-md rounded border border-amber-600/80 bg-amber-950/90 px-4 py-2 text-center text-xs font-mono text-amber-200">
-            Demo mode: Google SSO off (<code className="text-amber-400">VITE_DISABLE_GOOGLE_AUTH=true</code>). Progress is not saved to the server.
+            {isGoogleAuthDisabledByEnv() ? (
+              <>
+                Demo mode: Google SSO off (<code className="text-amber-400">VITE_DISABLE_GOOGLE_AUTH=true</code>
+                ). Progress is not saved to the server.
+              </>
+            ) : (
+              <>Playing without Google — progress is not saved to the server. Use Sign out to sign in with Google later.</>
+            )}
           </div>
         )}
         {/* Retro Game Title */}
@@ -228,6 +257,16 @@ export const MenuScreen: React.FC = () => {
                   </svg>
                   <span className="text-lg">CONTINUE WITH GOOGLE</span>
                 </button>
+
+                {!isGoogleAuthDisabledByEnv() && (
+                  <button
+                    type="button"
+                    onClick={handleSkipGoogleSignIn}
+                    className="mt-4 w-full border-2 border-slate-500/80 bg-slate-800/80 py-3 px-4 text-sm font-mono font-bold text-slate-200 transition hover:border-green-500/70 hover:bg-slate-700/90 hover:text-green-200"
+                  >
+                    SKIP — PLAY WITHOUT GOOGLE (LOCAL DEMO)
+                  </button>
+                )}
 
                 <a
                   href={GODOT_WEB_HREF}
@@ -301,7 +340,7 @@ export const MenuScreen: React.FC = () => {
                     🕹️ GODOT WEB (PIXEL)
                   </a>
                   
-                  {!isGoogleAuthDisabled() ? (
+                  {!isGoogleAuthDisabledByEnv() ? (
                     <button
                       onClick={handleSignOut}
                       className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded border-2 border-slate-600 hover:border-slate-500 transition-all duration-200 font-mono"
