@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "godot:web": "bash scripts/godot-web-export.sh",
+    "build": "npm run godot:web && tsc -b && vite build",
+    "build:vite": "npm run godot:web && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

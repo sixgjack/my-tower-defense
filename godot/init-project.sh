@@ -7,12 +7,15 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJ_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GODOT_BIN="${GODOT:-godot4}"
 
-if ! command -v "$GODOT_BIN" >/dev/null 2>&1; then
+if [[ -n "${GODOT:-}" && -x "${GODOT}" ]]; then
+  GODOT_BIN="$GODOT"
+elif command -v godot4 >/dev/null 2>&1; then
+  GODOT_BIN="godot4"
+else
   echo "Godot 4 not found. Install it and use one of:"
   echo "  • godot4 on PATH, or"
-  echo "  • GODOT=/full/path/to/Godot_v4.*_linux.x86_64 $0"
+  echo "  • GODOT=/full/path/to/Godot_v4.*_linux.x86_64 bash $0"
   exit 1
 fi
 
