@@ -5,13 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true, // This exposes the app to the network
-    allowedHosts: ['tower.cpss.edu.hk'],
+    host: true, // 0.0.0.0 — reachable as http://<server-ip>:5173
+    // Allow hostname + raw IP (e.g. http://10.120.32.92:5173 on LAN)
+    allowedHosts: ['tower.cpss.edu.hk', '10.120.32.92', 'localhost', '127.0.0.1'],
     port: 5173,
     strictPort: true,
   },
   preview: {
     host: true,
+    allowedHosts: ['tower.cpss.edu.hk', '10.120.32.92', 'localhost', '127.0.0.1'],
     port: 4173,
     strictPort: true,
   },
