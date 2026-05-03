@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:5190": "vite --port 5190 --host",
     "godot:web": "bash scripts/godot-web-export.sh",
     "build": "npm run godot:web && tsc -b && vite build",
     "build:vite": "npm run godot:web && vite build",
