@@ -44,8 +44,9 @@ horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="Center"]
 layout_mode = 2
-text = "Godot 4 · 觸控或滑鼠放塔"
+text = "Godot 4 客戶端 · 與網頁版並存 · 手機／平板／桌面"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Play" type="Button" parent="Center"]
 layout_mode = 2

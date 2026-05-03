@@ -11,5 +11,4 @@ script = ExtResource("1_gameplay")
 script = ExtResource("2_session")
 
 [node name="WorldBoard" type="Node2D" parent="."]
-position = Vector2(40, 32)
 script = ExtResource("3_world")

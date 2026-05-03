@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="Neon Defense"
-config/description="Godot 4 port of Neon Defense tower defense (retro-friendly 2D)."
+config/description="Godot 4 student client — coexists with the React/web Neon Defense; phones, tablets, desktop."
 run/main_scene="res://scenes/main/main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
@@ -19,6 +19,7 @@ GameConstants="*res://scripts/autoload/game_constants.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/handheld/orientation=4
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

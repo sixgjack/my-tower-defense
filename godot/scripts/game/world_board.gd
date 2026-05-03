@@ -1,11 +1,36 @@
 extends Node2D
 ## Draws the grid and entities; maps screen / touch to cell builds via parent `Gameplay`.
+## 使用 SubViewport + Camera2D 時，觸控座標會自動對應到本地格子。
 
 var _session: NeonSession
+var _camera: Camera2D
 
 
 func bind_session(session: NeonSession) -> void:
 	_session = session
+	_ensure_camera()
+
+
+func _ensure_camera() -> void:
+	if get_node_or_null("Camera2D"):
+		_camera = $Camera2D
+	else:
+		_camera = Camera2D.new()
+		_camera.name = "Camera2D"
+		add_child(_camera)
+	_camera.enabled = true
+	_camera.make_current()
+
+
+func configure_camera_for_size(container_size: Vector2) -> void:
+	if _camera == null:
+		return
+	var cs: float = float(GameConstants.CELL_SIZE)
+	var map_sz := Vector2(float(GameConstants.COLS) * cs, float(GameConstants.ROWS) * cs)
+	var z: float = mini(container_size.x / map_sz.x, container_size.y / map_sz.y)
+	z = clampf(z * 0.97, 0.18, 4.0)
+	_camera.zoom = Vector2(z, z)
+	_camera.position = map_sz * 0.5
 
 
 func _draw() -> void:
@@ -97,9 +122,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	var r: int = int(floor(local_p.y / float(GameConstants.CELL_SIZE)))
 	if r < 0 or c < 0 or r >= GameConstants.ROWS or c >= GameConstants.COLS:
 		return
-	var parent_node := get_parent()
-	if parent_node and parent_node.has_method("get_selected_tower"):
-		var key: String = String(parent_node.call("get_selected_tower"))
+	var gp: Node = get_tree().current_scene
+	if gp and gp.has_method("get_selected_tower"):
+		var key: String = String(gp.call("get_selected_tower"))
 		_session.try_build_tower(r, c, key)
 		queue_redraw()
 	get_viewport().set_input_as_handled()
