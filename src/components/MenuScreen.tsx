@@ -10,7 +10,7 @@ import {
   setSkipGoogleAuthSession,
 } from '../config/authMode';
 
-/** Same-origin Godot HTML5 export (Vite serves `public/godot/` — dev :5173, preview :4173). */
+/** Same-origin Godot HTML5 export (Vite serves `public/godot/`). */
 const viteBase = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
@@ -274,11 +274,12 @@ export const MenuScreen: React.FC = () => {
                   rel="noopener noreferrer"
                   className="mt-6 inline-flex w-full items-center justify-center border-2 border-cyan-500/60 bg-cyan-950/40 px-4 py-3 text-sm font-mono font-bold text-cyan-300 transition hover:border-cyan-400 hover:bg-cyan-900/50"
                 >
-                  🕹️ GODOT WEB (PIXEL) — same site :5173
+                  🕹️ GODOT WEB (PIXEL) — same site
                 </a>
                 <p className="mt-2 text-center text-xs text-slate-500 font-mono">
                   Export Godot → Web to <code className="text-slate-400">public/godot/</code> first.
                 </p>
+
               </div>
             ) : (
               /* User Menu Section */
@@ -339,7 +340,7 @@ export const MenuScreen: React.FC = () => {
                   >
                     🕹️ GODOT WEB (PIXEL)
                   </a>
-                  
+
                   {!isGoogleAuthDisabledByEnv() ? (
                     <button
                       onClick={handleSignOut}

@@ -5,6 +5,17 @@ extends RefCounted
 static func all() -> Array[Dictionary]:
 	return [
 		{
+			"name": "Neon Asphalt",
+			"name_zh": "霓虹柏油路",
+			"bg": Color(0.1, 0.11, 0.13),
+			"grid_line": Color(0.38, 0.42, 0.5, 0.22),
+			"path": Color(0.22, 0.23, 0.26, 0.58),
+			"obstacle": Color(0.14, 0.15, 0.18),
+			"ground_style": "neon_asphalt",
+			"tower_cooldown_mult": 1.0,
+			"enemy_speed_mult": 1.0,
+		},
+		{
 			"name": "Cyber City",
 			"name_zh": "賽博城市",
 			"bg": Color(0.059, 0.09, 0.165),

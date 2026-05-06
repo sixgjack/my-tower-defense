@@ -36,6 +36,8 @@ var notification_kind: String = "wave"
 
 var support_tower_count: int = 0
 var _next_entity_id: int = 1
+var total_enemies_killed: int = 0
+var total_money_earned: int = 0
 
 var _themes: Array = []
 var _tower_defs: Dictionary = {}
@@ -63,6 +65,8 @@ func start_new_game() -> void:
 	is_game_over = false
 	tick_count = 0
 	speed_accumulator = 0.0
+	total_enemies_killed = 0
+	total_money_earned = 0
 	map = MapGenerator.generate_map(wave, 1.0)
 	recalculate_path()
 	_emit_state()
@@ -620,6 +624,8 @@ func _kill_enemy(e: Dictionary) -> void:
 	var th: Dictionary = _theme_mults()
 	var reward: int = int(e.get("reward", 0)) + th["money_bonus"]
 	money += reward
+	total_money_earned += reward
+	total_enemies_killed += 1
 	money_changed.emit(money)
 
 

@@ -1,6 +1,6 @@
 // src/components/LobbyScreen.tsx
 // Redesigned lobby with modern UI/UX principles and bilingual support
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import { GameBoard } from './GameBoard';
 import { LuckyDraw } from './LuckyDraw';
@@ -37,6 +37,35 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
+
+  useEffect(() => {
+    const onMessage = async (evt: MessageEvent) => {
+      if (evt.origin !== window.location.origin) return;
+      const data = evt.data as { type?: string; payload?: any };
+      if (data?.type !== 'godot.runResult' || !data.payload || !user) return;
+
+      const result = data.payload;
+      try {
+        await updateStudentStatusAfterGame(user.uid, {
+          wave: Number(result.wave || 1),
+          enemiesKilled: Number(result.enemiesKilled || 0),
+          moneyEarned: Number(result.moneyEarned || 0),
+          towersBuilt: Number(result.towersBuilt || 0),
+        });
+        await onStatusUpdate();
+      } catch (error) {
+        console.error('Error syncing Godot result:', error);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [onStatusUpdate, user]);
+
+  const handleOpenGodotWeb = () => {
+    const url = new URL(`${window.location.origin}${import.meta.env.BASE_URL}godot/index.html`);
+    url.searchParams.set('uid', user.uid);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  };
 
   const handleStartCombat = () => {
     setActiveView('mode-selection');
@@ -142,6 +171,12 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 font-semibold text-sm"
                 >
                   {language === 'en' ? '中文' : 'EN'}
+                </button>
+                <button
+                  onClick={handleOpenGodotWeb}
+                  className="px-5 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 backdrop-blur-md text-cyan-100 rounded-xl transition-all border border-cyan-500/40 font-semibold"
+                >
+                  Godot Web (Beta)
                 </button>
                 <button
                   onClick={onSignOut}

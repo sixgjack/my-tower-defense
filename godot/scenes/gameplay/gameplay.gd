@@ -22,12 +22,21 @@ var _drag_tower_key: String = ""
 var _is_dragging_tower: bool = false
 var _drag_preview: Panel
 var _drag_preview_label: Label
+var _web_player_uid: String = ""
+var _question_bank: QuestionBank
+var _question_overlay: Panel
+var _question_prompt: Label
+var _question_feedback: Label
+var _question_buttons: Array[Button] = []
+var _pending_build: Dictionary = {}
+var _question_open: bool = false
 
 const HUD_STATS_TOP: float = 48.0
 const HUD_BOTTOM_BASE: float = 132.0
 
 
 func _ready() -> void:
+	_question_bank = QuestionBank.new()
 	_tower_group = ButtonGroup.new()
 	_setup_play_viewport()
 	_world.bind_session(_session)
@@ -40,6 +49,9 @@ func _ready() -> void:
 	_session.game_over_changed.connect(_on_game_over)
 	_refresh_labels()
 	_schedule_play_viewport_layout()
+	_build_question_overlay()
+	_web_player_uid = _read_web_query_param("uid")
+	_emit_web_event("godot.ready", {"uid": _web_player_uid})
 	if OS.has_feature("web"):
 		_settle_web_layout_async()
 
@@ -311,7 +323,8 @@ func _update_drag_preview(pointer_pos: Vector2) -> void:
 func _finish_tower_drag(pointer_pos: Vector2) -> void:
 	if not _is_dragging_tower:
 		return
-	_world.try_build_from_screen(pointer_pos, _drag_tower_key)
+	var cell: Vector2i = _world.screen_to_cell(pointer_pos)
+	request_build_with_question(cell.y, cell.x, _drag_tower_key)
 	_is_dragging_tower = false
 	_drag_tower_key = ""
 	if _drag_preview:
@@ -342,6 +355,104 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func request_build_with_question(r: int, c: int, tower_key: String) -> void:
+	if _question_open:
+		return
+	if r < 0 or c < 0 or r >= GameConstants.ROWS or c >= GameConstants.COLS:
+		return
+	_pending_build = {"r": r, "c": c, "key": tower_key}
+	_open_question_gate()
+
+
+func _build_question_overlay() -> void:
+	_question_overlay = Panel.new()
+	_question_overlay.set_anchors_preset(Control.PRESET_CENTER)
+	_question_overlay.offset_left = -280
+	_question_overlay.offset_top = -180
+	_question_overlay.offset_right = 280
+	_question_overlay.offset_bottom = 180
+	_question_overlay.visible = false
+	_question_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_hud_root.add_child(_question_overlay)
+
+	var root := VBoxContainer.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.offset_left = 16
+	root.offset_top = 16
+	root.offset_right = -16
+	root.offset_bottom = -16
+	root.add_theme_constant_override("separation", 10)
+	_question_overlay.add_child(root)
+
+	var title := Label.new()
+	title.text = "Answer to perform action"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	root.add_child(title)
+
+	_question_prompt = Label.new()
+	_question_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_question_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_question_prompt.add_theme_font_size_override("font_size", 16)
+	root.add_child(_question_prompt)
+
+	for i in range(4):
+		var b := Button.new()
+		b.text = "-"
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(_on_question_answer_pressed.bind(i))
+		root.add_child(b)
+		_question_buttons.append(b)
+
+	_question_feedback = Label.new()
+	_question_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_question_feedback.add_theme_font_size_override("font_size", 14)
+	root.add_child(_question_feedback)
+
+
+func _open_question_gate() -> void:
+	var q: Dictionary = _question_bank.random_question()
+	var choices: Array = q.get("choices", [])
+	_question_prompt.text = String(q.get("prompt", "Question"))
+	for i in range(_question_buttons.size()):
+		var btn := _question_buttons[i]
+		btn.disabled = i >= choices.size()
+		btn.text = "%d) %s" % [i + 1, String(choices[i]) if i < choices.size() else ""]
+		btn.set_meta("answerIndex", int(q.get("answerIndex", 0)))
+	_question_feedback.text = ""
+	_question_overlay.visible = true
+	_question_open = true
+
+
+func _on_question_answer_pressed(choice_idx: int) -> void:
+	if not _question_open:
+		return
+	var correct_idx: int = int(_question_buttons[0].get_meta("answerIndex"))
+	if choice_idx == correct_idx:
+		var ok: bool = _session.try_build_tower(
+			int(_pending_build.get("r", -1)),
+			int(_pending_build.get("c", -1)),
+			String(_pending_build.get("key", ""))
+		)
+		_question_feedback.text = "Correct! Action %s." % ("done" if ok else "blocked")
+		_emit_web_event("godot.questionResult", {
+			"uid": _web_player_uid,
+			"correct": true,
+			"action": "build_tower",
+		})
+	else:
+		_question_feedback.text = "Incorrect. Action cancelled."
+		_emit_web_event("godot.questionResult", {
+			"uid": _web_player_uid,
+			"correct": false,
+			"action": "build_tower",
+		})
+	_pending_build = {}
+	_question_open = false
+	await get_tree().create_timer(0.5).timeout
+	_question_overlay.visible = false
+
+
 func _on_money(v: int) -> void:
 	_money_label.text = "$%d" % v
 
@@ -364,6 +475,29 @@ func _on_notification(text: String, _kind: String) -> void:
 func _on_game_over(is_over: bool) -> void:
 	if is_over:
 		_notify_label.text = "GAME OVER — tap Restart"
+		_emit_web_event("godot.runResult", {
+			"uid": _web_player_uid,
+			"wave": _session.wave,
+			"enemiesKilled": _session.total_enemies_killed,
+			"moneyEarned": _session.total_money_earned,
+			"towersBuilt": _session.towers.size(),
+		})
+
+
+func _read_web_query_param(name: String) -> String:
+	if not OS.has_feature("web"):
+		return ""
+	var js := "(() => { try { return new URLSearchParams(window.location.search).get('%s') || ''; } catch(_e) { return ''; } })();" % name
+	var val: Variant = JavaScriptBridge.eval(js, true)
+	return String(val)
+
+
+func _emit_web_event(event_type: String, payload: Dictionary) -> void:
+	if not OS.has_feature("web"):
+		return
+	var json_payload := JSON.stringify(payload)
+	var js := "(() => { const msg = { type: '%s', payload: %s }; try { if (window.parent && window.parent !== window) { window.parent.postMessage(msg, window.location.origin); } if (window.opener && !window.opener.closed) { window.opener.postMessage(msg, window.location.origin); } window.postMessage(msg, window.location.origin); } catch(_e) {} })();" % [event_type, json_payload]
+	JavaScriptBridge.eval(js, false)
 
 
 func _refresh_labels() -> void:

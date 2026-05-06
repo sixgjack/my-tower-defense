@@ -52,8 +52,12 @@ func _draw() -> void:
 	var map: Array = _session.map
 	var grid_line: Color = theme.get("grid_line", Color(0.4, 0.5, 0.55, 0.25))
 	var bg: Color = theme.get("bg", Color(0.1, 0.1, 0.15))
+	var anim_tick: int = int(_session.tick_count / 8)
+	var map_rect := Rect2(Vector2.ZERO, Vector2(cols * cs, rows * cs))
 
-	draw_rect(Rect2(Vector2.ZERO, Vector2(cols * cs, rows * cs)), bg)
+	draw_rect(map_rect, bg)
+	if String(theme.get("ground_style", "")) == "neon_asphalt":
+		_draw_neon_asphalt_ground(map_rect, cs, anim_tick)
 
 	for r in range(rows):
 		for c in range(cols):
@@ -70,8 +74,6 @@ func _draw() -> void:
 				fill = theme.get("obstacle", Color(0.3, 0.3, 0.35))
 			draw_rect(rect, fill)
 			draw_rect(rect, grid_line, false, 1.0)
-
-	var anim_tick: int = int(_session.tick_count / 8)
 
 	for t in _session.towers:
 		var tr: int = int(t["r"])
@@ -287,6 +289,42 @@ func _draw_projectile(p: Dictionary, cs: int, anim_tick: int) -> void:
 		draw_circle(pos, 3.8, col)
 
 
+func _draw_neon_asphalt_ground(map_rect: Rect2, cs: int, anim_tick: int) -> void:
+	# Subtle beat-em-up road flavor without heavy textures: cracks, lane marks, puddles, manholes.
+	var pulse: float = 0.28 + 0.08 * sin(float(anim_tick) * 0.45)
+	draw_rect(map_rect, Color(0.12, 0.12, 0.13, 0.35))
+
+	# Cracks / seams.
+	for i in range(0, int(map_rect.size.x), cs * 2):
+		var x := float(i + (i / max(1, cs)) % 7)
+		draw_line(Vector2(x, map_rect.position.y + 4), Vector2(x + 10, map_rect.position.y + map_rect.size.y - 4), Color(0.06, 0.06, 0.07, 0.35), 1.0)
+
+	# Painted lane markings (faded).
+	for i in range(1, int(map_rect.size.x / (cs * 2))):
+		var mark_w: float = float(cs)
+		var mark_h: float = 4.0
+		var mx: float = map_rect.position.x + i * cs * 2
+		var my: float = map_rect.position.y + map_rect.size.y * 0.48
+		draw_rect(Rect2(Vector2(mx, my), Vector2(mark_w, mark_h)), Color(0.85, 0.84, 0.78, 0.22))
+
+	# Neon puddle reflections.
+	for i in range(5):
+		var px: float = map_rect.position.x + (map_rect.size.x * (0.13 + 0.17 * i))
+		var py: float = map_rect.position.y + map_rect.size.y * (0.18 + 0.13 * (i % 3))
+		var puddle := Rect2(Vector2(px, py), Vector2(36 + i * 4, 14 + (i % 2) * 6))
+		draw_rect(puddle, Color(0.15, 0.22, 0.3, 0.18))
+		draw_rect(puddle.grow(-2), Color(0.18, 0.55, 0.8, pulse))
+		draw_rect(Rect2(puddle.position + Vector2(3, 2), Vector2(puddle.size.x * 0.45, 3)), Color(0.9, 0.35, 0.85, pulse * 0.85))
+
+	# Manhole covers.
+	for i in range(3):
+		var cx: float = map_rect.position.x + map_rect.size.x * (0.25 + 0.27 * i)
+		var cy: float = map_rect.position.y + map_rect.size.y * 0.72
+		draw_circle(Vector2(cx, cy), 9.0, Color(0.23, 0.23, 0.25, 0.7))
+		draw_circle(Vector2(cx, cy), 7.0, Color(0.3, 0.3, 0.34, 0.65))
+		draw_arc(Vector2(cx, cy), 5.0, 0.0, TAU, 14, Color(0.18, 0.18, 0.2, 0.5), 1.0)
+
+
 func _fill_rect(img: Image, rect: Rect2i, c: Color) -> void:
 	for y in range(rect.position.y, rect.position.y + rect.size.y):
 		if y < 0 or y >= img.get_height():
@@ -339,6 +377,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	var gp: Node = get_tree().current_scene
 	if gp and gp.has_method("get_selected_tower"):
 		var key: String = String(gp.call("get_selected_tower"))
-		_session.try_build_tower(r, c, key)
+		if gp.has_method("request_build_with_question"):
+			gp.call("request_build_with_question", r, c, key)
+		else:
+			_session.try_build_tower(r, c, key)
 		queue_redraw()
 	get_viewport().set_input_as_handled()
