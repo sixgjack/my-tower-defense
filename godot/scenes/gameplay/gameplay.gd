@@ -28,14 +28,34 @@ func _ready() -> void:
 	_setup_play_viewport()
 	_world.bind_session(_session)
 	_build_hud()
-	get_viewport().size_changed.connect(_update_play_viewport_layout)
+	get_viewport().size_changed.connect(_schedule_play_viewport_layout)
 	_session.money_changed.connect(_on_money)
 	_session.lives_changed.connect(_on_lives)
 	_session.wave_changed.connect(_on_wave)
 	_session.notification_changed.connect(_on_notification)
 	_session.game_over_changed.connect(_on_game_over)
 	_refresh_labels()
+	_schedule_play_viewport_layout()
+	if OS.has_feature("web"):
+		_settle_web_layout_async()
+
+
+func _settle_web_layout_async() -> void:
+	## Canvas + Control layout settles a few frames after first paint on Wasm.
+	var tree := get_tree()
+	for _i in 4:
+		await tree.process_frame
+	_update_play_viewport_layout()
+
+
+func _schedule_play_viewport_layout() -> void:
+	## Defer once so Container.size matches anchors after sizing pass.
 	call_deferred("_update_play_viewport_layout")
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED:
+		_schedule_play_viewport_layout()
 
 
 func _setup_play_viewport() -> void:
@@ -74,7 +94,10 @@ func _setup_play_viewport() -> void:
 
 
 func _safe_insets() -> Vector4:
-	## left, top, right, bottom — window 內緣需避開瀏海 / 手勢區（無則為 0）。
+	## left, top, right, bottom — notch / home-indicator padding (desktop = 0).
+	## Wasm: safe-area geometry is unreliable; wrong values shrink the SubViewport into a postage stamp.
+	if OS.has_feature("web"):
+		return Vector4.ZERO
 	var win := get_window()
 	var sid: int = win.get_window_id()
 	var wpos := DisplayServer.window_get_position(sid)
