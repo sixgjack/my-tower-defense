@@ -530,13 +530,12 @@ func _build_question_overlay() -> void:
 	root.add_child(sep)
 
 	# Answer buttons
-	var answer_colors := [
-		Color(0.22, 0.72, 0.30),  # A — green
-		Color(0.72, 0.22, 0.22),  # B — red
-		Color(0.22, 0.42, 0.82),  # C — blue
-		Color(0.72, 0.52, 0.08),  # D — amber
+	var answer_colors: Array[Color] = [
+		Color(0.22, 0.72, 0.30),
+		Color(0.72, 0.22, 0.22),
+		Color(0.22, 0.42, 0.82),
+		Color(0.72, 0.52, 0.08),
 	]
-	var labels := ["A", "B", "C", "D"]
 	for i in range(4):
 		var b := Button.new()
 		b.text = "-"
