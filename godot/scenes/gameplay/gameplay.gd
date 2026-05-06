@@ -65,11 +65,13 @@ func _ready() -> void:
 
 
 func _settle_web_layout_async() -> void:
-	## Canvas + Control layout settles a few frames after first paint on Wasm.
+	## Layout settles slowly on Wasm — retry until the SubViewport has a real size.
 	var tree := get_tree()
-	for _i in 4:
+	for _i in 12:
 		await tree.process_frame
-	_update_play_viewport_layout()
+		_update_play_viewport_layout()
+		if _play_viewport and _play_viewport.size.x > 2:
+			break
 
 
 func _schedule_play_viewport_layout() -> void:
@@ -110,6 +112,8 @@ func _setup_play_viewport() -> void:
 	_play_viewport.disable_3d = true
 	_play_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_play_viewport.transparent_bg = false
+	# Set a non-zero initial size so something renders before layout settles
+	_play_viewport.size = Vector2i(1280, 580)
 	svc.add_child(_play_viewport)
 
 	remove_child(_world)
@@ -148,7 +152,11 @@ func _update_play_viewport_layout() -> void:
 
 	var sz := _play_container.size
 	if sz.x < 2.0 or sz.y < 2.0:
-		return
+		# Layout hasn't settled yet — compute size directly from viewport rect
+		sz = Vector2(
+			maxf(1.0, vp.x - ins.x - ins.z),
+			maxf(1.0, vp.y - top_gap - bottom_hud)
+		)
 	_play_viewport.size = Vector2i(int(sz.x), int(sz.y))
 	_world.configure_camera_for_size(sz)
 
