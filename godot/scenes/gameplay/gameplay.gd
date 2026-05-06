@@ -18,6 +18,10 @@ var _play_viewport: SubViewport
 var _hud_root: Control
 var _top_bar: HBoxContainer
 var _bottom_bar: HBoxContainer
+var _drag_tower_key: String = ""
+var _is_dragging_tower: bool = false
+var _drag_preview: Panel
+var _drag_preview_label: Label
 
 const HUD_STATS_TOP: float = 48.0
 const HUD_BOTTOM_BASE: float = 132.0
@@ -114,7 +118,7 @@ func _update_play_viewport_layout() -> void:
 		return
 	var ins := _safe_insets()
 	var vp := get_viewport().get_visible_rect().size
-	var bottom_hud: float = maxf(HUD_BOTTOM_BASE, vp.y * 0.20) + ins.w
+	var bottom_hud: float = clampf(vp.y * 0.13, HUD_BOTTOM_BASE, 220.0) + ins.w
 	var top_gap: float = HUD_STATS_TOP + ins.y
 
 	_play_container.offset_top = top_gap
@@ -227,6 +231,7 @@ func _build_hud() -> void:
 		b.tooltip_text = "%s — $%d" % [String(stats.get("name", key)), int(stats.get("cost", 0))]
 		b.custom_minimum_size = Vector2(52 if narrow else 108, maxf(48.0, mini(get_viewport().get_visible_rect().size.y * 0.065, 56.0)))
 		b.toggled.connect(_on_tower_toggled.bind(key))
+		b.gui_input.connect(_on_tower_button_gui_input.bind(String(key), b))
 		tower_bar.add_child(b)
 		if key == selected_tower:
 			b.button_pressed = true
@@ -248,11 +253,93 @@ func _build_hud() -> void:
 	side.add_child(menu)
 
 	_apply_hud_scale(get_viewport().get_visible_rect().size)
+	_build_drag_preview()
+
+
+func _build_drag_preview() -> void:
+	if _hud_root == null:
+		return
+	_drag_preview = Panel.new()
+	_drag_preview.visible = false
+	_drag_preview.size = Vector2(84, 30)
+	_drag_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drag_preview.z_index = 100
+	_drag_preview.modulate = Color(1, 1, 1, 0.92)
+	_hud_root.add_child(_drag_preview)
+
+	_drag_preview_label = Label.new()
+	_drag_preview_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drag_preview_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_drag_preview_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_drag_preview_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drag_preview.add_child(_drag_preview_label)
+
+
+func _on_tower_button_gui_input(event: InputEvent, tower_key: String, button: Button) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+			_start_tower_drag(tower_key, mb.position, button.text)
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenTouch:
+		var st := event as InputEventScreenTouch
+		if st.pressed:
+			_start_tower_drag(tower_key, st.position, button.text)
+			get_viewport().set_input_as_handled()
+
+
+func _start_tower_drag(tower_key: String, pointer_pos: Vector2, button_text: String) -> void:
+	_is_dragging_tower = true
+	_drag_tower_key = tower_key
+	selected_tower = tower_key
+	_drag_preview_label.text = button_text
+	_drag_preview.visible = true
+	_update_drag_preview(pointer_pos)
+
+
+func _update_drag_preview(pointer_pos: Vector2) -> void:
+	if not _is_dragging_tower or _drag_preview == null:
+		return
+	_drag_preview.position = pointer_pos + Vector2(14, 14)
+	var cell: Vector2i = _world.screen_to_cell(pointer_pos)
+	var in_bounds: bool = (
+		cell.x >= 0 and cell.y >= 0 and cell.x < GameConstants.COLS and cell.y < GameConstants.ROWS
+	)
+	_drag_preview.modulate = Color(0.8, 1.0, 0.85, 0.92) if in_bounds else Color(1.0, 0.75, 0.75, 0.92)
+
+
+func _finish_tower_drag(pointer_pos: Vector2) -> void:
+	if not _is_dragging_tower:
+		return
+	_world.try_build_from_screen(pointer_pos, _drag_tower_key)
+	_is_dragging_tower = false
+	_drag_tower_key = ""
+	if _drag_preview:
+		_drag_preview.visible = false
 
 
 func _on_tower_toggled(pressed: bool, key: String) -> void:
 	if pressed:
 		selected_tower = key
+
+
+func _input(event: InputEvent) -> void:
+	if not _is_dragging_tower:
+		return
+	if event is InputEventMouseMotion:
+		_update_drag_preview((event as InputEventMouseMotion).position)
+	elif event is InputEventScreenDrag:
+		_update_drag_preview((event as InputEventScreenDrag).position)
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed:
+			_finish_tower_drag(mb.position)
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenTouch:
+		var st := event as InputEventScreenTouch
+		if not st.pressed:
+			_finish_tower_drag(st.position)
+			get_viewport().set_input_as_handled()
 
 
 func _on_money(v: int) -> void:
