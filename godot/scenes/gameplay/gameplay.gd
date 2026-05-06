@@ -30,6 +30,10 @@ var _question_feedback: Label
 var _question_buttons: Array[Button] = []
 var _pending_build: Dictionary = {}
 var _question_open: bool = false
+var _question_set_id: String = "mixed"
+var _current_question_request_id: String = ""
+var _current_question_id: String = ""
+var _waiting_for_judgement: bool = false
 
 const HUD_STATS_TOP: float = 48.0
 const HUD_BOTTOM_BASE: float = 132.0
@@ -51,6 +55,10 @@ func _ready() -> void:
 	_schedule_play_viewport_layout()
 	_build_question_overlay()
 	_web_player_uid = _read_web_query_param("uid")
+	_question_set_id = _read_web_query_param("qs")
+	if _question_set_id.is_empty():
+		_question_set_id = "mixed"
+	_install_web_bridge_listener()
 	_emit_web_event("godot.ready", {"uid": _web_player_uid})
 	if OS.has_feature("web"):
 		_settle_web_layout_async()
@@ -166,6 +174,7 @@ func _apply_hud_scale(vp: Vector2) -> void:
 
 func _process(_delta: float) -> void:
 	_session.tick()
+	_poll_web_bridge_messages()
 	_world.queue_redraw()
 
 
@@ -361,7 +370,10 @@ func request_build_with_question(r: int, c: int, tower_key: String) -> void:
 	if r < 0 or c < 0 or r >= GameConstants.ROWS or c >= GameConstants.COLS:
 		return
 	_pending_build = {"r": r, "c": c, "key": tower_key}
-	_open_question_gate()
+	if OS.has_feature("web"):
+		_request_question_from_bridge()
+	else:
+		_open_question_gate_local()
 
 
 func _build_question_overlay() -> void:
@@ -410,7 +422,7 @@ func _build_question_overlay() -> void:
 	root.add_child(_question_feedback)
 
 
-func _open_question_gate() -> void:
+func _open_question_gate_local() -> void:
 	var q: Dictionary = _question_bank.random_question()
 	var choices: Array = q.get("choices", [])
 	_question_prompt.text = String(q.get("prompt", "Question"))
@@ -419,38 +431,38 @@ func _open_question_gate() -> void:
 		btn.disabled = i >= choices.size()
 		btn.text = "%d) %s" % [i + 1, String(choices[i]) if i < choices.size() else ""]
 		btn.set_meta("answerIndex", int(q.get("answerIndex", 0)))
+		btn.set_meta("verifyMode", "local")
 	_question_feedback.text = ""
 	_question_overlay.visible = true
 	_question_open = true
+	_waiting_for_judgement = false
 
 
 func _on_question_answer_pressed(choice_idx: int) -> void:
 	if not _question_open:
 		return
+	var verify_mode: String = String(_question_buttons[0].get_meta("verifyMode"))
+	if verify_mode == "bridge":
+		if _waiting_for_judgement:
+			return
+		_waiting_for_judgement = true
+		_question_feedback.text = "Checking..."
+		_set_question_buttons_disabled(true)
+		var selected_text := String(_question_buttons[choice_idx].get_meta("choiceText"))
+		_emit_web_event("godot.questionAnswer", {
+			"requestId": _current_question_request_id,
+			"questionId": _current_question_id,
+			"selected": selected_text,
+			"selectedIndex": choice_idx,
+			"uid": _web_player_uid,
+		})
+		return
+
 	var correct_idx: int = int(_question_buttons[0].get_meta("answerIndex"))
 	if choice_idx == correct_idx:
-		var ok: bool = _session.try_build_tower(
-			int(_pending_build.get("r", -1)),
-			int(_pending_build.get("c", -1)),
-			String(_pending_build.get("key", ""))
-		)
-		_question_feedback.text = "Correct! Action %s." % ("done" if ok else "blocked")
-		_emit_web_event("godot.questionResult", {
-			"uid": _web_player_uid,
-			"correct": true,
-			"action": "build_tower",
-		})
+		_apply_pending_build(true)
 	else:
-		_question_feedback.text = "Incorrect. Action cancelled."
-		_emit_web_event("godot.questionResult", {
-			"uid": _web_player_uid,
-			"correct": false,
-			"action": "build_tower",
-		})
-	_pending_build = {}
-	_question_open = false
-	await get_tree().create_timer(0.5).timeout
-	_question_overlay.visible = false
+		_apply_pending_build(false)
 
 
 func _on_money(v: int) -> void:
@@ -498,6 +510,106 @@ func _emit_web_event(event_type: String, payload: Dictionary) -> void:
 	var json_payload := JSON.stringify(payload)
 	var js := "(() => { const msg = { type: '%s', payload: %s }; try { if (window.parent && window.parent !== window) { window.parent.postMessage(msg, window.location.origin); } if (window.opener && !window.opener.closed) { window.opener.postMessage(msg, window.location.origin); } window.postMessage(msg, window.location.origin); } catch(_e) {} })();" % [event_type, json_payload]
 	JavaScriptBridge.eval(js, false)
+
+
+func _install_web_bridge_listener() -> void:
+	if not OS.has_feature("web"):
+		return
+	var js := "(() => { if (window.__godotInboundInstalled) return; window.__godotInboundInstalled = true; window.__godotInbound = window.__godotInbound || []; window.addEventListener('message', (evt) => { try { if (evt.origin !== window.location.origin) return; const d = evt.data || {}; if (d.type === 'godot.questionPayload' || d.type === 'godot.questionJudgement') { window.__godotInbound.push(d); } } catch(_e) {} }); })();"
+	JavaScriptBridge.eval(js, false)
+
+
+func _poll_web_bridge_messages() -> void:
+	if not OS.has_feature("web"):
+		return
+	var raw: Variant = JavaScriptBridge.eval("(() => { try { const q = window.__godotInbound || []; window.__godotInbound = []; return JSON.stringify(q); } catch(_e) { return '[]'; } })();", true)
+	var txt: String = String(raw)
+	if txt.is_empty():
+		return
+	var parsed: Variant = JSON.parse_string(txt)
+	if not (parsed is Array):
+		return
+	for item in parsed:
+		if not (item is Dictionary):
+			continue
+		var typ: String = String(item.get("type", ""))
+		var payload: Dictionary = item.get("payload", {})
+		if typ == "godot.questionPayload":
+			_on_question_payload(payload)
+		elif typ == "godot.questionJudgement":
+			_on_question_judgement(payload)
+
+
+func _request_question_from_bridge() -> void:
+	_current_question_request_id = "%d_%d" % [Time.get_unix_time_from_system(), randi() % 100000]
+	_emit_web_event("godot.questionRequest", {
+		"requestId": _current_question_request_id,
+		"uid": _web_player_uid,
+		"questionSetId": _question_set_id,
+		"action": "build_tower",
+	})
+	# If host bridge is unavailable, fall back to local bank after a short timeout.
+	await get_tree().create_timer(0.9).timeout
+	if not _question_open and not _pending_build.is_empty() and _current_question_id.is_empty():
+		_open_question_gate_local()
+
+
+func _on_question_payload(payload: Dictionary) -> void:
+	if String(payload.get("requestId", "")) != _current_question_request_id:
+		return
+	var choices: Array = payload.get("choices", [])
+	_current_question_id = String(payload.get("questionId", ""))
+	_question_prompt.text = String(payload.get("prompt", "Question"))
+	for i in range(_question_buttons.size()):
+		var btn := _question_buttons[i]
+		btn.disabled = i >= choices.size()
+		btn.text = "%d) %s" % [i + 1, String(choices[i]) if i < choices.size() else ""]
+		btn.set_meta("choiceText", String(choices[i]) if i < choices.size() else "")
+		btn.set_meta("verifyMode", "bridge")
+	_question_feedback.text = ""
+	_set_question_buttons_disabled(false)
+	_question_overlay.visible = true
+	_question_open = true
+	_waiting_for_judgement = false
+
+
+func _on_question_judgement(payload: Dictionary) -> void:
+	if String(payload.get("requestId", "")) != _current_question_request_id:
+		return
+	var allow: bool = bool(payload.get("allow", false))
+	_apply_pending_build(allow)
+
+
+func _apply_pending_build(allow: bool) -> void:
+	if allow:
+		var ok: bool = _session.try_build_tower(
+			int(_pending_build.get("r", -1)),
+			int(_pending_build.get("c", -1)),
+			String(_pending_build.get("key", ""))
+		)
+		_question_feedback.text = "Correct! Action %s." % ("done" if ok else "blocked")
+	else:
+		_question_feedback.text = "Incorrect. Action cancelled."
+	_emit_web_event("godot.questionResult", {
+		"uid": _web_player_uid,
+		"correct": allow,
+		"action": "build_tower",
+		"requestId": _current_question_request_id,
+		"questionId": _current_question_id,
+	})
+	_pending_build = {}
+	_current_question_request_id = ""
+	_current_question_id = ""
+	_question_open = false
+	_waiting_for_judgement = false
+	_set_question_buttons_disabled(true)
+	await get_tree().create_timer(0.5).timeout
+	_question_overlay.visible = false
+
+
+func _set_question_buttons_disabled(v: bool) -> void:
+	for b in _question_buttons:
+		b.disabled = v
 
 
 func _refresh_labels() -> void:

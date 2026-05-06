@@ -1,6 +1,6 @@
 // src/components/LobbyScreen.tsx
 // Redesigned lobby with modern UI/UX principles and bilingual support
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import { GameBoard } from './GameBoard';
 import { LuckyDraw } from './LuckyDraw';
@@ -11,6 +11,7 @@ import { TowerLoadoutSelection } from './TowerLoadoutSelection';
 import { useLanguage } from '../i18n/useTranslation';
 import { updateStudentStatusAfterGame } from '../services/studentService';
 import { isGoogleAuthDisabled } from '../config/authMode';
+import { getAllQuestions, getQuestionsBySet } from '../services/questionService';
 
 interface StudentStatus {
   totalGames: number;
@@ -37,24 +38,71 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
+  const godotQuestionCacheRef = useRef<Record<string, { correct: string }>>({});
 
   useEffect(() => {
     const onMessage = async (evt: MessageEvent) => {
       if (evt.origin !== window.location.origin) return;
       const data = evt.data as { type?: string; payload?: any };
-      if (data?.type !== 'godot.runResult' || !data.payload || !user) return;
+      if (!data?.type || !data.payload || !user) return;
 
-      const result = data.payload;
-      try {
-        await updateStudentStatusAfterGame(user.uid, {
-          wave: Number(result.wave || 1),
-          enemiesKilled: Number(result.enemiesKilled || 0),
-          moneyEarned: Number(result.moneyEarned || 0),
-          towersBuilt: Number(result.towersBuilt || 0),
-        });
-        await onStatusUpdate();
-      } catch (error) {
-        console.error('Error syncing Godot result:', error);
+      if (data.type === 'godot.runResult') {
+        const result = data.payload;
+        try {
+          await updateStudentStatusAfterGame(user.uid, {
+            wave: Number(result.wave || 1),
+            enemiesKilled: Number(result.enemiesKilled || 0),
+            moneyEarned: Number(result.moneyEarned || 0),
+            towersBuilt: Number(result.towersBuilt || 0),
+          });
+          await onStatusUpdate();
+        } catch (error) {
+          console.error('Error syncing Godot result:', error);
+        }
+        return;
+      }
+
+      if (data.type === 'godot.questionRequest') {
+        const requestId = String(data.payload.requestId || '');
+        const questionSetId = String(data.payload.questionSetId || 'mixed');
+        if (!requestId) return;
+        try {
+          let questions = questionSetId === 'mixed'
+            ? await getAllQuestions()
+            : await getQuestionsBySet(questionSetId);
+          if (!questions || questions.length === 0) {
+            questions = await getAllQuestions();
+          }
+          if (!questions || questions.length === 0) return;
+          const q = questions[Math.floor(Math.random() * questions.length)];
+          const payload = {
+            type: 'godot.questionPayload',
+            payload: {
+              requestId,
+              questionId: String(q.id ?? q.question ?? requestId),
+              prompt: String(q.question ?? q.prompt ?? 'Question'),
+              choices: Array.isArray(q.options) ? q.options : [],
+            },
+          };
+          godotQuestionCacheRef.current[requestId] = { correct: String(q.correct ?? '') };
+          window.postMessage(payload, window.location.origin);
+        } catch (error) {
+          console.error('Error serving Godot question:', error);
+        }
+        return;
+      }
+
+      if (data.type === 'godot.questionAnswer') {
+        const requestId = String(data.payload.requestId || '');
+        if (!requestId) return;
+        const selected = String(data.payload.selected ?? '');
+        const entry = godotQuestionCacheRef.current[requestId];
+        const allow = !!entry && selected === entry.correct;
+        window.postMessage({
+          type: 'godot.questionJudgement',
+          payload: { requestId, allow, correctAnswer: entry?.correct ?? '' },
+        }, window.location.origin);
+        delete godotQuestionCacheRef.current[requestId];
       }
     };
     window.addEventListener('message', onMessage);
@@ -64,6 +112,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const handleOpenGodotWeb = () => {
     const url = new URL(`${window.location.origin}${import.meta.env.BASE_URL}godot/index.html`);
     url.searchParams.set('uid', user.uid);
+    url.searchParams.set('qs', 'mixed');
     window.open(url.toString(), '_blank', 'noopener,noreferrer');
   };
 
