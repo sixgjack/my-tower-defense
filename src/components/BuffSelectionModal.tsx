@@ -84,7 +84,7 @@ export const BuffSelectionModal: React.FC<BuffSelectionModalProps> = ({ isOpen, 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {choices.map((buff, index) => (
+          {choices.map((buff) => (
             <button
               key={buff.id}
               onClick={() => onSelect(buff)}

@@ -80,7 +80,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
             payload: {
               requestId,
               questionId: String(q.id ?? q.question ?? requestId),
-              prompt: String(q.question ?? q.prompt ?? 'Question'),
+              prompt: String(q.question ?? 'Question'),
               choices: Array.isArray(q.options) ? q.options : [],
             },
           };
@@ -311,8 +311,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300 animate-spin-slow">🎰</div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.luckyDraw')}</h2>
-                <p className="text-yellow-100 text-sm mb-3">{language === 'zh-TW' ? '使用積分抽取強大的防禦塔' : 'Draw powerful towers with credits'}</p>
+                <h2 className="text-2xl font-bold text-white mb-2">{language === 'zh-TW' ? '商店 / 抽獎' : 'Shop / Lucky Draw'}</h2>
+                <p className="text-yellow-100 text-sm mb-3">{language === 'zh-TW' ? '使用積分抽取強大的防禦塔（商店功能）' : 'Use credits to roll new towers (shop system)'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-yellow-200 bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/30">
                     {language === 'zh-TW' ? '100 積分' : '100 credits'}

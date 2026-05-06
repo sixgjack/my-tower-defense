@@ -207,6 +207,7 @@ export class GameEngine {
       // Check for buff selection (every 3 waves, starting from wave 3)
       if (this.wave > 1 && (this.wave - 1) % 3 === 0) {
           this.showBuffSelection = true;
+          this.showNotification('LEVEL BONUS READY', 'alert');
       }
       
       // Clean up expired buffs
@@ -355,7 +356,8 @@ export class GameEngine {
           isBurrowed: bossAbilities.includes('burrow') || false,
           bossType: bossType,
           bossShieldHp: bossAbilities.includes('shield') ? (isBigBoss ? hp * 0.5 : hp * 0.3) : undefined,
-          statusEffects: []
+          statusEffects: [],
+          name: stats.name
       });
   }
 
@@ -544,12 +546,17 @@ export class GameEngine {
         
         // Calculate effective speed based on status effects
         let currentSpeed = effectManager.getEffectiveEnemySpeed(enemy, enemy.baseSpeed);
-        
+
+        // Apply speed_aura boost (expires automatically via tick count)
+        if ((enemy as any).speedBuffExpiry > this.tickCount) {
+          currentSpeed *= 1.3;
+        }
+
         // Apply theme environmental effects to enemy speed
         if (this.currentTheme && this.currentTheme.enemySpeedMultiplier) {
           currentSpeed *= this.currentTheme.enemySpeedMultiplier;
         }
-        
+
         // Apply active buff multipliers to enemy speed (for already spawned enemies)
         const enemyBuffs = this.getEnemyBuffMultipliers();
         currentSpeed *= enemyBuffs.speed;
@@ -646,16 +653,23 @@ export class GameEngine {
         tower.damage = effectiveDamage;
         tower.range = effectiveRange;
         
-        // 1. Eco Tower Logic (if we add eco type later)
-        if (false) { // Eco towers not implemented yet
-             if (tower.cooldown > 0) tower.cooldown--;
-             else {
-                 const amount = 20 * tower.level;
-                 this.money += amount;
-                 this.addTextParticle(tower.c, tower.r, `+$${amount}`, "#10b981");
-                 tower.cooldown = 300;
-             }
-             return;
+        // 1. Farm/BANKER Tower Logic
+        if (stats.type === 'farm') {
+            if (!tower.farmInitialized) {
+                tower.cooldown = stats.cooldown; // Start with full delay
+                tower.farmInitialized = true;
+            }
+            if (tower.cooldown > 0) {
+                tower.cooldown--;
+            } else {
+                const amount = Math.floor(50 * (1 + (tower.level - 1) * 0.2));
+                this.money += amount;
+                this.totalMoneyEarned += amount;
+                this.addTextParticle(tower.c, tower.r, `+$${amount}`, "#10b981");
+                this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'star', '#10b981');
+                tower.cooldown = stats.cooldown;
+            }
+            return;
         }
         
         // 2. Target Finding (use effective range)
@@ -682,6 +696,28 @@ export class GameEngine {
         effectiveCooldown /= buffMultipliers.attackSpeed; // Faster attack = lower cooldown
         
         if (tower.cooldown > 0) tower.cooldown--;
+
+        // Flamethrower passive: 3x3 square aura DoT (no beam projectile)
+        if (tower.key === 'BASIC_BURN') {
+            if (tower.cooldown <= 0) {
+                tower.cooldown = effectiveCooldown;
+                this.enemies.forEach(enemy => {
+                    const ex = enemy.c + (enemy.xOffset || 0);
+                    const ey = enemy.r + (enemy.yOffset || 0);
+                    const inAuraSquare = Math.abs(ex - tower.c) <= 1 && Math.abs(ey - tower.r) <= 1;
+                    if (!inAuraSquare) return;
+
+                    applyDamageToEnemy(enemy, tower.damage);
+                    effectManager.applyEffectToEnemy(enemy, 'burning');
+                    if (Math.random() < 0.45) {
+                        this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
+                    }
+                    if (enemy.hp <= 0) this.killEnemy(enemy);
+                });
+                this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'flame', '#ef4444');
+            }
+            return;
+        }
         
         // Mine towers - plant mines on route
         if (stats.description.includes('Mine') || stats.description.includes('mine') || tower.key.includes('MINE')) {
@@ -715,8 +751,8 @@ export class GameEngine {
             return; // Don't attack enemies
         }
         
-        // Healer/Support towers - heal/buff nearby towers instead of attacking
-        if (stats.damage === 0 || (stats.type === 'aura' && (stats.description.includes('Heal') || stats.description.includes('heal') || stats.description.includes('buff') || stats.description.includes('Buff') || stats.description.includes('Medic') || stats.description.includes('Support') || stats.description.includes('Amplifier') || stats.description.includes('Enhancer') || stats.description.includes('Extender')))) {
+        // Healer/Support/Aura towers - handle buff/slow/heal effects instead of attacking
+        if (stats.type === 'aura' || stats.damage === 0) {
             if (tower.cooldown <= 0) {
                 tower.cooldown = effectiveCooldown;
                 // Find nearby towers to heal/buff
@@ -867,8 +903,43 @@ export class GameEngine {
                     applyDamageToEnemy(target, tower.damage);
                     if (stats.projectileStyle === 'lightning') {
                         this.addParticle(target.c*60+30, target.r*60+30, 'electric', stats.color);
+
+                        // CHAIN LIGHTNING: bounce to additional enemies
+                        if (stats.multiTarget && stats.multiTarget > 1) {
+                            const maxChains = Math.floor(stats.multiTarget) - 1;
+                            const hitIds = new Set<number>([target.id]);
+                            let lastHit: any = target;
+                            let chainDmg = tower.damage * 0.75;
+                            for (let ch = 0; ch < maxChains; ch++) {
+                                let next: any = null;
+                                let minD = 3.5;
+                                for (const e of this.enemies) {
+                                    if (hitIds.has(e.id)) continue;
+                                    const d = Math.sqrt((e.r - lastHit.r)**2 + (e.c - lastHit.c)**2);
+                                    if (d < minD) { minD = d; next = e; }
+                                }
+                                if (!next) break;
+                                applyDamageToEnemy(next, chainDmg);
+                                hitIds.add(next.id);
+                                this.projectiles.push({
+                                    id: Math.random(),
+                                    x: lastHit.c, y: lastHit.r,
+                                    startX: lastHit.c, startY: lastHit.r,
+                                    tx: next.c + (next.xOffset || 0),
+                                    ty: next.r + (next.yOffset || 0),
+                                    targetId: next.id, color: '#fcd34d',
+                                    life: 8, maxLife: 8,
+                                    style: 'lightning', damage: 0, speed: 0, progress: 0,
+                                    type: 'arrow'
+                                });
+                                this.addParticle(next.c * 60 + 30, next.r * 60 + 30, 'electric', '#fcd34d');
+                                if (next.hp <= 0) this.killEnemy(next);
+                                lastHit = next;
+                                chainDmg *= 0.75;
+                            }
+                        }
                     }
-                    
+
                     // Visual Projectile
                     this.projectiles.push({
                         id: Math.random(), x: tower.c, y: tower.r, tx: target.c, ty: target.r,
@@ -958,26 +1029,71 @@ export class GameEngine {
                     soundSystem.play('shoot');
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
+                } else if (tower.key === 'PENETRATOR') {
+                    // Railgun: pierce through all enemies in a line, 20% damage reduction per enemy
+                    const dx = (target.c + (target.xOffset || 0)) - tower.c;
+                    const dy = (target.r + (target.yOffset || 0)) - tower.r;
+                    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const nx = dx / len, ny = dy / len;
+                    const lineEnemies = this.enemies
+                        .filter(e => {
+                            const ex = (e.c + (e.xOffset || 0)) - tower.c;
+                            const ey = (e.r + (e.yOffset || 0)) - tower.r;
+                            const proj = ex * nx + ey * ny;
+                            if (proj < 0.2) return false;
+                            return Math.abs(ex * ny - ey * nx) < 0.55;
+                        })
+                        .sort((a, b) => {
+                            const pa = ((a.c + (a.xOffset || 0)) - tower.c) * nx + ((a.r + (a.yOffset || 0)) - tower.r) * ny;
+                            const pb = ((b.c + (b.xOffset || 0)) - tower.c) * nx + ((b.r + (b.yOffset || 0)) - tower.r) * ny;
+                            return pa - pb;
+                        });
+                    let damMult = 1.0;
+                    lineEnemies.forEach(e => {
+                        applyDamageToEnemy(e, tower.damage * damMult);
+                        this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'electric', stats.color);
+                        if (e.hp <= 0) this.killEnemy(e);
+                        damMult *= 0.8;
+                    });
+                    // Visual: instant full-line bolt
+                    const endX = tower.c + nx * (stats.range + 1);
+                    const endY = tower.r + ny * (stats.range + 1);
+                    this.projectiles.push({
+                        id: Math.random(), x: tower.c, y: tower.r,
+                        startX: tower.c, startY: tower.r,
+                        tx: endX, ty: endY,
+                        targetId: target.id, color: stats.color,
+                        life: 12, maxLife: 12,
+                        style: 'bolt', damage: 0, speed: 0, progress: 0, type: 'arrow'
+                    });
+                    soundSystem.play('shoot');
+                    this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', stats.color);
                 } else {
                     // Traveling Projectile
+                    let projDamage = tower.damage;
+                    // EXECUTIONER: 3x damage to enemies below 30% HP
+                    if (tower.key === 'EXECUTIONER' && target.hp < target.maxHp * 0.3) {
+                        projDamage *= 3;
+                        this.addTextParticle(target.c, target.r, '💀 EXECUTE!', '#ef4444');
+                        this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'shadow_cloud', '#1e293b');
+                    }
                     this.projectiles.push({
                         id: Math.random(),
                         x: tower.c, y: tower.r,
                         startX: tower.c, startY: tower.r,
-                        tx: target.c + (target.xOffset||0), 
+                        tx: target.c + (target.xOffset||0),
                         ty: target.r + (target.yOffset||0),
                         targetId: target.id,
-                        color: stats.color, 
+                        color: stats.color,
                         life: 100, maxLife: 100,
-                        style: stats.projectileStyle || 'dot', 
-                        damage: tower.damage, 
-                        speed: stats.projectileSpeed || 0.12, // Reduced default speed for better visibility
+                        style: stats.projectileStyle || 'dot',
+                        damage: projDamage,
+                        speed: stats.projectileSpeed || 0.12,
                         splash: stats.areaRadius,
                         progress: 0,
                         type: 'arrow'
                     });
                     soundSystem.play('shoot');
-                    // Use tower color for muzzle flash instead of white, with reduced intensity for fast-firing towers
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
                 }
@@ -1414,7 +1530,8 @@ export class GameEngine {
                 yOffset: enemy.yOffset,
                 money: Math.floor(enemy.reward * 0.3),
                 damage: 0,
-                statusEffects: []
+                statusEffects: [],
+                name: enemy.name
               });
             }
             enemy.hp = 0; // Remove original
@@ -1467,26 +1584,21 @@ export class GameEngine {
           break;
           
         case 'speed_aura':
-          // Speed up nearby allies
-          if (timeSinceLastUse > 100) {
+          // Speed up nearby allies — refresh every tick, expires after 10 ticks if out of range
+          {
             const nearbyAllies = this.enemies.filter(e => {
               if (e.id === enemy.id || e.hp <= 0) return false;
               const dist = Math.sqrt((e.r - enemy.r)**2 + (e.c - enemy.c)**2);
               return dist <= 3;
             });
-            
             nearbyAllies.forEach((ally: any) => {
-              if (!ally.hasSpeedBuff) {
-                ally.speedMultiplier = (ally.speedMultiplier || 1.0) * 1.3; // 30% speed boost
-                ally.hasSpeedBuff = true;
-                this.addParticle(ally.c * 60 + 30, ally.r * 60 + 30, 'spark', '#fbbf24');
-              }
+              ally.speedBuffExpiry = this.tickCount + 10; // Expires 10 ticks after last refresh
             });
-            
-            enemy.lastAbilityUse = this.tickCount;
-            // Visual aura around speed buffer
             if (this.tickCount % 30 === 0) {
               this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'buff', '#fbbf24');
+              nearbyAllies.forEach((ally: any) => {
+                this.addParticle(ally.c * 60 + 30, ally.r * 60 + 30, 'spark', '#fbbf24');
+              });
             }
           }
           break;
@@ -1763,12 +1875,16 @@ export class GameEngine {
       this.notificationTimer = 180; // 3 Seconds
   }
 
-  addParticle(x: number, y: number, type: any, color: string) {
-      this.particles.push({ id: Math.random(), x, y, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, life: 20, maxLife: 20, color, scale: 1, type });
+  addParticle(x: number, y: number, type: any, color: string, scale = 1) {
+      const speed = type === 'spark' ? 4 : type === 'debris' ? 3 : type === 'shard' ? 3.5 : 1.5;
+      const vx = (Math.random() - 0.5) * speed * 2;
+      const vy = (Math.random() - 0.5) * speed * 2;
+      const life = type === 'spark' ? 14 : type === 'smoke' ? 25 : type === 'flame' ? 18 : type === 'electric' ? 10 : 20;
+      this.particles.push({ id: Math.random(), x, y, vx, vy, life, maxLife: life, color, scale, type });
   }
 
   addTextParticle(c: number, r: number, text: string, color: string) {
-      this.particles.push({ id: Math.random(), x: c * 60 + 30, y: r * 40, vx: 0, vy: -1, life: 40, maxLife: 40, color, text, scale: 1, type: 'text' });
+      this.particles.push({ id: Math.random(), x: c * 60 + 30, y: r * 60 + 10, vx: (Math.random() - 0.5) * 0.5, vy: -1.2, life: 50, maxLife: 50, color, text, scale: 1, type: 'text' });
   }
 
   createExplosion(x: number, y: number, color: string, scale = 1, style?: string) {
@@ -1810,11 +1926,26 @@ export class GameEngine {
   }
 
   updateParticles() {
-      this.particles.forEach(p => { 
-          p.x += (p.vx ?? 0); 
-          p.y += (p.vy ?? 0); 
-          p.life--; 
+      this.particles.forEach(p => {
+          p.x += (p.vx ?? 0);
+          p.y += (p.vy ?? 0);
+          // Physics: decelerate sparks/debris, smoke/flame rise and slow
+          if (p.type === 'spark' || p.type === 'shard' || p.type === 'debris') {
+              p.vx! *= 0.88;
+              p.vy! *= 0.88;
+          } else if (p.type === 'smoke' || p.type === 'flame' || p.type === 'shadow_cloud' || p.type === 'poison_cloud') {
+              p.vx! *= 0.92;
+              p.vy! = (p.vy! ?? 0) * 0.9 - 0.08; // Rise upward, decelerate
+          } else if (p.type === 'electric') {
+              p.vx! *= 0.85;
+              p.vy! *= 0.85;
+          }
+          p.life--;
       });
+      // Cap particles for performance
+      if (this.particles.length > 500) {
+          this.particles = this.particles.slice(this.particles.length - 500);
+      }
       this.particles = this.particles.filter(p => p.life > 0);
   }
   

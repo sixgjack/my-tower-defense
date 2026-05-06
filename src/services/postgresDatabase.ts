@@ -25,7 +25,7 @@ async function initDatabase(): Promise<void> {
       // Clear corrupted IndexedDB if it exists
       try {
         const deleteReq = indexedDB.deleteDatabase('tower-defense-db');
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve, _reject) => {
           deleteReq.onsuccess = () => {
             console.log('Cleared corrupted IndexedDB database');
             setTimeout(resolve, 200); // Wait for cleanup

@@ -499,12 +499,11 @@ export const TOWERS: Record<string, TowerStats> = {
     upgradeStats: { damage: 1.15, range: 1.1, cooldown: 0.92, slowFactor: 1.1 }
   },
   'BASIC_BURN': {
-    name: 'Flamethrower', cost: 250, damage: 5, range: 3.5, cooldown: 8,
-    type: 'beam', color: '#ef4444', icon: '🌋',
-    description: 'Continuous flame beam in arc shape. Damage ramps up over time. Burns enemies in a wide cone.',
-    beamRamp: 0.5,
+    name: 'Flamethrower', cost: 250, damage: 10, range: 1.5, cooldown: 18,
+    type: 'aura', color: '#ef4444', icon: '🌋',
+    description: 'Passive 3x3 flame zone. Enemies passing through suffer burning damage over time.',
     burnDamage: 8,
-    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.15, burnDamage: 1.2 }
+    upgradeStats: { damage: 1.15, range: 1.05, cooldown: 0.94, burnDamage: 1.25 }
   },
   'BASIC_STUN': {
     name: 'Stun Cannon', cost: 220, damage: 40, range: 2.8, cooldown: 100,

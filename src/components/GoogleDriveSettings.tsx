@@ -2,7 +2,7 @@
 // Settings component for Google Drive integration
 
 import React, { useState, useEffect } from 'react';
-import { googleDriveService, type GoogleDriveConfig } from '../services/googleDriveService';
+import { googleDriveService } from '../services/googleDriveService';
 
 interface GoogleDriveSettingsProps {
   onClose: () => void;

@@ -1,7 +1,7 @@
 // src/utils/testOAuth.ts
 // Test script for Google OAuth
 
-import { initGoogleAuth, signInWithGoogle, signOut, getCurrentUser, isAuthenticated } from '../services/googleAuth';
+import { initGoogleAuth, signInWithGoogle, getCurrentUser, isAuthenticated } from '../services/googleAuth';
 
 export async function testOAuth() {
   console.log('🧪 Testing Google OAuth...\n');

@@ -298,8 +298,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
       throw new Error('CSV must have a header row and at least one data row');
     }
 
-    // Parse header to find column indices
-    const header = lines[0].toLowerCase();
     const questions: any[] = [];
 
     // Process each data row

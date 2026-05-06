@@ -89,7 +89,7 @@ export const TeacherQuestionSetManager: React.FC<TeacherQuestionSetManagerProps>
     if (!editingSet) return;
 
     try {
-      await updateQuestionSet(editingSet.id, formData);
+      await updateQuestionSet(String(editingSet.id), formData);
       await loadQuestionSets();
       setEditingSet(null);
       resetForm();
@@ -315,7 +315,7 @@ export const TeacherQuestionSetManager: React.FC<TeacherQuestionSetManagerProps>
                   </button>
                   {set.createdBy === teacherUid && (
                     <button
-                      onClick={() => handleDelete(set.id)}
+                      onClick={() => handleDelete(String(set.id))}
                       className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-all"
                     >
                       {t('common.delete')}

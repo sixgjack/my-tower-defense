@@ -47,10 +47,10 @@ export async function signInWithGoogle(): Promise<GoogleUser> {
   await initGoogleAuth();
 
   return new Promise((resolve, reject) => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
     
     if (!clientId) {
-      reject(new Error('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID in .env'));
+      reject(new Error('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID in .env and restart Vite.'));
       return;
     }
 

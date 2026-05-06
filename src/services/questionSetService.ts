@@ -7,7 +7,7 @@ import type { GameMode } from '../components/ModeSelection';
 export type { GameMode };
 
 export interface QuestionSet extends GameMode {
-  id: string | number;
+  id?: string | number;
   createdBy: string; // Teacher UID
   createdAt?: string;
   updatedAt?: string;

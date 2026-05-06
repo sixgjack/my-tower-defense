@@ -12,6 +12,7 @@ import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
 import { getThemeDescription } from '../utils/themeHelpers';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
+import { getEnemyGifAsset, getTowerGifAsset } from '../config/visualAssets';
 
 const TILE_SIZE = 60; // Increased tile size for better visibility
 const BOARD_WIDTH = COLS * TILE_SIZE; 
@@ -165,145 +166,183 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
 
   // --- RENDER PARTICLES ---
   const renderParticle = (p: Particle) => {
+      const t = p.life / p.maxLife; // normalized lifetime 1→0
+      const ti = 1 - t;             // inverse: 0→1 as particle ages
+
       if (p.type === 'text') {
-        return <div key={p.id} className="absolute pointer-events-none font-black text-[10px] z-50 whitespace-nowrap"
-            style={{ left: p.x, top: p.y, color: p.color, textShadow: '0px 2px 2px rgba(0,0,0,0.8)', opacity: p.life / 20 }}>{p.text}</div>;
+        return <div key={p.id} className="absolute pointer-events-none font-black text-xs z-50 whitespace-nowrap select-none"
+            style={{ left: p.x, top: p.y, color: p.color, textShadow: `0px 1px 3px rgba(0,0,0,0.9), 0 0 6px ${p.color}`, opacity: Math.min(1, t * 3) }}>{p.text}</div>;
       }
       if (p.type === 'shockwave') {
-          const size = 40 * p.scale * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none rounded-full border-2 z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, opacity: p.life/p.maxLife }} />;
+          const size = 70 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              border: `3px solid ${p.color}`, opacity: t * 0.9,
+              boxShadow: `0 0 ${size * 0.3}px ${p.color}40` }} />;
       }
       if (p.type === 'spark') {
+          const r = 3 * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 2*p.scale, top: p.y - 2*p.scale, width: 4*p.scale, height: 4*p.scale, background: p.color, opacity: p.life/p.maxLife, boxShadow: `0 0 ${4*p.scale}px ${p.color}` }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t,
+              boxShadow: `0 0 ${r*3}px ${p.color}` }} />;
       }
       if (p.type === 'smoke') {
+          const r = (4 + 8 * ti) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 3*p.scale, top: p.y - 3*p.scale, width: 6*p.scale, height: 6*p.scale, background: p.color, opacity: p.life/p.maxLife * 0.5, filter: 'blur(2px)' }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t * 0.45, filter: 'blur(3px)' }} />;
       }
       if (p.type === 'muzzle') {
-          const isColored = p.color !== '#fff';
+          const r = (8 + 6 * t) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none rounded-full z-40"
-            style={{ 
-                left: p.x - 8, top: p.y - 8, width: 16, height: 16, 
-                background: isColored ? p.color : 'white',
-                opacity: p.life/p.maxLife * (isColored ? 0.6 : 1), 
-                filter: 'blur(1.5px)', 
-                boxShadow: `0 0 ${isColored ? '8px' : '12px'} ${p.color}` 
-            }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: `radial-gradient(circle, white 0%, ${p.color} 60%, transparent 100%)`,
+              opacity: t * 0.9,
+              boxShadow: `0 0 ${r*2}px ${p.color}` }} />;
       }
       if (p.type === 'flame') {
+          const r = (5 + 3 * t) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 3*p.scale, top: p.y - 3*p.scale, width: 6*p.scale, height: 6*p.scale, background: `radial-gradient(circle, ${p.color} 0%, #ff6600 100%)`, opacity: p.life/p.maxLife, boxShadow: `0 0 ${6*p.scale}px ${p.color}` }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: `radial-gradient(circle, #fff5c0 0%, ${p.color} 40%, #ff4400 100%)`,
+              opacity: t * 0.85,
+              boxShadow: `0 0 ${r * 2}px ${p.color}` }} />;
       }
       if (p.type === 'debris') {
+          const r = 3 * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30"
-            style={{ left: p.x - 2*p.scale, top: p.y - 2*p.scale, width: 4*p.scale, height: 4*p.scale, background: p.color, opacity: p.life/p.maxLife, transform: `rotate(${p.life * 10}deg)` }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t,
+              transform: `rotate(${(1 - t) * 360}deg)` }} />;
       }
       if (p.type === 'star') {
-          const angle = (p.maxLife - p.life) * 15;
+          const r = 5 * p.scale;
+          const rot = ti * 180;
           return <div key={p.id} className="absolute pointer-events-none z-30"
-            style={{ left: p.x - 3*p.scale, top: p.y - 3*p.scale, width: 6*p.scale, height: 6*p.scale, opacity: p.life/p.maxLife, transform: `rotate(${angle}deg)` }}>
-              <div style={{ width: '100%', height: '100%', background: p.color, clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' }} />
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2, opacity: t,
+              transform: `rotate(${rot}deg)` }}>
+              <div style={{ width: '100%', height: '100%', background: p.color,
+                clipPath: 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)',
+                filter: `drop-shadow(0 0 ${r}px ${p.color})` }} />
             </div>;
       }
       if (p.type === 'impact') {
-          const size = 8 * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none rounded-full z-40 border-2"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, opacity: p.life/p.maxLife, boxShadow: `0 0 ${size*2}px ${p.color}` }} />;
+          // Expanding ring that fades out
+          const size = 24 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none rounded-full z-40"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              border: `2px solid ${p.color}`, opacity: t * 0.9,
+              boxShadow: `0 0 ${size}px ${p.color}50` }} />;
       }
       if (p.type === 'freeze') {
+          const r = (3 + 2 * t) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 2*p.scale, top: p.y - 2*p.scale, width: 4*p.scale, height: 4*p.scale, background: `radial-gradient(circle, ${p.color} 0%, #bfdbfe 100%)`, opacity: p.life/p.maxLife, boxShadow: `0 0 ${4*p.scale}px ${p.color}` }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: `radial-gradient(circle, white 0%, ${p.color} 50%, #93c5fd 100%)`,
+              opacity: t * 0.85,
+              boxShadow: `0 0 ${r*2}px ${p.color}` }} />;
       }
       if (p.type === 'poison_cloud') {
+          const r = (6 + 6 * ti) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 4*p.scale, top: p.y - 4*p.scale, width: 8*p.scale, height: 8*p.scale, background: p.color, opacity: p.life/p.maxLife * 0.6, filter: 'blur(3px)' }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: `radial-gradient(circle, ${p.color} 0%, transparent 80%)`,
+              opacity: t * 0.65, filter: 'blur(2px)' }} />;
       }
       if (p.type === 'electric') {
-          return <div key={p.id} className="absolute pointer-events-none z-30"
-            style={{ left: p.x - 2*p.scale, top: p.y - 2*p.scale, width: 4*p.scale, height: 4*p.scale, background: p.color, opacity: p.life/p.maxLife, boxShadow: `0 0 ${6*p.scale}px ${p.color}`, filter: 'blur(1px)' }} />;
+          const r = (2 + 3 * t) * p.scale;
+          return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t,
+              boxShadow: `0 0 ${r*4}px ${p.color}`, filter: 'blur(0.5px)' }} />;
       }
       if (p.type === 'magic_burst') {
-          const size = 30 * p.scale * (1 - p.life / p.maxLife);
+          const size = 50 * p.scale * ti;
           return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, background: `radial-gradient(circle, ${p.color} 0%, transparent 100%)`, opacity: p.life/p.maxLife }} />;
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              background: `radial-gradient(circle, white 0%, ${p.color} 40%, transparent 100%)`,
+              opacity: t * 0.8 }} />;
       }
       if (p.type === 'shadow_cloud') {
+          const r = (8 + 6 * ti) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - 5*p.scale, top: p.y - 5*p.scale, width: 10*p.scale, height: 10*p.scale, background: p.color, opacity: p.life/p.maxLife * 0.4, filter: 'blur(4px)' }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t * 0.5, filter: 'blur(4px)' }} />;
       }
       if (p.type === 'void_ring') {
-          const size = 50 * p.scale * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none rounded-full border z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, borderWidth: 2, opacity: p.life/p.maxLife }} />;
+          const size = 60 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              border: `2px solid ${p.color}`, opacity: t,
+              boxShadow: `inset 0 0 ${size * 0.3}px ${p.color}40` }} />;
       }
       if (p.type === 'holy_light') {
-          const size = 25 * p.scale * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, background: `radial-gradient(circle, ${p.color} 0%, transparent 100%)`, opacity: p.life/p.maxLife, boxShadow: `0 0 ${size}px ${p.color}` }} />;
+          const size = 40 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              background: `radial-gradient(circle, white 0%, ${p.color} 50%, transparent 100%)`,
+              opacity: t * 0.85, boxShadow: `0 0 ${size}px ${p.color}` }} />;
       }
       if (p.type === 'blast') {
-          const size = 60 * p.scale * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none rounded-full z-30 border-2"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, opacity: p.life/p.maxLife, boxShadow: `0 0 ${size/2}px ${p.color}` }} />;
+          const size = 80 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              border: `3px solid ${p.color}`,
+              background: `radial-gradient(circle, ${p.color}40 0%, transparent 60%)`,
+              opacity: t,
+              boxShadow: `0 0 ${size * 0.5}px ${p.color}, inset 0 0 ${size*0.3}px ${p.color}40` }} />;
       }
       if (p.type === 'splash') {
-          const size = 40 * p.scale * (1 - p.life / p.maxLife);
+          const size = 50 * p.scale * ti;
           return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, background: p.color, opacity: p.life/p.maxLife * 0.3, filter: 'blur(2px)' }} />;
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              background: `radial-gradient(circle, ${p.color}60 0%, ${p.color}20 60%, transparent 100%)`,
+              opacity: t * 0.7, filter: 'blur(2px)' }} />;
       }
       if (p.type === 'shard') {
-          const angle = (p.maxLife - p.life) * 20;
+          const r = (3 + 2 * t) * p.scale;
+          const rot = ti * 300;
           return <div key={p.id} className="absolute pointer-events-none z-30"
-            style={{ left: p.x - 2*p.scale, top: p.y - 2*p.scale, width: 4*p.scale, height: 4*p.scale, background: p.color, opacity: p.life/p.maxLife, transform: `rotate(${angle}deg)`, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: p.color, opacity: t,
+              transform: `rotate(${rot}deg)`,
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+              boxShadow: `0 0 ${r}px ${p.color}` }} />;
       }
       if (p.type === 'beam') {
-          const size = 20 * p.scale * (1 - p.life / p.maxLife);
+          const size = 30 * p.scale * ti;
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, background: `radial-gradient(circle, ${p.color} 0%, transparent 100%)`, opacity: p.life/p.maxLife, boxShadow: `0 0 ${size}px ${p.color}` }} />;
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              background: `radial-gradient(circle, white 0%, ${p.color} 50%, transparent 100%)`,
+              opacity: t, boxShadow: `0 0 ${size}px ${p.color}` }} />;
       }
       if (p.type === 'ripple') {
-          const size = 35 * p.scale * (1 - p.life / p.maxLife);
-          return <div key={p.id} className="absolute pointer-events-none rounded-full border z-30"
-            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size, borderColor: p.color, borderWidth: 1, opacity: p.life/p.maxLife }} />;
+          const size = 45 * p.scale * ti;
+          return <div key={p.id} className="absolute pointer-events-none rounded-full z-30"
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              border: `2px solid ${p.color}`, opacity: t * 0.7 }} />;
       }
       if (p.type === 'heal') {
-          return <div key={p.id} className="absolute pointer-events-none z-40 font-bold text-lg"
-            style={{ 
-                left: p.x - 8, 
-                top: p.y - 8, 
-                color: p.color, 
-                opacity: p.life/p.maxLife,
-                textShadow: `0 0 4px ${p.color}`,
-                transform: `translateY(${(p.maxLife - p.life) * -0.5}px)`
-            }}>+</div>;
+          return <div key={p.id} className="absolute pointer-events-none z-40 font-black text-xl"
+            style={{ left: p.x - 8, top: p.y - 8,
+              color: p.color, opacity: t,
+              textShadow: `0 0 6px ${p.color}, 0 1px 3px black`,
+              transform: `translateY(${ti * -18}px)` }}>+</div>;
       }
       if (p.type === 'buff') {
-          const size = 12 * p.scale;
+          const r = (8 + 4 * t) * p.scale;
           return <div key={p.id} className="absolute pointer-events-none z-40 rounded-full"
-            style={{ 
-                left: p.x - size/2, 
-                top: p.y - size/2, 
-                width: size, 
-                height: size, 
-                background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
-                opacity: p.life/p.maxLife,
-                boxShadow: `0 0 ${size}px ${p.color}`
-            }} />;
+            style={{ left: p.x - r, top: p.y - r, width: r*2, height: r*2,
+              background: `radial-gradient(circle, white 0%, ${p.color} 50%, transparent 80%)`,
+              opacity: t * 0.9, boxShadow: `0 0 ${r*2}px ${p.color}` }} />;
       }
       if (p.type === 'aura') {
-          const size = 20 * p.scale * (1 - p.life / p.maxLife * 0.5);
+          const size = 28 * p.scale * (0.5 + t * 0.5);
           return <div key={p.id} className="absolute pointer-events-none z-30 rounded-full"
-            style={{ 
-                left: p.x - size/2, 
-                top: p.y - size/2, 
-                width: size, 
-                height: size, 
-                background: `radial-gradient(circle, ${p.color}40 0%, transparent 70%)`,
-                opacity: p.life/p.maxLife
-            }} />;
+            style={{ left: p.x - size/2, top: p.y - size/2, width: size, height: size,
+              background: `radial-gradient(circle, ${p.color}50 0%, transparent 70%)`,
+              opacity: t * 0.7 }} />;
       }
       return null;
   };
@@ -416,7 +455,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}
                 className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
-                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform">{tower.icon}</div>
+                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform overflow-hidden">
+                  {getTowerGifAsset(key) ? (
+                    <img
+                      src={getTowerGifAsset(key)}
+                      alt={`${tower.name} sprite`}
+                      className="h-full w-full object-contain pixel-art"
+                      draggable={false}
+                    />
+                  ) : (
+                    tower.icon
+                  )}
+                </div>
                 <div className="flex-1">
                     <div className="font-bold text-sm text-slate-200">{getTowerName(key)}</div>
                     <div className="flex justify-between items-center"><span className="text-xs text-emerald-400 font-mono">${tower.cost}</span></div>
@@ -466,14 +516,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
         {/* NOTIFICATION OVERLAY */}
         {game.notification && (
            <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-               <h1 className="text-6xl font-black text-white stroke-black drop-shadow-xl animate-bounce">
+               <div className="relative px-10 py-5 rounded-none" style={{
+                 background: game.notificationType === 'boss' ? 'rgba(127,0,0,0.85)' : game.notificationType === 'alert' ? 'rgba(30,60,120,0.85)' : 'rgba(10,20,40,0.85)',
+                 border: `4px solid ${game.notificationType === 'boss' ? '#ef4444' : game.notificationType === 'alert' ? '#60a5fa' : '#facc15'}`,
+                 boxShadow: `0 0 30px ${game.notificationType === 'boss' ? '#ef444480' : game.notificationType === 'alert' ? '#60a5fa80' : '#facc1580'}, inset 0 0 20px rgba(0,0,0,0.5)`,
+               }}>
+                 <h1 className="text-5xl font-black tracking-widest text-white drop-shadow-xl"
+                   style={{ textShadow: `0 0 20px ${game.notificationType === 'boss' ? '#ef4444' : game.notificationType === 'alert' ? '#60a5fa' : '#facc15'}, 0 2px 4px black` }}>
                    {game.notification}
-               </h1>
+                 </h1>
+               </div>
            </div>
         )}
 
         {/* --- BOARD --- */}
-        <div className="relative shadow-2xl transition-all duration-300"
+        <div className="relative shadow-2xl transition-all duration-300 pixel-board"
              style={{ width: BOARD_WIDTH, height: BOARD_HEIGHT, border: '4px solid #1e293b', backgroundColor: '#0f172a' }}
              onDragOver={handleDragOver} onDragLeave={() => setHoverPos(null)} onDrop={handleDrop}>
           
@@ -484,7 +541,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   if (cell !== 0 && cell !== 'S' && cell !== 'B') className = `${currentTheme.path} ${currentTheme.grid} border-none shadow-inner`;
                   
                   return (
-                    <div key={`${r}-${c}`} className={`${className} flex items-center justify-center text-xs opacity-80`}>
+                    <div key={`${r}-${c}`} className={`${className} flex items-center justify-center text-xs opacity-80 pixel-tile`}>
                         {cell === 'S' && <span className="text-xl animate-bounce">🚪</span>}
                         {cell === 'B' && <span className="text-xl animate-pulse">🎯</span>}
                         {cell === 'X' && <span className="text-xl opacity-50">{currentTheme.obstacle}</span>}
@@ -552,7 +609,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   style={{ left: hoverPos!.c * TILE_SIZE, top: hoverPos!.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
                 <div className={`absolute rounded-full border-2 opacity-40 transition-colors ${ghost.isValid ? 'bg-emerald-500/30 border-emerald-400' : 'bg-rose-500/30 border-rose-400'}`}
                      style={{ width: ghost.rangePx * 2, height: ghost.rangePx * 2, top: TILE_SIZE/2 - ghost.rangePx, left: TILE_SIZE/2 - ghost.rangePx }} />
-                <div className="w-full h-full flex items-center justify-center text-2xl opacity-80">{ghost.stats.icon}</div>
+                <div className="w-full h-full flex items-center justify-center text-2xl opacity-80 overflow-hidden">
+                  {getTowerGifAsset(draggingKey || '') ? (
+                    <img
+                      src={getTowerGifAsset(draggingKey || '')}
+                      alt="tower ghost"
+                      className="h-[80%] w-[80%] object-contain pixel-art opacity-80"
+                      draggable={false}
+                    />
+                  ) : (
+                    ghost.stats.icon
+                  )}
+                </div>
              </div>
           )}
 
@@ -650,16 +718,42 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                              />
                          </div>
                      )}
-                     <div 
-                         onClick={() => setSelectedTowerId(isSelected ? null : t.id)} 
-                         className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}
-                         style={{ 
-                             transform: t.angle !== undefined ? `rotate(${t.angle}deg)` : 'none',
-                             transformOrigin: 'center'
-                         }}
+                    {/* Tower base platform (pixel-art pedestal) */}
+                    <div className="absolute inset-0 pointer-events-none"
+                         style={{
+                           background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%, rgba(0,0,0,0.3) 100%)',
+                           border: `1px solid ${isSelected ? '#facc15' : stats.color + '60'}`,
+                           boxShadow: isSelected
+                             ? `0 0 12px #facc1580, inset 0 0 8px #facc1520`
+                             : t.targetId
+                               ? `0 0 8px ${stats.color}60, inset 0 0 4px ${stats.color}20`
+                               : 'none',
+                         }} />
+                    <div
+                         onClick={() => setSelectedTowerId(isSelected ? null : t.id)}
+                        className={`w-full h-full flex items-center justify-center cursor-pointer transition-transform overflow-hidden`}
+                        style={{
+                            fontSize: `${TILE_SIZE * 0.5}px`,
+                            transform: t.angle !== undefined ? `rotate(${t.angle}deg)` : 'none',
+                            transformOrigin: 'center',
+                        }}
                      >
-                          {stats.icon}
-                          {t.level > 1 && <div className="absolute -top-1 -right-1 bg-blue-600 text-[8px] px-1 rounded-full text-white border border-blue-400">{t.level}</div>}
+                         {getTowerGifAsset(t.key) ? (
+                           <img
+                             src={getTowerGifAsset(t.key)}
+                             alt={`${stats.name} tower`}
+                             className="h-[85%] w-[85%] object-contain pixel-art"
+                             draggable={false}
+                           />
+                         ) : (
+                           <span style={{ filter: t.targetId ? `drop-shadow(0 0 4px ${stats.color})` : 'none' }}>
+                             {stats.icon}
+                           </span>
+                         )}
+                          {t.level > 1 && <div className="absolute -top-1 -right-1 text-[9px] px-1 font-black text-white"
+                            style={{ background: '#1d4ed8', border: '1px solid #60a5fa', minWidth: 14, textAlign: 'center' }}>
+                            {t.level}
+                          </div>}
                      </div>
                      {isSelected && (
                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-40 animate-in fade-in zoom-in duration-100">
@@ -670,7 +764,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                              <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>
                          </div>
                      )}
-                     {isSelected && <div className="absolute rounded-full border border-white/30 bg-white/5 pointer-events-none" style={{ width: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), height: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), top: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), left: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), zIndex: -1 }} /> }
+                     {isSelected && <div className="absolute rounded-full border border-white/30 bg-white/5 pointer-events-none" style={{ width: t.range * TILE_SIZE * 2, height: t.range * TILE_SIZE * 2, top: TILE_SIZE/2 - t.range * TILE_SIZE, left: TILE_SIZE/2 - t.range * TILE_SIZE, zIndex: -1 }} /> }
                  </div>
              );
           })}
@@ -746,22 +840,44 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px]">🛡️</div>
                   )}
                   
-                  <div className="w-8 h-1 bg-slate-800 rounded-full overflow-hidden mb-0.5 border border-slate-600">
-                      <div 
-                        className="h-full bg-rose-500 will-change-[width]" 
-                        style={{ width: `${(e.hp / e.maxHp) * 100}%` }} 
+                  {/* Health bar - sized to match tile */}
+                  <div className="overflow-hidden mb-0.5" style={{
+                    width: TILE_SIZE * 0.82, height: 5,
+                    background: '#1e293b', border: '1px solid #475569', borderRadius: 2
+                  }}>
+                      <div
+                        className="h-full will-change-[width]"
+                        style={{
+                          width: `${(e.hp / e.maxHp) * 100}%`,
+                          background: e.hp / e.maxHp > 0.5 ? '#22c55e' : e.hp / e.maxHp > 0.25 ? '#f59e0b' : '#ef4444',
+                          borderRadius: 2,
+                          transition: 'background-color 0.3s'
+                        }}
                         ref={(el) => {
                              if (el) enemyHpRefs.current.set(e.id, el);
                              else enemyHpRefs.current.delete(e.id);
                         }}
                       />
                   </div>
-                  <div className="text-2xl drop-shadow-md">{e.icon}</div>
+                  <div className="drop-shadow-md flex items-center justify-center overflow-hidden"
+                       style={{ fontSize: `${TILE_SIZE * 0.52}px`, width: TILE_SIZE * 0.78, height: TILE_SIZE * 0.78 }}>
+                    {getEnemyGifAsset((e as any).name, e.icon) ? (
+                      <img
+                        src={getEnemyGifAsset((e as any).name, e.icon)}
+                        alt={`${(e as any).name || 'enemy'} sprite`}
+                        className="h-full w-full object-contain pixel-art"
+                        draggable={false}
+                      />
+                    ) : (
+                      e.icon
+                    )}
+                  </div>
                   
                   {/* Boss indicator */}
                   {e.bossType && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-yellow-400 bg-slate-900/80 px-1 rounded">
-                      BOSS
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black text-yellow-300 px-1.5 py-0.5 whitespace-nowrap"
+                         style={{ background: '#7c2d12', border: '1px solid #f59e0b', boxShadow: '0 0 6px #f59e0b80', letterSpacing: '0.05em' }}>
+                      {e.bossType === 'big' ? '⚠ BOSS ⚠' : '★ MINI'}
                     </div>
                   )}
               </div>
@@ -835,22 +951,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                       return (
                         <g key={t.id}>
                           {/* Outer frost glow */}
-                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#60a5fa" strokeWidth={glowWidth} opacity={0.15 + ramp * 0.1} />
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#60a5fa" strokeWidth={glowWidth + 4} opacity={0.12 + ramp * 0.1} />
                           {/* Main beam */}
-                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#93c5fd" strokeWidth={beamWidth} opacity={0.7} />
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#93c5fd" strokeWidth={beamWidth} opacity={0.75} />
                           {/* Crystal center */}
-                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={beamWidth * 0.3} opacity={0.8} />
-                          {/* Frost particles */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#ffffff" strokeWidth={beamWidth * 0.35} opacity={0.85} />
+                          {/* Animated dash for energy flow */}
+                          <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#bfdbfe" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.5}
+                            style={{ strokeDashoffset: -(tick * 3) % 10 }} />
+                          {/* Frost orbs along beam - seeded, no Math.random() */}
                           {Array.from({ length: 5 }).map((_, i) => {
                             const t_pos = (i + 0.5) / 5;
-                            const px = sx + (ex - sx) * t_pos + (Math.sin(tick * 0.1 + i) * 8);
-                            const py = sy + (ey - sy) * t_pos + (Math.cos(tick * 0.1 + i) * 8);
-                            return <circle key={i} cx={px} cy={py} r={2 + Math.random() * 2} fill="#bfdbfe" opacity={0.6} />;
+                            const fpx = sx + (ex - sx) * t_pos + (Math.sin(tick * 0.12 + i * 1.3) * 7);
+                            const fpy = sy + (ey - sy) * t_pos + (Math.cos(tick * 0.12 + i * 1.3) * 7);
+                            const fr = 2 + Math.sin(tick * 0.2 + i * 2.1) * 1.2;
+                            return <circle key={i} cx={fpx} cy={fpy} r={fr} fill="#bfdbfe" opacity={0.7} />;
                           })}
-                          {/* Freeze effect at target */}
-                          <circle cx={ex} cy={ey} r={12 + ramp * 8} fill="#60a5fa" opacity={0.3}>
-                            <animate attributeName="r" values={`${10+ramp*6};${14+ramp*10};${10+ramp*6}`} dur="0.5s" repeatCount="indefinite" />
+                          {/* Freeze burst at target */}
+                          <circle cx={ex} cy={ey} r={13 + ramp * 8} fill="#60a5fa" opacity={0.25}>
+                            <animate attributeName="r" values={`${11+ramp*6};${15+ramp*10};${11+ramp*6}`} dur="0.5s" repeatCount="indefinite" />
                           </circle>
+                          <circle cx={ex} cy={ey} r={6 + ramp * 4} fill="#bfdbfe" opacity={0.5} />
                         </g>
                       );
                     } else if (stats.projectileStyle === 'lightning') {

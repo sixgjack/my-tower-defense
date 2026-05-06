@@ -2,84 +2,182 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ======================================================
+   KEYFRAMES
+   ====================================================== */
 @keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
 }
 
 @keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
+@keyframes pixel-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
 }
 
-/* === THEME DEFINITIONS === */
+@keyframes tower-attack-flash {
+  0%   { box-shadow: none; }
+  20%  { box-shadow: 0 0 16px 4px var(--accent, #fff); }
+  100% { box-shadow: none; }
+}
+
+@keyframes path-march {
+  to { stroke-dashoffset: -12; }
+}
+
+.animate-spin-slow   { animation: spin-slow 3s linear infinite; }
+.animate-pixel-pulse { animation: pixel-pulse 1s steps(2) infinite; }
+
+/* ======================================================
+   THEME CSS VARIABLES
+   ====================================================== */
 :root {
-  /* Default fallbacks */
-  --bg-color: #0f172a;
+  --bg-color:    #0f172a;
   --high-ground: #1e293b;
-  --border: #334155;
-  --accent: #3b82f6;
+  --border:      #334155;
+  --accent:      #3b82f6;
 }
 
-/* 1. RHINE LAB (Tech Blue) */
-.theme-rhine { --bg-color: #0f172a; --high-ground: #1e293b; --border: #0ea5e9; --accent: #0ea5e9; }
-.theme-rhine .tile-high-ground { box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.2); }
+/* RHINE LAB — cool tech blue */
+.theme-rhine { --bg-color: #0c1929; --high-ground: #162236; --border: #0ea5e9; --accent: #38bdf8; }
+.theme-rhine .tile-high-ground { box-shadow: inset 0 0 12px rgba(14,165,233,0.18), inset 1px 1px 0 rgba(14,165,233,0.15); }
 
-/* 2. KAZDEL (Ruins Orange) */
-.theme-kazdel { --bg-color: #271a12; --high-ground: #432a1c; --border: #f97316; --accent: #ea580c; }
-.theme-kazdel .tile-high-ground { border-style: dashed; }
+/* KAZDEL — scorched ruins */
+.theme-kazdel { --bg-color: #231510; --high-ground: #3d2015; --border: #f97316; --accent: #ea580c; }
+.theme-kazdel .tile-high-ground { border-style: dashed; box-shadow: inset 0 0 8px rgba(249,115,22,0.1); }
 
-/* 3. KJERAG (Ice White/Cyan) */
-.theme-kjerag { --bg-color: #1e293b; --high-ground: #334155; --border: #a5f3fc; --accent: #22d3ee; }
-.theme-kjerag .tile-path { background: rgba(165, 243, 252, 0.1); }
+/* KJERAG — glacial ice */
+.theme-kjerag { --bg-color: #1a2a3d; --high-ground: #243550; --border: #a5f3fc; --accent: #22d3ee; }
+.theme-kjerag .tile-path { background: rgba(165,243,252,0.08); }
+.theme-kjerag .tile-high-ground { box-shadow: inset 0 0 10px rgba(165,243,252,0.12); }
 
-/* 4. SIESTA (Lava Red) */
-.theme-siesta { --bg-color: #2b0e0e; --high-ground: #451a1a; --border: #ef4444; --accent: #dc2626; }
-.theme-siesta .tile-path { background: rgba(239, 68, 68, 0.1); }
+/* SIESTA — volcanic lava */
+.theme-siesta { --bg-color: #270a0a; --high-ground: #3d1212; --border: #ef4444; --accent: #dc2626; }
+.theme-siesta .tile-path { background: rgba(239,68,68,0.07); }
+.theme-siesta .tile-high-ground { box-shadow: inset 0 0 10px rgba(239,68,68,0.12); }
 
-/* 5. SARGON (Jungle Green) */
-.theme-sargon { --bg-color: #052e16; --high-ground: #14532d; --border: #22c55e; --accent: #16a34a; }
+/* SARGON — dense jungle */
+.theme-sargon { --bg-color: #041e0f; --high-ground: #0a3018; --border: #22c55e; --accent: #16a34a; }
+.theme-sargon .tile-high-ground { box-shadow: inset 0 0 8px rgba(34,197,94,0.1); }
 
-/* 6. LUNGMEN (Neon Purple) */
-.theme-lungmen { --bg-color: #1e1b4b; --high-ground: #312e81; --border: #d8b4fe; --accent: #a855f7; }
-.theme-lungmen .tile-high-ground { box-shadow: 0 0 5px #a855f7; }
+/* LUNGMEN — neon city */
+.theme-lungmen { --bg-color: #15123b; --high-ground: #221e6b; --border: #d8b4fe; --accent: #a855f7; }
+.theme-lungmen .tile-high-ground { box-shadow: 0 0 6px #a855f760, inset 0 0 8px rgba(168,85,247,0.15); }
 
-/* 7. IBERIA (Ocean Deep Blue) */
-.theme-iberia { --bg-color: #082f49; --high-ground: #0c4a6e; --border: #38bdf8; --accent: #0284c7; }
+/* IBERIA — deep ocean */
+.theme-iberia { --bg-color: #061f33; --high-ground: #0a3654; --border: #38bdf8; --accent: #0284c7; }
+.theme-iberia .tile-high-ground { box-shadow: inset 0 0 10px rgba(56,189,248,0.12); }
 
-/* 8. LATERANO (Holy Gold) */
-.theme-laterano { --bg-color: #2a2a2a; --high-ground: #404040; --border: #facc15; --accent: #eab308; }
+/* LATERANO — sacred gold */
+.theme-laterano { --bg-color: #1e1a10; --high-ground: #302a18; --border: #facc15; --accent: #eab308; }
+.theme-laterano .tile-high-ground { box-shadow: inset 0 0 10px rgba(250,204,21,0.12); }
 
-/* 9. URSUS (Military Grey) */
-.theme-ursus { --bg-color: #18181b; --high-ground: #27272a; --border: #71717a; --accent: #52525b; }
+/* URSUS — military grey */
+.theme-ursus { --bg-color: #131316; --high-ground: #1f1f24; --border: #52525b; --accent: #71717a; }
 
-/* 10. VOID (Matrix Green/Black) */
-.theme-void { --bg-color: #000000; --high-ground: #111; --border: #22c55e; --accent: #00ff00; }
-.theme-void .tile-high-ground { border: 1px solid #00ff00; font-family: monospace; }
+/* VOID — matrix terminal */
+.theme-void { --bg-color: #000; --high-ground: #060606; --border: #22c55e; --accent: #00ff00; }
+.theme-void .tile-high-ground { border: 1px solid #22c55e80; font-family: monospace; box-shadow: inset 0 0 6px rgba(34,197,94,0.2); }
 
-
-/* === GLOBAL TILE CLASSES === */
+/* ======================================================
+   GAME CONTAINER & TILE BASE CLASSES
+   ====================================================== */
 .game-container { background-color: var(--bg-color); transition: background 1s ease; }
 
 .tile-high-ground {
   background-color: var(--high-ground);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
   transition: all 0.5s ease;
 }
 
 .tile-path {
-  background-color: rgba(0,0,0,0.3);
+  background-color: rgba(0, 0, 0, 0.28);
   border: 1px solid transparent;
 }
+
+/* ======================================================
+   PIXEL ART RENDERING
+   SVG elements must NOT get image-rendering: pixelated
+   because it makes diagonal strokes look like staircases.
+   We scope .pixel-board to non-SVG children only.
+   ====================================================== */
+.pixel-board {
+  image-rendering: pixelated;
+}
+
+/* Apply crisp rendering to img/canvas inside the board, NOT to SVG */
+.pixel-board img,
+.pixel-board canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Explicit opt-in for sprite images */
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ======================================================
+   PIXEL TILE DEPTH
+   Gives each tile a subtle 3-D raised look with
+   1px bright top-left edge and dark bottom-right edge.
+   ====================================================== */
+.pixel-tile {
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.06),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Path tiles — slightly raised / lit from above */
+.pixel-tile-path {
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset 0  0 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ======================================================
+   TOWER ATTACK ACTIVE GLOW (applied via JS when firing)
+   ====================================================== */
+.tower-firing {
+  animation: tower-attack-flash 0.15s ease-out;
+}
+
+/* ======================================================
+   HEALTH BARS — crisp pixel style
+   ====================================================== */
+.hp-bar-container {
+  height: 5px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  transition: width 0.1s linear, background-color 0.3s;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* ======================================================
+   BEAM / LASER PATHS — keep smooth antialiasing
+   ====================================================== */
+.beam-path {
+  shape-rendering: geometricPrecision;
+}
+
+/* ======================================================
+   SCROLLBAR — minimal dark style for sidebar
+   ====================================================== */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
