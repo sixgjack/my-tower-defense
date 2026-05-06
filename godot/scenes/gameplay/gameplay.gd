@@ -182,6 +182,19 @@ func get_selected_tower() -> String:
 	return selected_tower
 
 
+func _make_stylebox(bg: Color, border: Color, border_px: int = 2, radius: int = 6) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = border
+	s.set_border_width_all(border_px)
+	s.set_corner_radius_all(radius)
+	s.content_margin_left = 6.0
+	s.content_margin_right = 6.0
+	s.content_margin_top = 4.0
+	s.content_margin_bottom = 4.0
+	return s
+
+
 func _build_hud() -> void:
 	var hud := CanvasLayer.new()
 	hud.layer = 10
@@ -192,29 +205,71 @@ func _build_hud() -> void:
 	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(_hud_root)
 
+	# ── Top bar background panel ──
+	var top_panel := Panel.new()
+	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_panel.offset_bottom = HUD_STATS_TOP + 2
+	var top_style := _make_stylebox(Color(0.04, 0.04, 0.07, 0.96), Color(0.25, 0.55, 1.0, 0.5), 0, 0)
+	top_style.set_border_width(SIDE_BOTTOM, 2)
+	top_panel.add_theme_stylebox_override("panel", top_style)
+	top_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_root.add_child(top_panel)
+
 	_top_bar = HBoxContainer.new()
 	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_top_bar.offset_left = 12
-	_top_bar.offset_top = 8
-	_top_bar.offset_right = -12
+	_top_bar.offset_left = 14
+	_top_bar.offset_top = 7
+	_top_bar.offset_right = -14
 	_top_bar.offset_bottom = 44
-	_top_bar.add_theme_constant_override("separation", 16)
+	_top_bar.add_theme_constant_override("separation", 20)
 	_hud_root.add_child(_top_bar)
 
 	_money_label = Label.new()
-	_lives_label = Label.new()
-	_wave_label = Label.new()
+	_money_label.add_theme_color_override("font_color", Color(0.28, 1.0, 0.52))
+	_money_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.8))
+	_money_label.add_theme_constant_override("shadow_offset_x", 1)
+	_money_label.add_theme_constant_override("shadow_offset_y", 1)
 	_top_bar.add_child(_money_label)
+
+	_lives_label = Label.new()
+	_lives_label.add_theme_color_override("font_color", Color(1.0, 0.28, 0.32))
+	_lives_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.8))
+	_lives_label.add_theme_constant_override("shadow_offset_x", 1)
+	_lives_label.add_theme_constant_override("shadow_offset_y", 1)
 	_top_bar.add_child(_lives_label)
+
+	_wave_label = Label.new()
+	_wave_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.18))
+	_wave_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.8))
+	_wave_label.add_theme_constant_override("shadow_offset_x", 1)
+	_wave_label.add_theme_constant_override("shadow_offset_y", 1)
 	_top_bar.add_child(_wave_label)
 
+	# ── Notification label (center-top, styled) ──
 	_notify_label = Label.new()
 	_notify_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_notify_label.offset_top = 44
-	_notify_label.offset_bottom = 92
+	_notify_label.offset_left = -240
+	_notify_label.offset_top = 46
+	_notify_label.offset_right = 240
+	_notify_label.offset_bottom = 90
 	_notify_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notify_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_notify_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_notify_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.3))
+	_notify_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	_notify_label.add_theme_constant_override("shadow_offset_x", 2)
+	_notify_label.add_theme_constant_override("shadow_offset_y", 2)
 	_hud_root.add_child(_notify_label)
+
+	# ── Bottom bar background panel ──
+	var bot_panel := Panel.new()
+	bot_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bot_panel.offset_top = -126
+	var bot_style := _make_stylebox(Color(0.04, 0.04, 0.07, 0.96), Color(0.25, 0.55, 1.0, 0.5), 0, 0)
+	bot_style.set_border_width(SIDE_TOP, 2)
+	bot_panel.add_theme_stylebox_override("panel", bot_style)
+	bot_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_root.add_child(bot_panel)
 
 	_bottom_bar = HBoxContainer.new()
 	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -230,50 +285,87 @@ func _build_hud() -> void:
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size.y = 56.0
+	scroll.custom_minimum_size.y = 100.0
 	_bottom_bar.add_child(scroll)
 
 	var tower_bar := HBoxContainer.new()
-	tower_bar.add_theme_constant_override("separation", 6)
+	tower_bar.add_theme_constant_override("separation", 5)
 	tower_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	scroll.add_child(tower_bar)
 
 	var defs := TowerCatalog.towers()
-	var narrow: bool = get_viewport().get_visible_rect().size.x < 560.0
+	var vp_size := get_viewport().get_visible_rect().size
+	var narrow: bool = vp_size.x < 560.0
+	var btn_h: float = clampf(vp_size.y * 0.09, 72.0, 100.0)
+	var btn_w: float = 72.0 if narrow else 96.0
+
 	for key in defs.keys():
 		var stats: Dictionary = defs[key]
+		var tower_col: Color = stats.get("color", Color(0.5, 0.5, 0.6))
 		var b := Button.new()
 		b.toggle_mode = true
 		b.button_group = _tower_group
+		var icon: String = String(stats.get("icon", "?"))
+		var name_str: String = String(stats.get("name", key))
+		var cost_str: String = "$%d" % int(stats.get("cost", 0))
 		if narrow:
-			b.text = String(stats.get("icon", "?"))
+			b.text = "%s\n%s" % [icon, cost_str]
 		else:
-			b.text = "%s %s" % [String(stats.get("icon", "?")), String(stats.get("name", key))]
-		b.tooltip_text = "%s — $%d" % [String(stats.get("name", key)), int(stats.get("cost", 0))]
-		b.custom_minimum_size = Vector2(52 if narrow else 108, maxf(48.0, mini(get_viewport().get_visible_rect().size.y * 0.065, 56.0)))
+			b.text = "%s %s\n%s" % [icon, name_str, cost_str]
+		b.tooltip_text = "%s — %s" % [name_str, cost_str]
+		b.custom_minimum_size = Vector2(btn_w, btn_h)
+
+		# Normal style — dark tinted with tower colour border
+		var dark_bg := Color(tower_col.r * 0.18, tower_col.g * 0.18, tower_col.b * 0.18, 0.92)
+		var s_normal := _make_stylebox(dark_bg, Color(tower_col.r * 0.7, tower_col.g * 0.7, tower_col.b * 0.7, 0.8), 2, 5)
+		var s_hover := _make_stylebox(Color(tower_col.r * 0.32, tower_col.g * 0.32, tower_col.b * 0.32, 0.96), tower_col, 2, 5)
+		var s_pressed := _make_stylebox(Color(tower_col.r * 0.45, tower_col.g * 0.45, tower_col.b * 0.45, 1.0), Color(1.0, 1.0, 1.0, 0.95), 3, 5)
+		var s_focus := _make_stylebox(Color(tower_col.r * 0.45, tower_col.g * 0.45, tower_col.b * 0.45, 1.0), Color(1.0, 1.0, 1.0, 0.95), 3, 5)
+		b.add_theme_stylebox_override("normal", s_normal)
+		b.add_theme_stylebox_override("hover", s_hover)
+		b.add_theme_stylebox_override("pressed", s_pressed)
+		b.add_theme_stylebox_override("focus", s_focus)
+		b.add_theme_color_override("font_color", Color(0.92, 0.92, 0.95))
+		b.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 1.0))
+		b.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+		b.add_theme_font_size_override("font_size", 11)
+
 		b.toggled.connect(_on_tower_toggled.bind(key))
 		b.gui_input.connect(_on_tower_button_gui_input.bind(String(key), b))
 		tower_bar.add_child(b)
 		if key == selected_tower:
 			b.button_pressed = true
 
+	# ── Side buttons (Restart / Menu) ──
 	var side := VBoxContainer.new()
-	side.add_theme_constant_override("separation", 8)
+	side.add_theme_constant_override("separation", 6)
 	_bottom_bar.add_child(side)
 
+	var s_restart := _make_stylebox(Color(0.08, 0.18, 0.08, 0.92), Color(0.28, 0.88, 0.38, 0.8), 2, 5)
+	var s_restart_h := _make_stylebox(Color(0.12, 0.28, 0.14, 0.96), Color(0.4, 1.0, 0.5, 0.9), 2, 5)
 	var restart := Button.new()
-	restart.text = "Restart"
-	restart.custom_minimum_size = Vector2(88, 44)
+	restart.text = "⟳ Restart"
+	restart.custom_minimum_size = Vector2(82, 44)
+	restart.add_theme_stylebox_override("normal", s_restart)
+	restart.add_theme_stylebox_override("hover", s_restart_h)
+	restart.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	restart.add_theme_font_size_override("font_size", 13)
 	restart.pressed.connect(_on_restart)
 	side.add_child(restart)
 
+	var s_menu := _make_stylebox(Color(0.08, 0.08, 0.18, 0.92), Color(0.35, 0.45, 0.9, 0.75), 2, 5)
+	var s_menu_h := _make_stylebox(Color(0.12, 0.12, 0.28, 0.96), Color(0.5, 0.6, 1.0, 0.9), 2, 5)
 	var menu := Button.new()
-	menu.text = "Menu"
-	menu.custom_minimum_size = Vector2(88, 44)
+	menu.text = "← Menu"
+	menu.custom_minimum_size = Vector2(82, 44)
+	menu.add_theme_stylebox_override("normal", s_menu)
+	menu.add_theme_stylebox_override("hover", s_menu_h)
+	menu.add_theme_color_override("font_color", Color(0.6, 0.7, 1.0))
+	menu.add_theme_font_size_override("font_size", 13)
 	menu.pressed.connect(_on_menu)
 	side.add_child(menu)
 
-	_apply_hud_scale(get_viewport().get_visible_rect().size)
+	_apply_hud_scale(vp_size)
 	_build_drag_preview()
 
 
@@ -379,46 +471,85 @@ func request_build_with_question(r: int, c: int, tower_key: String) -> void:
 func _build_question_overlay() -> void:
 	_question_overlay = Panel.new()
 	_question_overlay.set_anchors_preset(Control.PRESET_CENTER)
-	_question_overlay.offset_left = -280
-	_question_overlay.offset_top = -180
-	_question_overlay.offset_right = 280
-	_question_overlay.offset_bottom = 180
+	_question_overlay.offset_left = -300
+	_question_overlay.offset_top = -210
+	_question_overlay.offset_right = 300
+	_question_overlay.offset_bottom = 210
 	_question_overlay.visible = false
 	_question_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var q_style := _make_stylebox(Color(0.04, 0.05, 0.10, 0.98), Color(0.28, 0.62, 1.0, 0.9), 2, 10)
+	_question_overlay.add_theme_stylebox_override("panel", q_style)
 	_hud_root.add_child(_question_overlay)
 
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.offset_left = 16
-	root.offset_top = 16
-	root.offset_right = -16
-	root.offset_bottom = -16
-	root.add_theme_constant_override("separation", 10)
+	root.offset_left = 18
+	root.offset_top = 14
+	root.offset_right = -18
+	root.offset_bottom = -14
+	root.add_theme_constant_override("separation", 9)
 	_question_overlay.add_child(root)
 
-	var title := Label.new()
-	title.text = "Answer to perform action"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 18)
-	root.add_child(title)
+	# Header bar
+	var header_panel := Panel.new()
+	header_panel.custom_minimum_size = Vector2(0, 32)
+	var h_style := _make_stylebox(Color(0.12, 0.22, 0.48, 0.9), Color(0.28, 0.62, 1.0, 0.6), 0, 6)
+	header_panel.add_theme_stylebox_override("panel", h_style)
+	root.add_child(header_panel)
 
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.text = "  ANSWER TO BUILD"
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 14)
+	title.add_theme_color_override("font_color", Color(0.5, 0.82, 1.0))
+	header_panel.add_child(title)
+
+	# Question prompt
 	_question_prompt = Label.new()
 	_question_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_question_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_question_prompt.add_theme_font_size_override("font_size", 16)
+	_question_prompt.add_theme_color_override("font_color", Color(0.95, 0.95, 1.0))
+	_question_prompt.custom_minimum_size = Vector2(0, 42)
 	root.add_child(_question_prompt)
 
+	# Separator line
+	var sep := HSeparator.new()
+	var sep_style := StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.28, 0.62, 1.0, 0.35)
+	sep.add_theme_stylebox_override("separator", sep_style)
+	root.add_child(sep)
+
+	# Answer buttons
+	var answer_colors := [
+		Color(0.22, 0.72, 0.30),  # A — green
+		Color(0.72, 0.22, 0.22),  # B — red
+		Color(0.22, 0.42, 0.82),  # C — blue
+		Color(0.72, 0.52, 0.08),  # D — amber
+	]
+	var labels := ["A", "B", "C", "D"]
 	for i in range(4):
 		var b := Button.new()
 		b.text = "-"
-		b.custom_minimum_size = Vector2(0, 40)
+		b.custom_minimum_size = Vector2(0, 38)
+		var ac := answer_colors[i]
+		var s_n := _make_stylebox(Color(ac.r * 0.22, ac.g * 0.22, ac.b * 0.22, 0.92), Color(ac.r * 0.7, ac.g * 0.7, ac.b * 0.7, 0.7), 2, 5)
+		var s_h := _make_stylebox(Color(ac.r * 0.38, ac.g * 0.38, ac.b * 0.38, 0.96), ac, 2, 5)
+		b.add_theme_stylebox_override("normal", s_n)
+		b.add_theme_stylebox_override("hover", s_h)
+		b.add_theme_color_override("font_color", Color(0.88, 0.92, 1.0))
+		b.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
+		b.add_theme_font_size_override("font_size", 13)
 		b.pressed.connect(_on_question_answer_pressed.bind(i))
 		root.add_child(b)
 		_question_buttons.append(b)
 
+	# Feedback label
 	_question_feedback = Label.new()
 	_question_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_question_feedback.add_theme_font_size_override("font_size", 14)
+	_question_feedback.add_theme_font_size_override("font_size", 13)
+	_question_feedback.add_theme_color_override("font_color", Color(1.0, 0.88, 0.28))
 	root.add_child(_question_feedback)
 
 
