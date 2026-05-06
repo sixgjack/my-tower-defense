@@ -41,10 +41,10 @@ export async function updateStudentStatusAfterGame(
 
     const currentStatus = currentStatusResult.data;
     
-    // Ensure 8 basic towers are unlocked (for existing players who might not have them)
+    // Ensure starter towers are unlocked (without starter healer)
     const basicTowers = [
       'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
+      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN'
     ];
     const currentUnlocked = currentStatus.unlockedTowers || [];
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];

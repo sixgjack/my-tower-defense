@@ -8,6 +8,10 @@ interface ProjectileRendererProps {
   tick: number;
 }
 
+const seededJitter = (seed: number, amplitude: number) => {
+  return Math.sin(seed) * amplitude;
+};
+
 const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
   const sx = (p.startX ?? p.x) * TILE_SIZE + TILE_SIZE/2;
   const sy = (p.startY ?? p.y) * TILE_SIZE + TILE_SIZE/2;
@@ -21,17 +25,18 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
   const getArcPosition = () => {
     const cx = (p.startX! * TILE_SIZE + TILE_SIZE/2) + (p.tx - p.startX!) * TILE_SIZE * p.progress;
     const cy = (p.startY! * TILE_SIZE + TILE_SIZE/2) + (p.ty - p.startY!) * TILE_SIZE * p.progress;
-    const arcHeight = 120 * 4 * p.progress * (1 - p.progress);
+    const arcHeight = TILE_SIZE * 1.6 * 4 * p.progress * (1 - p.progress);
     return { cx, cy: cy - arcHeight, arcHeight };
   };
 
   switch (p.style) {
     case 'lightning':
       // Enhanced lightning with multiple branches
-      const midX = (sx + tx) / 2 + (Math.random() - 0.5) * 30;
-      const midY = (sy + ty) / 2 + (Math.random() - 0.5) * 30;
-      const branch1X = midX + (Math.random() - 0.5) * 20;
-      const branch1Y = midY + (Math.random() - 0.5) * 20;
+      const seed = Number(p.id) * 0.001 + tick * 0.35;
+      const midX = (sx + tx) / 2 + seededJitter(seed, 16);
+      const midY = (sy + ty) / 2 + seededJitter(seed + 2.1, 16);
+      const branch1X = midX + seededJitter(seed + 4.2, 10);
+      const branch1Y = midY + seededJitter(seed + 6.3, 10);
       return <g>
         {/* Main bolt */}
         <polyline points={`${sx},${sy} ${midX},${midY} ${tx},${ty}`} stroke={p.color} strokeWidth="5" fill="none" opacity="0.4" />
@@ -51,7 +56,7 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
     }
     
     case 'missile':
-      return <g transform={`translate(${px}, ${py}) rotate(${angle})`}><path d="M 6,0 L -4,5 L -4,-5 Z" fill={p.color} stroke="white" strokeWidth="1" /><path d="M -4,5 L -8,8 L -4,2 Z" fill="#334155" /><path d="M -4,-5 L -8,-8 L -4,-2 Z" fill="#334155" /><path d="M -6,0 L -12,3 L -12,-3 Z" fill="orange" opacity={Math.random()}><animate attributeName="d" values="M -6,0 L -12,3 L -12,-3 Z; M -6,0 L -16,4 L -16,-4 Z; M -6,0 L -12,3 L -12,-3 Z" dur="0.1s" repeatCount="indefinite" /></path></g>;
+      return <g transform={`translate(${px}, ${py}) rotate(${angle})`}><path d="M 6,0 L -4,5 L -4,-5 Z" fill={p.color} stroke="white" strokeWidth="1" /><path d="M -4,5 L -8,8 L -4,2 Z" fill="#334155" /><path d="M -4,-5 L -8,-8 L -4,-2 Z" fill="#334155" /><path d="M -6,0 L -12,3 L -12,-3 Z" fill="orange" opacity={0.65 + 0.25 * Math.sin(tick * 0.8)}><animate attributeName="d" values="M -6,0 L -12,3 L -12,-3 Z; M -6,0 L -16,4 L -16,-4 Z; M -6,0 L -12,3 L -12,-3 Z" dur="0.1s" repeatCount="indefinite" /></path></g>;
     
     case 'fire':
       return <g transform={`translate(${px}, ${py}) scale(${1 + Math.sin(tick)*0.2})`}><circle r={4} fill="url(#grad-fire)" /><circle r={7} fill={p.color} opacity="0.4" /></g>;
@@ -221,5 +226,9 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
 };
 
 export const ProjectileRenderer: React.FC<ProjectileRendererProps> = ({ projectile, tileSize, tick }) => {
-  return <g key={projectile.id}>{renderProjectile(projectile, tileSize, tick)}</g>;
+  return (
+    <g key={projectile.id} style={{ shapeRendering: 'crispEdges' }}>
+      {renderProjectile(projectile, tileSize, tick)}
+    </g>
+  );
 };

@@ -207,6 +207,7 @@ export class GameEngine {
       // Check for buff selection (every 3 waves, starting from wave 3)
       if (this.wave > 1 && (this.wave - 1) % 3 === 0) {
           this.showBuffSelection = true;
+          this.showNotification('LEVEL BONUS READY', 'alert');
       }
       
       // Clean up expired buffs
@@ -355,7 +356,8 @@ export class GameEngine {
           isBurrowed: bossAbilities.includes('burrow') || false,
           bossType: bossType,
           bossShieldHp: bossAbilities.includes('shield') ? (isBigBoss ? hp * 0.5 : hp * 0.3) : undefined,
-          statusEffects: []
+          statusEffects: [],
+          name: stats.name
       });
   }
 
@@ -682,6 +684,28 @@ export class GameEngine {
         effectiveCooldown /= buffMultipliers.attackSpeed; // Faster attack = lower cooldown
         
         if (tower.cooldown > 0) tower.cooldown--;
+
+        // Flamethrower passive: 3x3 square aura DoT (no beam projectile)
+        if (tower.key === 'BASIC_BURN') {
+            if (tower.cooldown <= 0) {
+                tower.cooldown = effectiveCooldown;
+                this.enemies.forEach(enemy => {
+                    const ex = enemy.c + (enemy.xOffset || 0);
+                    const ey = enemy.r + (enemy.yOffset || 0);
+                    const inAuraSquare = Math.abs(ex - tower.c) <= 1 && Math.abs(ey - tower.r) <= 1;
+                    if (!inAuraSquare) return;
+
+                    applyDamageToEnemy(enemy, tower.damage);
+                    effectManager.applyEffectToEnemy(enemy, 'burning');
+                    if (Math.random() < 0.45) {
+                        this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
+                    }
+                    if (enemy.hp <= 0) this.killEnemy(enemy);
+                });
+                this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'flame', '#ef4444');
+            }
+            return;
+        }
         
         // Mine towers - plant mines on route
         if (stats.description.includes('Mine') || stats.description.includes('mine') || tower.key.includes('MINE')) {
@@ -1414,7 +1438,8 @@ export class GameEngine {
                 yOffset: enemy.yOffset,
                 money: Math.floor(enemy.reward * 0.3),
                 damage: 0,
-                statusEffects: []
+                statusEffects: [],
+                name: enemy.name
               });
             }
             enemy.hp = 0; // Remove original

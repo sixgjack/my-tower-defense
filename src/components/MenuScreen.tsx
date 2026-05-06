@@ -7,7 +7,6 @@ import {
   DEMO_LOCAL_USER_ID,
   isGoogleAuthDisabled,
   isGoogleAuthDisabledByEnv,
-  setSkipGoogleAuthSession,
 } from '../config/authMode';
 
 /** Same-origin Godot HTML5 export (Vite serves `public/godot/`). */
@@ -29,7 +28,7 @@ interface StudentStatus {
 
 const BASIC_TOWER_KEYS = [
   'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL',
+  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN',
 ] as const;
 
 const DEMO_GOOGLE_USER: GoogleUser = {
@@ -123,21 +122,11 @@ export const MenuScreen: React.FC = () => {
     }
   };
 
-  const handleSkipGoogleSignIn = () => {
-    setSkipGoogleAuthSession(true);
-    localStorage.removeItem('google_user');
-    localStorage.removeItem('google_access_token');
-    setUser(DEMO_GOOGLE_USER);
-    setStudentStatus(DEMO_STUDENT_STATUS);
-    setLoading(false);
-  };
-
   const handleSignOut = async () => {
     if (isGoogleAuthDisabledByEnv()) {
       return;
     }
     try {
-      setSkipGoogleAuthSession(false);
       await signOut();
       setStudentStatus(null);
     } catch (error) {
@@ -257,16 +246,6 @@ export const MenuScreen: React.FC = () => {
                   </svg>
                   <span className="text-lg">CONTINUE WITH GOOGLE</span>
                 </button>
-
-                {!isGoogleAuthDisabledByEnv() && (
-                  <button
-                    type="button"
-                    onClick={handleSkipGoogleSignIn}
-                    className="mt-4 w-full border-2 border-slate-500/80 bg-slate-800/80 py-3 px-4 text-sm font-mono font-bold text-slate-200 transition hover:border-green-500/70 hover:bg-slate-700/90 hover:text-green-200"
-                  >
-                    SKIP — PLAY WITHOUT GOOGLE (LOCAL DEMO)
-                  </button>
-                )}
 
                 <a
                   href={GODOT_WEB_HREF}

@@ -12,6 +12,7 @@ import { i18n, getTowerName, getTowerDescription } from '../utils/i18n';
 import { getThemeDescription } from '../utils/themeHelpers';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
+import { getEnemyGifAsset, getTowerGifAsset } from '../config/visualAssets';
 
 const TILE_SIZE = 60; // Increased tile size for better visibility
 const BOARD_WIDTH = COLS * TILE_SIZE; 
@@ -416,7 +417,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}
                 className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
-                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform">{tower.icon}</div>
+                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform overflow-hidden">
+                  {getTowerGifAsset(key) ? (
+                    <img
+                      src={getTowerGifAsset(key)}
+                      alt={`${tower.name} sprite`}
+                      className="h-full w-full object-contain pixel-art"
+                      draggable={false}
+                    />
+                  ) : (
+                    tower.icon
+                  )}
+                </div>
                 <div className="flex-1">
                     <div className="font-bold text-sm text-slate-200">{getTowerName(key)}</div>
                     <div className="flex justify-between items-center"><span className="text-xs text-emerald-400 font-mono">${tower.cost}</span></div>
@@ -473,7 +485,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
         )}
 
         {/* --- BOARD --- */}
-        <div className="relative shadow-2xl transition-all duration-300"
+        <div className="relative shadow-2xl transition-all duration-300 pixel-board"
              style={{ width: BOARD_WIDTH, height: BOARD_HEIGHT, border: '4px solid #1e293b', backgroundColor: '#0f172a' }}
              onDragOver={handleDragOver} onDragLeave={() => setHoverPos(null)} onDrop={handleDrop}>
           
@@ -484,7 +496,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   if (cell !== 0 && cell !== 'S' && cell !== 'B') className = `${currentTheme.path} ${currentTheme.grid} border-none shadow-inner`;
                   
                   return (
-                    <div key={`${r}-${c}`} className={`${className} flex items-center justify-center text-xs opacity-80`}>
+                    <div key={`${r}-${c}`} className={`${className} flex items-center justify-center text-xs opacity-80 pixel-tile`}>
                         {cell === 'S' && <span className="text-xl animate-bounce">🚪</span>}
                         {cell === 'B' && <span className="text-xl animate-pulse">🎯</span>}
                         {cell === 'X' && <span className="text-xl opacity-50">{currentTheme.obstacle}</span>}
@@ -552,7 +564,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   style={{ left: hoverPos!.c * TILE_SIZE, top: hoverPos!.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
                 <div className={`absolute rounded-full border-2 opacity-40 transition-colors ${ghost.isValid ? 'bg-emerald-500/30 border-emerald-400' : 'bg-rose-500/30 border-rose-400'}`}
                      style={{ width: ghost.rangePx * 2, height: ghost.rangePx * 2, top: TILE_SIZE/2 - ghost.rangePx, left: TILE_SIZE/2 - ghost.rangePx }} />
-                <div className="w-full h-full flex items-center justify-center text-2xl opacity-80">{ghost.stats.icon}</div>
+                <div className="w-full h-full flex items-center justify-center text-2xl opacity-80 overflow-hidden">
+                  {getTowerGifAsset(draggingKey || '') ? (
+                    <img
+                      src={getTowerGifAsset(draggingKey || '')}
+                      alt="tower ghost"
+                      className="h-[80%] w-[80%] object-contain pixel-art opacity-80"
+                      draggable={false}
+                    />
+                  ) : (
+                    ghost.stats.icon
+                  )}
+                </div>
              </div>
           )}
 
@@ -650,15 +673,24 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                              />
                          </div>
                      )}
-                     <div 
+                    <div 
                          onClick={() => setSelectedTowerId(isSelected ? null : t.id)} 
-                         className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}
+                        className={`w-full h-full flex items-center justify-center text-2xl cursor-pointer hover:scale-110 transition-transform overflow-hidden ${isSelected ? 'ring-2 ring-yellow-400 bg-yellow-400/20 rounded-lg' : ''}`}
                          style={{ 
                              transform: t.angle !== undefined ? `rotate(${t.angle}deg)` : 'none',
                              transformOrigin: 'center'
                          }}
                      >
-                          {stats.icon}
+                         {getTowerGifAsset(t.key) ? (
+                           <img
+                             src={getTowerGifAsset(t.key)}
+                             alt={`${stats.name} tower`}
+                             className="h-[85%] w-[85%] object-contain pixel-art"
+                             draggable={false}
+                           />
+                         ) : (
+                           stats.icon
+                         )}
                           {t.level > 1 && <div className="absolute -top-1 -right-1 bg-blue-600 text-[8px] px-1 rounded-full text-white border border-blue-400">{t.level}</div>}
                      </div>
                      {isSelected && (
@@ -756,7 +788,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                         }}
                       />
                   </div>
-                  <div className="text-2xl drop-shadow-md">{e.icon}</div>
+                  <div className="text-2xl drop-shadow-md h-9 w-9 flex items-center justify-center overflow-hidden">
+                    {getEnemyGifAsset((e as any).name, e.icon) ? (
+                      <img
+                        src={getEnemyGifAsset((e as any).name, e.icon)}
+                        alt={`${(e as any).name || 'enemy'} sprite`}
+                        className="h-full w-full object-contain pixel-art"
+                        draggable={false}
+                      />
+                    ) : (
+                      e.icon
+                    )}
+                  </div>
                   
                   {/* Boss indicator */}
                   {e.bossType && (
