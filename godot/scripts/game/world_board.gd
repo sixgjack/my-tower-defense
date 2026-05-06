@@ -4,16 +4,14 @@ extends Node2D
 
 var _session: NeonSession
 var _camera: Camera2D
-var _tower_tex: Dictionary = {} # key -> Array[Texture2D]
-var _enemy_tex: Dictionary = {} # key -> Array[Texture2D]
 
 const SPRITE_PX: int = 16
+const TILE_PX_STEP: int = 6
 
 
 func bind_session(session: NeonSession) -> void:
 	_session = session
 	_ensure_camera()
-	_build_sprite_cache()
 
 
 func _ensure_camera() -> void:
@@ -72,7 +70,7 @@ func _draw() -> void:
 				fill = Color(0.95, 0.35, 0.25, 0.55)
 			elif cell == GameConstants.CELL_OBSTACLE:
 				fill = theme.get("obstacle", Color(0.3, 0.3, 0.35))
-			draw_rect(rect, fill)
+			_draw_pixel_cell(rect, fill, r, c)
 			draw_rect(rect, grid_line, false, 1.0)
 
 	for t in _session.towers:
@@ -101,7 +99,7 @@ func _draw() -> void:
 	for ft in _session.float_texts:
 		var fr: int = int(ft["r"])
 		var fc: int = int(ft["c"])
-		var pos2 := Vector2(fc * cs + 4, fr * cs + 14)
+		var pos2 := Vector2(round(fc * cs + 4), round(fr * cs + 14))
 		draw_string(fnt, pos2, String(ft.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, ft.get("color", Color.WHITE))
 
 
@@ -112,114 +110,26 @@ func _tower_color(key: String) -> Color:
 	return Color.GRAY
 
 
-func _enemy_key(e: Dictionary) -> String:
-	return "%s|%s" % [
-		String(e.get("name", "Enemy")),
-		String(e.get("is_boss", false)),
-	]
+func _pixel_hash(r: int, c: int, salt: int = 0) -> int:
+	var n: int = r * 92821 + c * 68917 + salt * 1013
+	n = (n << 13) ^ n
+	return abs((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff)
 
 
-func _build_sprite_cache() -> void:
-	_tower_tex.clear()
-	_enemy_tex.clear()
-	var tdefs: Dictionary = TowerCatalog.towers()
-	for key in tdefs.keys():
-		var data: Dictionary = tdefs[key]
-		var base_col: Color = data.get("color", Color.GRAY)
-		_tower_tex[String(key)] = _make_tower_frames(String(key), base_col)
-	var enemies: Array[Dictionary] = EnemyCatalog.all_types()
-	for e in enemies:
-		_enemy_tex[_enemy_key(e)] = _make_enemy_frames(
-			String(e.get("name", "Enemy")),
-			Color.from_string(String(e.get("color", "#ffffff")), Color.WHITE),
-			bool(e.get("is_boss", false))
-		)
-
-
-func _make_tower_frames(key: String, base: Color) -> Array:
-	var frames: Array = []
-	for frame_i in range(2):
-		var img := Image.create(SPRITE_PX, SPRITE_PX, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0, 0, 0, 0))
-		var dark := base.darkened(0.45)
-		var light := base.lightened(0.3 + 0.08 * frame_i)
-		_fill_rect(img, Rect2i(3, 3, 10, 10), dark)
-		_fill_rect(img, Rect2i(4, 4, 8, 8), base)
-		_fill_rect(img, Rect2i(6, 6, 4, 4), light)
-		# Barrel / emitter style per tower type.
-		if key.find("SNIPER") >= 0:
-			_fill_rect(img, Rect2i(10, 5, 5, 2), Color(0.95, 0.3, 0.3))
-		elif key.find("CANNON") >= 0:
-			_fill_rect(img, Rect2i(9, 5, 4, 4), Color(0.15, 0.16, 0.2))
-		elif key.find("SHOTGUN") >= 0:
-			_fill_rect(img, Rect2i(10, 5, 3, 3), Color(0.95, 0.55, 0.1))
-		elif key.find("FREEZE") >= 0:
-			_fill_rect(img, Rect2i(10, 5, 4, 2), Color(0.5, 0.85, 1.0))
-		elif key.find("BURN") >= 0:
-			_fill_rect(img, Rect2i(10, 4, 4, 4), Color(1.0, 0.38, 0.15))
-		elif key.find("STUN") >= 0:
-			_fill_rect(img, Rect2i(10, 5, 4, 2), Color(1.0, 0.9, 0.2))
-		elif key.find("HEAL") >= 0:
-			_fill_rect(img, Rect2i(7, 5, 2, 6), Color(0.2, 1.0, 0.6))
-			_fill_rect(img, Rect2i(5, 7, 6, 2), Color(0.2, 1.0, 0.6))
-		else:
-			_fill_rect(img, Rect2i(10, 5, 4, 2), Color(1.0, 0.8, 0.2))
-		frames.append(ImageTexture.create_from_image(img))
-	return frames
-
-
-func _make_enemy_frames(name: String, base: Color, is_boss: bool) -> Array:
-	var frames: Array = []
-	var family: String = _enemy_family(name)
-	for frame_i in range(3):
-		var img := Image.create(SPRITE_PX, SPRITE_PX, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0, 0, 0, 0))
-		var dark := base.darkened(0.5)
-		var light := base.lightened(0.2 + 0.05 * frame_i)
-		var y_bob: int = 0 if frame_i == 1 else 1
-		_fill_rect(img, Rect2i(4, 4 + y_bob, 8, 8), dark)
-		_fill_rect(img, Rect2i(5, 5 + y_bob, 6, 6), base)
-		_fill_rect(img, Rect2i(6, 6 + y_bob, 4, 2), light)
-		_fill_rect(img, Rect2i(6, 8 + y_bob, 1, 1), Color.BLACK)
-		_fill_rect(img, Rect2i(9, 8 + y_bob, 1, 1), Color.BLACK)
-		_fill_rect(img, Rect2i(7, 10 + y_bob, 2, 1), Color(0.98, 0.85, 0.85, 0.9))
-		_add_enemy_family_features(img, family, frame_i)
-		if is_boss:
-			_fill_rect(img, Rect2i(3, 3, 2, 2), Color(1.0, 0.25, 0.2))
-			_fill_rect(img, Rect2i(11, 3, 2, 2), Color(1.0, 0.25, 0.2))
-			_fill_rect(img, Rect2i(4, 12, 8, 2), Color(0.2, 0.2, 0.25, 0.9))
-		frames.append(ImageTexture.create_from_image(img))
-	return frames
-
-
-func _enemy_family(name: String) -> String:
-	var n := name.to_lower()
-	if n.contains("virus") or n.contains("trojan") or n.contains("worm"):
-		return "cyber"
-	if n.contains("drone") or n.contains("glitch") or n.contains("titan"):
-		return "robot"
-	return "bug"
-
-
-func _add_enemy_family_features(img: Image, family: String, frame_i: int) -> void:
-	if family == "bug":
-		_fill_rect(img, Rect2i(3, 7, 2, 1), Color(0.2, 0.2, 0.22))
-		_fill_rect(img, Rect2i(11, 7, 2, 1), Color(0.2, 0.2, 0.22))
-		_fill_rect(img, Rect2i(2 + frame_i, 11, 2, 1), Color(0.15, 0.15, 0.18))
-	elif family == "robot":
-		_fill_rect(img, Rect2i(6, 3, 4, 1), Color(0.65, 0.88, 1.0))
-		_fill_rect(img, Rect2i(4, 12, 8, 1), Color(0.25, 0.25, 0.35))
-	else:
-		_fill_rect(img, Rect2i(4, 4, 1, 1), Color(0.35, 1.0, 0.55))
-		_fill_rect(img, Rect2i(11, 4, 1, 1), Color(0.35, 1.0, 0.55))
-		_fill_rect(img, Rect2i(7, 12, 2, 1), Color(0.35, 1.0, 0.55))
-
-
-func _pick_frame(frames: Array, tick: int) -> Texture2D:
-	if frames.is_empty():
-		return null
-	var idx: int = abs(tick) % frames.size()
-	return frames[idx] as Texture2D
+func _draw_pixel_cell(rect: Rect2, base: Color, r: int, c: int) -> void:
+	draw_rect(rect, base)
+	var step: float = float(TILE_PX_STEP)
+	var cols: int = maxi(1, int(floor(rect.size.x / step)))
+	var rows: int = maxi(1, int(floor(rect.size.y / step)))
+	for yy in range(rows):
+		for xx in range(cols):
+			var h: int = _pixel_hash(r * 17 + yy, c * 23 + xx, 3) % 100
+			if h < 33:
+				var shade := base.darkened(0.08)
+				draw_rect(Rect2(rect.position + Vector2(xx * step, yy * step), Vector2(step + 0.1, step + 0.1)), shade)
+			elif h > 88:
+				var hi := base.lightened(0.08)
+				draw_rect(Rect2(rect.position + Vector2(xx * step, yy * step), Vector2(step + 0.1, step + 0.1)), hi)
 
 
 func _draw_tower_accent(rect3: Rect2, key: String, anim_tick: int) -> void:
@@ -259,21 +169,22 @@ func _draw_projectile(p: Dictionary, cs: int, anim_tick: int) -> void:
 	var pos: Vector2 = start.lerp(target, t)
 
 	if style == "sniper":
-		draw_line(start, target, Color(1.0, 0.35, 0.35, 0.65), 2.0)
-		draw_circle(target, 2.5, Color(1.0, 0.8, 0.8, 0.85))
+		_draw_pixel_beam(start, target, Color(1.0, 0.35, 0.35, 0.75), 2.0)
+		draw_rect(Rect2(target - Vector2(2, 2), Vector2(4, 4)), Color(1.0, 0.8, 0.8, 0.85))
 	elif style == "lightning":
 		var wiggle := 2.0 + 1.4 * sin(float(anim_tick) * 1.1)
 		var mid := (start + target) * 0.5 + Vector2(wiggle, -wiggle)
-		draw_polyline(PackedVector2Array([start, mid, target]), Color(1.0, 0.92, 0.35, 0.95), 2.2)
+		_draw_pixel_beam(start, mid, Color(1.0, 0.92, 0.35, 0.95), 2.0)
+		_draw_pixel_beam(mid, target, Color(1.0, 0.92, 0.35, 0.95), 2.0)
 	elif style == "fire":
-		draw_circle(pos, 4.5, Color(1.0, 0.42, 0.2, 0.9))
-		draw_circle(pos + Vector2(1, -1), 2.5, Color(1.0, 0.78, 0.35, 0.9))
+		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), Color(1.0, 0.42, 0.2, 0.9))
+		draw_rect(Rect2(pos - Vector2(2, 2), Vector2(4, 4)), Color(1.0, 0.78, 0.35, 0.9))
 	elif style == "ice":
 		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), Color(0.55, 0.9, 1.0, 0.95))
 	elif style == "shotgun":
-		draw_circle(pos, 3.2, Color(1.0, 0.7, 0.2, 0.85))
+		draw_rect(Rect2(pos - Vector2(2.5, 2.5), Vector2(5, 5)), Color(1.0, 0.7, 0.2, 0.85))
 	else:
-		draw_circle(pos, 3.8, col)
+		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), col)
 
 
 func _draw_pixel_tower(rect3: Rect2, key: String, tick: int) -> void:
@@ -365,7 +276,22 @@ func _draw_pixel_pattern(rect: Rect2, pattern: PackedStringArray, palette: Dicti
 			if ch == "." or not palette.has(ch):
 				continue
 			var col: Color = palette[ch]
-			draw_rect(Rect2(rect.position + Vector2(px * x, py * y), Vector2(px + 0.25, py + 0.25)), col)
+			var pos := rect.position + Vector2(floor(px * x), floor(py * y))
+			var size := Vector2(ceil(px), ceil(py))
+			draw_rect(Rect2(pos, size), col)
+
+
+func _draw_pixel_beam(a: Vector2, b: Vector2, col: Color, thickness: float) -> void:
+	var dir: Vector2 = b - a
+	var len: float = dir.length()
+	if len <= 0.001:
+		return
+	var step: float = 3.0
+	var n: int = int(ceil(len / step))
+	for i in range(n + 1):
+		var t: float = float(i) / maxf(1.0, float(n))
+		var p: Vector2 = a.lerp(b, t)
+		draw_rect(Rect2(Vector2(floor(p.x), floor(p.y)), Vector2(thickness, thickness)), col)
 
 
 func _draw_neon_asphalt_ground(map_rect: Rect2, cs: int, anim_tick: int) -> void:
