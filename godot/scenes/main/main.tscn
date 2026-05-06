@@ -44,18 +44,18 @@ horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="Center"]
 layout_mode = 2
-text = "Godot 4 客戶端 · 與 React 網頁版並存 · 可匯出 Web／Android／iOS"
+text = "Godot 4 client · Ships with React site · Web / Android / iOS"
 horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="Play" type="Button" parent="Center"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 48)
-text = "開始遊戲"
+text = "Start game"
 
 [node name="Quit" type="Button" parent="Center"]
 layout_mode = 2
-text = "離開"
+text = "Quit"
 
 [connection signal="pressed" from="Center/Play" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="Center/Quit" to="." method="_on_quit_pressed"]
