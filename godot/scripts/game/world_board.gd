@@ -80,12 +80,7 @@ func _draw() -> void:
 		var tc: int = int(t["c"])
 		var rect3 := Rect2(Vector2(tc * cs + 4, tr * cs + 4), Vector2(cs - 8, cs - 8))
 		var key: String = String(t["key"])
-		var tower_frames: Array = _tower_tex.get(key, [])
-		var tex: Texture2D = _pick_frame(tower_frames, anim_tick + int(t.get("id", 0)))
-		if tex != null:
-			draw_texture_rect(tex, rect3, false)
-		else:
-			draw_rect(rect3, _tower_color(key))
+		_draw_pixel_tower(rect3, key, anim_tick + int(t.get("id", 0)))
 		_draw_tower_accent(rect3, key, anim_tick)
 		draw_rect(rect3, Color(1, 1, 1, 0.8), false, 1.5)
 
@@ -96,15 +91,7 @@ func _draw() -> void:
 		var scale: float = float(e.get("scale", 1.0))
 		var size_px: float = 28.0 * scale
 		var enemy_rect := Rect2(center - Vector2(size_px, size_px) * 0.5, Vector2(size_px, size_px))
-		var enemy_key: String = _enemy_key(e)
-		var enemy_frames: Array = _enemy_tex.get(enemy_key, [])
-		var enemy_tex: Texture2D = _pick_frame(enemy_frames, anim_tick + int(e.get("id", 0)))
-		if enemy_tex != null:
-			draw_texture_rect(enemy_tex, enemy_rect, false)
-		else:
-			var rad: float = 12.0 * scale
-			draw_circle(center, rad + 2.0, Color.BLACK)
-			draw_circle(center, rad, e.get("color", Color.WHITE))
+		_draw_pixel_enemy(enemy_rect, e, anim_tick + int(e.get("id", 0)))
 		_draw_enemy_hp_bar(enemy_rect, e)
 
 	for p in _session.projectiles:
@@ -287,6 +274,98 @@ func _draw_projectile(p: Dictionary, cs: int, anim_tick: int) -> void:
 		draw_circle(pos, 3.2, Color(1.0, 0.7, 0.2, 0.85))
 	else:
 		draw_circle(pos, 3.8, col)
+
+
+func _draw_pixel_tower(rect3: Rect2, key: String, tick: int) -> void:
+	var phase: int = tick % 2
+	var pattern: PackedStringArray = PackedStringArray([
+		"..1111..",
+		".122221.",
+		"12233221",
+		"12344321",
+		"12344321",
+		"12233221",
+		".122221.",
+		"..1111..",
+	])
+	var base: Color = _tower_color(key)
+	var c1: Color = base.darkened(0.45)
+	var c2: Color = base
+	var c3: Color = base.lightened(0.18 + 0.07 * phase)
+	var c4: Color = base.lightened(0.36 + 0.08 * phase)
+	if key.find("SNIPER") >= 0:
+		pattern[3] = "12344444"
+		pattern[4] = "12344444"
+		c4 = Color(0.95, 0.3, 0.3)
+	elif key.find("CANNON") >= 0:
+		pattern[2] = "12244421"
+		pattern[3] = "12344421"
+		pattern[4] = "12344421"
+		c4 = Color(0.16, 0.18, 0.22)
+	elif key.find("HEAL") >= 0:
+		pattern[2] = "12234321"
+		pattern[3] = "12344421"
+		pattern[4] = "12344421"
+		pattern[5] = "12234321"
+		c4 = Color(0.2, 1.0, 0.62)
+	_draw_pixel_pattern(rect3, pattern, {"1": c1, "2": c2, "3": c3, "4": c4})
+
+
+func _draw_pixel_enemy(rect: Rect2, e: Dictionary, tick: int) -> void:
+	var phase: int = tick % 3
+	var name: String = String(e.get("name", "")).to_lower()
+	var is_boss: bool = String(e.get("boss_type", "")) != ""
+	var base: Color = Color(e.get("color", Color.WHITE))
+	var c1: Color = base.darkened(0.5)
+	var c2: Color = base
+	var c3: Color = base.lightened(0.24 + 0.05 * phase)
+	var c4: Color = Color(0.08, 0.08, 0.1)
+	var pattern: PackedStringArray = PackedStringArray([
+		"........",
+		"..1111..",
+		".122222.",
+		"12233221",
+		"12344321",
+		"12344321",
+		".122221.",
+		"..1111..",
+	])
+	if name.contains("drone") or name.contains("glitch") or name.contains("titan"):
+		pattern[0] = "...44..."
+		pattern[1] = "..1441.."
+		pattern[6] = ".122221."
+		c4 = Color(0.66, 0.9, 1.0)
+	elif name.contains("virus") or name.contains("trojan") or name.contains("worm"):
+		pattern[0] = "..4..4.."
+		pattern[7] = "..4444.."
+		c4 = Color(0.45, 1.0, 0.58)
+	else:
+		pattern[5] = "12344321"
+		pattern[6] = ".122221."
+	if is_boss:
+		pattern[0] = ".4....4."
+		pattern[1] = "44111144"
+		c4 = Color(1.0, 0.24, 0.2)
+	_draw_pixel_pattern(rect, pattern, {"1": c1, "2": c2, "3": c3, "4": c4})
+
+
+func _draw_pixel_pattern(rect: Rect2, pattern: PackedStringArray, palette: Dictionary) -> void:
+	if pattern.is_empty():
+		return
+	var h: int = pattern.size()
+	var w: int = pattern[0].length()
+	if h <= 0 or w <= 0:
+		return
+	var px: float = rect.size.x / float(w)
+	var py: float = rect.size.y / float(h)
+	for y in range(h):
+		var row: String = pattern[y]
+		for x in range(w):
+			var ch: String = row.substr(x, 1)
+			if ch == "." or not palette.has(ch):
+				continue
+			var col: Color = palette[ch]
+			draw_rect(Rect2(rect.position + Vector2(px * x, py * y), Vector2(px + 0.25, py + 0.25)), col)
 
 
 func _draw_neon_asphalt_ground(map_rect: Rect2, cs: int, anim_tick: int) -> void:
