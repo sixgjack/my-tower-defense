@@ -186,6 +186,12 @@ export const EnemyDictionary: React.FC<EnemyDictionaryProps> = ({ onBack, encoun
                               <div className="text-white font-bold text-xl">{enemy.minWave}</div>
                             </div>
                           )}
+                          <div>
+                            <div className="text-slate-400 text-sm">Type / 對象</div>
+                            <div className="text-cyan-300 font-bold text-xl">
+                              {enemy.movementType === 'air' || enemy.abilities?.includes('fly') ? 'AIR / 對空' : 'GROUND / 對地'}
+                            </div>
+                          </div>
                         </div>
 
                         {enemy.abilities && enemy.abilities.length > 0 && (
@@ -201,6 +207,22 @@ export const EnemyDictionary: React.FC<EnemyDictionaryProps> = ({ onBack, encoun
                                   title={ability.replace(/_/g, ' ')}
                                 >
                                   {t(`ability.${ability}`)}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {enemy.immunities && enemy.immunities.length > 0 && (
+                          <div className="bg-sky-500/20 border border-sky-500/50 rounded-xl p-4">
+                            <div className="text-sky-300 font-bold mb-2">Immunities / 屬性免疫</div>
+                            <div className="flex flex-wrap gap-2">
+                              {enemy.immunities.map((imm, idx) => (
+                                <div
+                                  key={idx}
+                                  className="px-3 py-1 bg-sky-500/30 rounded-full text-white text-sm uppercase"
+                                >
+                                  {imm}
                                 </div>
                               ))}
                             </div>

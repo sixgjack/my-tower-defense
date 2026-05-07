@@ -42,6 +42,8 @@ export interface Particle {
 export type EnemyAbility = 'teleport' | 'deactivate_towers' | 'heal_allies' | 'shield' | 'spawn_minions' | 'berserk' | 'camouflage' | 'regenerate' | 'explode' | 'charge' | 'retreat' | 'stun_attack' | 'poison_aura' | 'freeze_aura' | 'damage_reflect' | 'split' | 'fly' | 'burrow' | 'summon' | 'invisible' | 'slow_towers' | 'boss_shield' | 'attack_towers' | 'cc_immune' | 'speed_aura' | 'shield_allies' | 'area_disable';
 
 export type BossType = 'mini' | 'big';
+export type TargetMode = 'ground' | 'air' | 'both';
+export type ElementType = 'physical' | 'fire' | 'ice' | 'electric' | 'poison' | 'arcane' | 'explosive';
 
 export interface Enemy {
     id: number;
@@ -73,6 +75,8 @@ export interface Enemy {
     /** Catalog boss flag (mini/big waves set bossType; rare boss spawns use this) */
     isBoss?: boolean;
     name?: string;
+    movementType?: 'ground' | 'air';
+    immunities?: ElementType[];
 }
 
 // --- TOWERS ---
@@ -90,6 +94,8 @@ export interface TowerStats {
     color: string;
     icon: string;
     description: string;
+    targetMode?: TargetMode; // 對地 / 對空 / both
+    element?: ElementType;
     maxHp?: number;         // Tower health (default: 100)
     slowFactor?: number;   
     stunDuration?: number; 
@@ -170,6 +176,8 @@ export interface Projectile {
     pullStrength?: number; // For pull attacks
     hitTargets?: number[]; // For bloomerang - track which enemies have been hit
     firingTowerId?: number; // Track which tower fired this projectile
+    targetMode?: TargetMode;
+    element?: ElementType;
     special?: {
         pull?: number;
         slow?: number;

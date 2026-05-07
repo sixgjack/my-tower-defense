@@ -18,6 +18,8 @@ export class GameEngine {
   notification: string | null = null;
   notificationType: 'wave' | 'boss' | 'alert' = 'wave';
   notificationTimer: number = 0;
+  bossAbilityPopup: { name: string; bossType: 'mini' | 'big'; abilities: string[] } | null = null;
+  bossAbilityPopupTimer: number = 0;
   baseHitEffect: number = 0; // > 0 triggers red flash on screen
 
   // --- GAME STATE ---
@@ -110,6 +112,10 @@ export class GameEngine {
     if (this.notificationTimer > 0) {
         this.notificationTimer--;
         if (this.notificationTimer <= 0) this.notification = null;
+    }
+    if (this.bossAbilityPopupTimer > 0) {
+        this.bossAbilityPopupTimer--;
+        if (this.bossAbilityPopupTimer <= 0) this.bossAbilityPopup = null;
     }
     if (this.baseHitEffect > 0) this.baseHitEffect--;
 
@@ -322,6 +328,26 @@ export class GameEngine {
       return true;
   }
 
+  private applyStunToEnemy(enemy: any, duration: number = 90): boolean {
+      if (!enemy) return false;
+      const isBossEnemy = Boolean(enemy?.bossType || enemy?.isBoss);
+      if (!isBossEnemy) {
+          effectManager.applyEffectToEnemy(enemy, 'stunned', duration);
+          return true;
+      }
+
+      const immuneUntil = enemy.stunImmuneUntil || 0;
+      if (this.tickCount < immuneUntil) {
+          if (Math.random() > 0.72) this.addTextParticle(enemy.c, enemy.r, 'STUN RESIST', '#fbbf24');
+          return false;
+      }
+
+      // Bosses can still be controlled, but not chain-locked forever.
+      effectManager.applyEffectToEnemy(enemy, 'stunned', Math.min(duration, 75));
+      enemy.stunImmuneUntil = this.tickCount + 210; // ~3.5s immunity window
+      return true;
+  }
+
   private projectileCanHitEnemy(p: Projectile, enemy: any): boolean {
       const movement = this.getEnemyMovementType(enemy);
       const projMode: TargetMode = p.targetMode || 'both';
@@ -389,14 +415,17 @@ export class GameEngine {
       
       // Generate boss abilities
       let bossAbilities: string[] = stats.abilities ? [...stats.abilities] : [];
-      const abilityPool: string[] = ['shield', 'slow_towers', 'deactivate_towers', 'regenerate', 'heal_allies'];
+      const abilityPool: string[] = [
+        'shield', 'slow_towers', 'deactivate_towers', 'regenerate', 'heal_allies',
+        'speed_aura', 'shield_allies', 'charge', 'area_disable', 'damage_reflect',
+      ];
       if (isBigBoss) {
           const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
-          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(3, additionalAbilities.length));
+          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(4, additionalAbilities.length));
           bossAbilities = [...new Set([...bossAbilities, ...selected])];
       } else {
           const additionalAbilities = abilityPool.filter(a => !bossAbilities.includes(a));
-          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(2, additionalAbilities.length));
+          const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(3, additionalAbilities.length));
           bossAbilities = [...new Set([...bossAbilities, ...selected])];
       }
 
@@ -441,6 +470,12 @@ export class GameEngine {
           immunities: Array.isArray((stats as any).immunities) ? [...(stats as any).immunities] : [],
       });
       this.recordEnemyEncounter(stats.name);
+      this.bossAbilityPopup = {
+        name: stats.name,
+        bossType,
+        abilities: bossAbilities,
+      };
+      this.bossAbilityPopupTimer = 420; // 7 seconds
   }
 
   // --- MAP & PATH ---
@@ -785,6 +820,13 @@ export class GameEngine {
         effectiveCooldown /= buffMultipliers.attackSpeed; // Faster attack = lower cooldown
         
         if (tower.cooldown > 0) tower.cooldown--;
+        const towerIsStunned = Boolean(
+          tower.statusEffects?.some((effect: { effectId: string }) => effect.effectId === 'stunned')
+        );
+        if (towerIsStunned) {
+            // While disabled, do not fire or reset cooldown to huge values.
+            return;
+        }
 
         // Flamethrower passive: 3x3 square aura DoT (no beam projectile)
         if (tower.key === 'BASIC_BURN') {
@@ -974,7 +1016,7 @@ export class GameEngine {
                 } else if (stats.projectileStyle === 'lightning') {
                     // Lightning has chance to stun
                     if (Math.random() < 0.05) {
-                        effectManager.applyEffectToEnemy(target, 'stunned');
+                        this.applyStunToEnemy(target, 90);
                     }
                     this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
                 } else if (
@@ -1217,7 +1259,7 @@ export class GameEngine {
                 // Apply special abilities
                 if (stats.specialAbility) {
                     if (stats.specialAbility === 'stun' && stats.stunDuration) {
-                        effectManager.applyEffectToEnemy(target, 'stunned');
+                        this.applyStunToEnemy(target, stats.stunDuration);
                         this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
                     } else if (stats.specialAbility === 'slow' && stats.slowFactor) {
                         effectManager.applyEffectToEnemy(target, 'slowed');

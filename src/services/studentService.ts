@@ -35,16 +35,36 @@ export async function updateStudentStatusAfterGame(
     // Get current status
     const currentStatusResult = await db.getStudentStatus(userId);
     if (!currentStatusResult.success || !currentStatusResult.data) {
-      console.error('Student status does not exist');
+      const starterTowers = [
+        'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
+        'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
+      ];
+      const initialEncountered = Array.isArray(gameResult.encounteredEnemies)
+        ? [...new Set(gameResult.encounteredEnemies)]
+        : [];
+      const creditsEarned = gameResult.wave * 5;
+      // Self-heal missing profile so first completed run is still persisted.
+      await db.createStudentStatus(userId, {
+        userId,
+        totalGames: 1,
+        totalWaves: gameResult.wave,
+        totalEnemiesKilled: gameResult.enemiesKilled,
+        totalMoneyEarned: gameResult.moneyEarned,
+        highestWave: gameResult.wave,
+        credits: creditsEarned,
+        unlockedTowers: starterTowers,
+        encounteredEnemies: initialEncountered,
+        lastPlayed: new Date().toISOString(),
+      });
       return;
     }
 
     const currentStatus = currentStatusResult.data;
     
-    // Ensure starter towers are unlocked (without starter healer)
+    // Ensure starter towers are unlocked (include starter healer)
     const basicTowers = [
       'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN'
+      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
     ];
     const currentUnlocked = currentStatus.unlockedTowers || [];
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];

@@ -18,6 +18,28 @@ import { isDeveloperMode } from '../config/developerMode';
 const TILE_SIZE = 60; // Increased tile size for better visibility
 const BOARD_WIDTH = COLS * TILE_SIZE; 
 const BOARD_HEIGHT = ROWS * TILE_SIZE;
+const ABILITY_LABELS: Record<string, { en: string; zh: string }> = {
+  shield: { en: 'Shield', zh: '護盾' },
+  slow_towers: { en: 'Slow Towers', zh: '緩速防禦塔' },
+  deactivate_towers: { en: 'EMP Disable', zh: '電磁癱瘓' },
+  regenerate: { en: 'Regenerate', zh: '自我再生' },
+  heal_allies: { en: 'Heal Allies', zh: '治療同伴' },
+  speed_aura: { en: 'Speed Aura', zh: '加速光環' },
+  shield_allies: { en: 'Shield Allies', zh: '同伴護盾' },
+  charge: { en: 'Charge', zh: '衝鋒' },
+  area_disable: { en: 'Area Disable', zh: '區域失能' },
+  damage_reflect: { en: 'Damage Reflect', zh: '反傷' },
+  split: { en: 'Split', zh: '分裂' },
+  stun_attack: { en: 'Stun Attack', zh: '暈眩攻擊' },
+  teleport: { en: 'Teleport', zh: '瞬移' },
+  poison_aura: { en: 'Poison Aura', zh: '毒霧光環' },
+  freeze_aura: { en: 'Freeze Aura', zh: '冰凍光環' },
+  invisible: { en: 'Invisible', zh: '隱形' },
+  fly: { en: 'Flying', zh: '飛行' },
+  cc_immune: { en: 'CC Immune', zh: '控場免疫' },
+  spawn_minions: { en: 'Spawn Minions', zh: '召喚小怪' },
+  attack_towers: { en: 'Attack Towers', zh: '攻擊防禦塔' },
+};
 
 interface GameBoardProps {
   onGameEnd?: (result?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number; encounteredEnemies: string[] }) => void;
@@ -54,6 +76,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
     const newLang = language === 'en' ? 'zh' : 'en';
     setLanguage(newLang);
     i18n.setLanguage(newLang);
+  };
+  const formatAbilityLabel = (ability: string) => {
+    const label = ABILITY_LABELS[ability];
+    if (!label) return ability;
+    return language === 'zh' ? `${label.zh} / ${label.en}` : `${label.en} / ${label.zh}`;
   };
 
   // --- PERFORMANCE OPTIMIZATION: REFS ---
@@ -542,6 +569,27 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                </div>
            </div>
         )}
+        {game.bossAbilityPopup && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+            <div className="min-w-[360px] max-w-[75vw] rounded border-2 border-amber-400 bg-slate-900/95 px-4 py-3 shadow-2xl"
+                 style={{ boxShadow: '0 0 16px rgba(251,191,36,0.4)' }}>
+              <div className="text-[11px] tracking-wide uppercase text-amber-300 font-bold mb-1">
+                {game.bossAbilityPopup.bossType === 'big' ? 'Big Boss Intel' : 'Mini Boss Intel'}
+              </div>
+              <div className="text-white font-black text-lg mb-2">{game.bossAbilityPopup.name}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {game.bossAbilityPopup.abilities.map((ability) => (
+                  <span
+                    key={`${game.bossAbilityPopup?.name}-${ability}`}
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded border border-amber-500/60 bg-amber-950/40 text-amber-200"
+                  >
+                    {formatAbilityLabel(ability)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* --- BOARD --- */}
         <div className="relative shadow-2xl transition-all duration-300 pixel-board"
@@ -914,28 +962,46 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px]">🛡️</div>
                   )}
                   
+                  {/* Shield bar (gray) */}
+                  {e.shieldHp && e.shieldHp > 0 && (
+                    <div className="overflow-hidden mb-0.5" style={{
+                      width: TILE_SIZE * 0.82, height: 4,
+                      background: '#111827', border: '1px solid #4b5563', borderRadius: 2
+                    }}>
+                      <div
+                        className="h-full will-change-[width]"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, ((e.shieldHp || 0) / Math.max(1, e.maxHp * 0.5)) * 100))}%`,
+                          background: 'linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)',
+                          borderRadius: 2,
+                        }}
+                      />
+                    </div>
+                  )}
                   {/* Health bar - sized to match tile */}
                   <div className="overflow-hidden mb-0.5" style={{
                     width: TILE_SIZE * 0.82, height: 5,
                     background: '#1e293b', border: '1px solid #475569', borderRadius: 2
                   }}>
-                      <div
-                        className="h-full will-change-[width]"
-                        style={{
-                          width: `${(e.hp / e.maxHp) * 100}%`,
-                          background: e.hp / e.maxHp > 0.5 ? '#22c55e' : e.hp / e.maxHp > 0.25 ? '#f59e0b' : '#ef4444',
-                          borderRadius: 2,
-                          transition: 'background-color 0.3s'
-                        }}
-                        ref={(el) => {
-                             if (el) enemyHpRefs.current.set(e.id, el);
-                             else enemyHpRefs.current.delete(e.id);
-                        }}
-                      />
+                    <div
+                      className="h-full will-change-[width]"
+                      style={{
+                        width: `${(e.hp / e.maxHp) * 100}%`,
+                        background: e.hp / e.maxHp > 0.5 ? '#22c55e' : e.hp / e.maxHp > 0.25 ? '#f59e0b' : '#ef4444',
+                        borderRadius: 2,
+                        transition: 'background-color 0.3s'
+                      }}
+                      ref={(el) => {
+                           if (el) enemyHpRefs.current.set(e.id, el);
+                           else enemyHpRefs.current.delete(e.id);
+                      }}
+                    />
                   </div>
                   <div className="drop-shadow-md flex items-center justify-center overflow-hidden"
                        style={{ fontSize: `${TILE_SIZE * 0.52}px`, width: TILE_SIZE * 0.78, height: TILE_SIZE * 0.78 }}>
-                    {getEnemyGifAsset((e as any).name, e.icon) ? (
+                    {(((e as any).movementType === 'air') || e.isFlying || e.abilities?.includes('fly')) ? (
+                      e.icon
+                    ) : getEnemyGifAsset((e as any).name, e.icon) ? (
                       <img
                         src={getEnemyGifAsset((e as any).name, e.icon)}
                         alt={`${(e as any).name || 'enemy'} sprite`}

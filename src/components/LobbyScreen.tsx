@@ -139,14 +139,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     
     if (!gameResult || !user) return;
 
-    if (!isGoogleAuthDisabled()) {
-      try {
-        await updateStudentStatusAfterGame(user.uid, gameResult);
-      } catch (error) {
-        console.error('Error updating student status:', error);
+    try {
+      // Save through project backend DB for both Google and demo/local users.
+      await updateStudentStatusAfterGame(user.uid, gameResult);
+    } catch (error) {
+      console.error('Error updating student status:', error);
+      // Fallback cache for demo mode if DB path is unavailable.
+      if (isGoogleAuthDisabled()) {
+        mergeIntoLocalEncountered(gameResult.encounteredEnemies || []);
       }
-    } else {
-      mergeIntoLocalEncountered(gameResult.encounteredEnemies || []);
     }
     await onStatusUpdate();
   };

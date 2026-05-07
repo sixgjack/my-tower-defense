@@ -30,7 +30,7 @@ interface StudentStatus {
 
 const BASIC_TOWER_KEYS = [
   'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN',
+  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL',
 ] as const;
 
 const DEMO_GOOGLE_USER: GoogleUser = {
@@ -67,7 +67,11 @@ export const MenuScreen: React.FC = () => {
       const status = await getStudentStatus(uid);
       
       if (status) {
-        setStudentStatus(status);
+        const mergedUnlocked = [...new Set([...(status.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+        setStudentStatus({
+          ...status,
+          unlockedTowers: mergedUnlocked,
+        });
       } else {
         // Create new student status with 8 basic towers unlocked
         const basicTowers = [...BASIC_TOWER_KEYS];
@@ -146,14 +150,6 @@ export const MenuScreen: React.FC = () => {
 
   const handleStatusUpdate = async () => {
     if (!user) return;
-    if (isGoogleAuthDisabled()) {
-      setStudentStatus((prev) =>
-        prev
-          ? { ...prev, encounteredEnemies: readLocalEncountered() }
-          : buildDemoStudentStatus()
-      );
-      return;
-    }
     await loadStudentStatus(user.uid);
   };
 
@@ -198,10 +194,10 @@ export const MenuScreen: React.FC = () => {
             {isGoogleAuthDisabledByEnv() ? (
               <>
                 Demo mode: Google SSO off (<code className="text-amber-400">VITE_DISABLE_GOOGLE_AUTH=true</code>
-                ). Progress is not saved to the server.
+                ). Progress is saved to local backend profile (<code className="text-amber-400">{DEMO_LOCAL_USER_ID}</code>).
               </>
             ) : (
-              <>Playing without Google — progress is not saved to the server. Use Sign out to sign in with Google later.</>
+              <>Playing without Google — progress is saved to local backend profile. Use Sign out to sign in with Google later.</>
             )}
           </div>
         )}
