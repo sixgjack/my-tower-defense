@@ -17,103 +17,103 @@ export interface EnemyType {
 
 export const ENEMY_TYPES: EnemyType[] = [
     // Basic Enemies (Fast & Weak) - Rewards reduced by ~35%
-    { name: "Bug", hp: 30, speed: 1.0, reward: 10, color: "#f87171", icon: "🐛" },
-    { name: "Spider", hp: 25, speed: 1.3, reward: 8, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'] },
-    { name: "Mite", hp: 20, speed: 1.5, reward: 7, color: "#ef4444", icon: "🪲" },
-    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'] },
-    
+    { name: "Bug", hp: 30, speed: 1.0, reward: 10, color: "#f87171", icon: "🐛", description: "A mindless pest spawned from corrupt code. Weak alone, but travels in swarms that overwhelm unprepared defenses." },
+    { name: "Spider", hp: 25, speed: 1.3, reward: 8, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'], description: "Spins invisible webs to mask its approach. Hard to spot until it has already slipped past your outer towers." },
+    { name: "Mite", hp: 20, speed: 1.5, reward: 7, color: "#ef4444", icon: "🪲", description: "Microscopic and relentless. Its tiny frame lets it dart through gaps in coverage at unnerving speed." },
+    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'], description: "An airborne nuisance that bypasses ground-level defenses entirely. Fast and fragile — do not let it slip through." },
+
     // Balanced Enemies
-    { name: "Glitch", hp: 80, speed: 0.7, reward: 16, color: "#c084fc", icon: "👾" },
-    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'] },
-    { name: "Hacker", hp: 85, speed: 0.65, reward: 18, color: "#9333ea", icon: "👤", abilities: ['deactivate_towers'], abilityCooldown: 300 },
-    { name: "Crawler", hp: 70, speed: 0.75, reward: 13, color: "#7c3aed", icon: "🕸️" },
-    
+    { name: "Glitch", hp: 80, speed: 0.7, reward: 16, color: "#c084fc", icon: "👾", description: "A fragment of corrupted data. Erratic movement patterns make it difficult to target reliably." },
+    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'], description: "An aerial reconnaissance unit that flies over terrain obstacles and scouts ahead of larger threats." },
+    { name: "Hacker", hp: 85, speed: 0.65, reward: 18, color: "#9333ea", icon: "👤", abilities: ['deactivate_towers'], abilityCooldown: 300, description: "Infiltrates and disables your towers remotely. If left unchecked, it can neutralize entire sections of your defense grid." },
+    { name: "Crawler", hp: 70, speed: 0.75, reward: 13, color: "#7c3aed", icon: "🕸️", description: "Methodically advances through any terrain. Manageable alone, but dangerous when part of a coordinated push." },
+
     // Tank Enemies
-    { name: "Virus", hp: 200, speed: 0.4, reward: 32, color: "#4ade80", icon: "🦠" },
-    { name: "Malware", hp: 220, speed: 0.35, reward: 36, color: "#22c55e", icon: "🪳", abilities: ['shield'] },
-    { name: "Tank", hp: 250, speed: 0.3, reward: 39, color: "#16a34a", icon: "🛡️", abilities: ['damage_reflect'] },
-    { name: "Brute", hp: 300, speed: 0.25, reward: 45, color: "#15803d", icon: "💪", abilities: ['regenerate'] },
-    { name: "Guardian", hp: 350, speed: 0.2, reward: 52, color: "#166534", icon: "🛡️", abilities: ['shield', 'heal_allies'], abilityCooldown: 200 },
-    
+    { name: "Virus", hp: 200, speed: 0.4, reward: 32, color: "#4ade80", icon: "🦠", description: "A self-replicating threat that absorbs enormous punishment. Slow but nearly unstoppable once it gets close." },
+    { name: "Malware", hp: 220, speed: 0.35, reward: 36, color: "#22c55e", icon: "🪳", abilities: ['shield'], description: "Wrapped in a digital barrier that blocks the first burst of damage. Crack the shield before the real fight begins." },
+    { name: "Tank", hp: 250, speed: 0.3, reward: 39, color: "#16a34a", icon: "🛡️", abilities: ['damage_reflect'], description: "Reflects a portion of every hit back at your towers. Beware — heavy damage dealers may end up hurting themselves." },
+    { name: "Brute", hp: 300, speed: 0.25, reward: 45, color: "#15803d", icon: "💪", abilities: ['regenerate'], description: "Regenerates health continuously as it marches. Only concentrated burst damage can bring this monster down for good." },
+    { name: "Guardian", hp: 350, speed: 0.2, reward: 52, color: "#166534", icon: "🛡️", abilities: ['shield', 'heal_allies'], abilityCooldown: 200, description: "Shields itself and mends nearby allies mid-battle. Destroy it first to collapse the enemy formation around it." },
+
     // Fast Enemies
-    { name: "Worm", hp: 60, speed: 1.2, reward: 13, color: "#f472b6", icon: "🪱" },
-    { name: "Snake", hp: 55, speed: 1.4, reward: 12, color: "#ec4899", icon: "🐍", abilities: ['poison_aura'] },
-    { name: "Swift", hp: 50, speed: 1.6, reward: 10, color: "#db2777", icon: "⚡", abilities: ['charge'] },
-    { name: "Ghost", hp: 45, speed: 1.5, reward: 9, color: "#be185d", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 400 },
-    
+    { name: "Worm", hp: 60, speed: 1.2, reward: 13, color: "#f472b6", icon: "🪱", description: "Slithers at surprising speed for its size. A squirming menace that loves to slip through neglected corridors." },
+    { name: "Snake", hp: 55, speed: 1.4, reward: 12, color: "#ec4899", icon: "🐍", abilities: ['poison_aura'], description: "Exudes a toxic aura that corrodes nearby tower systems over time. Keep your fire concentrated or pay the price." },
+    { name: "Swift", hp: 50, speed: 1.6, reward: 10, color: "#db2777", icon: "⚡", abilities: ['charge'], description: "Charges forward in short bursts of extreme speed. Blink and you will miss it clearing your entire kill zone." },
+    { name: "Ghost", hp: 45, speed: 1.5, reward: 9, color: "#be185d", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 400, description: "Vanishes and reappears mid-path using short-range teleports. Towers can lose track of it between volleys." },
+
     // Special Ability Enemies
-    { name: "Teleporter", hp: 100, speed: 0.6, reward: 20, color: "#6366f1", icon: "🌀", abilities: ['teleport'], abilityCooldown: 250 },
-    { name: "Healer", hp: 90, speed: 0.65, reward: 18, color: "#8b5cf6", icon: "💚", abilities: ['heal_allies'], abilityCooldown: 150 },
-    { name: "Saboteur", hp: 120, speed: 0.5, reward: 23, color: "#ef4444", icon: "🔧", abilities: ['deactivate_towers'], abilityCooldown: 300 },
-    { name: "Summoner", hp: 150, speed: 0.45, reward: 26, color: "#a855f7", icon: "🔮", abilities: ['spawn_minions'], abilityCooldown: 500 },
-    { name: "Berserker", hp: 180, speed: 0.8, reward: 29, color: "#dc2626", icon: "😡", abilities: ['berserk'] },
-    { name: "Freezer", hp: 110, speed: 0.55, reward: 21, color: "#06b6d4", icon: "❄️", abilities: ['freeze_aura'] },
-    { name: "Bomber", hp: 70, speed: 0.7, reward: 16, color: "#f59e0b", icon: "💣", abilities: ['explode'] },
-    { name: "Splitter", hp: 130, speed: 0.5, reward: 25, color: "#10b981", icon: "🔀", abilities: ['split'] },
-    { name: "Burrower", hp: 95, speed: 0.6, reward: 18, color: "#78716c", icon: "🕳️", abilities: ['burrow'] },
-    { name: "Retreater", hp: 85, speed: 1.0, reward: 15, color: "#64748b", icon: "🏃", abilities: ['retreat'] },
-    { name: "Stunner", hp: 105, speed: 0.58, reward: 20, color: "#facc15", icon: "⚡", abilities: ['stun_attack'], abilityCooldown: 350 },
-    
+    { name: "Teleporter", hp: 100, speed: 0.6, reward: 20, color: "#6366f1", icon: "🌀", abilities: ['teleport'], abilityCooldown: 250, description: "Skips large sections of the path in an instant. Always assume it is farther ahead than your towers are targeting." },
+    { name: "Healer", hp: 90, speed: 0.65, reward: 18, color: "#8b5cf6", icon: "💚", abilities: ['heal_allies'], abilityCooldown: 150, description: "Continuously restores health to nearby allies as they advance. Eliminate it first to stop the bleeding." },
+    { name: "Saboteur", hp: 120, speed: 0.5, reward: 23, color: "#ef4444", icon: "🔧", abilities: ['deactivate_towers'], abilityCooldown: 300, description: "Carries EMP charges that shut down adjacent towers on contact. Your defenses go dark wherever it walks." },
+    { name: "Summoner", hp: 150, speed: 0.45, reward: 26, color: "#a855f7", icon: "🔮", abilities: ['spawn_minions'], abilityCooldown: 500, description: "Conjures waves of minions mid-march. Each spawn is a fresh leak threatening your base while you fight the original." },
+    { name: "Berserker", hp: 180, speed: 0.8, reward: 29, color: "#dc2626", icon: "😡", abilities: ['berserk'], description: "Enrages as it takes damage — the more you hurt it, the faster it moves. Burst it down before it goes ballistic." },
+    { name: "Freezer", hp: 110, speed: 0.55, reward: 21, color: "#06b6d4", icon: "❄️", abilities: ['freeze_aura'], description: "Projects a frozen aura that slows nearby towers' attack speed to a crawl. Packs of these will grind your defense to a halt." },
+    { name: "Bomber", hp: 70, speed: 0.7, reward: 16, color: "#f59e0b", icon: "💣", abilities: ['explode'], description: "Detonates in a massive explosion on death that damages adjacent towers. Be careful where you finish it off." },
+    { name: "Splitter", hp: 130, speed: 0.5, reward: 25, color: "#10b981", icon: "🔀", abilities: ['split'], description: "Divides into two smaller versions when destroyed. Eliminate the halves quickly or face an exponential cascade." },
+    { name: "Burrower", hp: 95, speed: 0.6, reward: 18, color: "#78716c", icon: "🕳️", abilities: ['burrow'], description: "Digs underground to avoid all tower fire for several seconds, then re-emerges closer to your base." },
+    { name: "Retreater", hp: 85, speed: 1.0, reward: 15, color: "#64748b", icon: "🏃", abilities: ['retreat'], description: "Sprints back toward spawn when heavily wounded, forcing you to spend extra shots. A frustrating time-waster." },
+    { name: "Stunner", hp: 105, speed: 0.58, reward: 20, color: "#facc15", icon: "⚡", abilities: ['stun_attack'], abilityCooldown: 350, description: "Unleashes electric pulses that stun nearby towers mid-volley. Times its bursts to strike during critical wave moments." },
+
     // Boss-like Enemies (Higher HP) - Rewards reduced by ~35%
-    { name: "Trojan", hp: 400, speed: 0.3, reward: 65, color: "#fbbf24", icon: "🐴" },
-    { name: "Titan", hp: 500, speed: 0.25, reward: 78, color: "#f59e0b", icon: "👹", isBoss: true, abilities: ['shield', 'charge'] },
-    { name: "Behemoth", hp: 600, speed: 0.2, reward: 91, color: "#dc2626", icon: "👺", isBoss: true, abilities: ['regenerate', 'berserk'] },
-    { name: "Warlord", hp: 450, speed: 0.28, reward: 72, color: "#7c2d12", icon: "⚔️", isBoss: true, abilities: ['damage_reflect', 'heal_allies'], abilityCooldown: 200 },
-    
+    { name: "Trojan", hp: 400, speed: 0.3, reward: 65, color: "#fbbf24", icon: "🐴", description: "Disguised as a harmless package, it carries devastating payloads deep into your base. A high-health infiltrator with no mercy." },
+    { name: "Titan", hp: 500, speed: 0.25, reward: 78, color: "#f59e0b", icon: "👹", isBoss: true, abilities: ['shield', 'charge'], description: "An armored giant that shields itself and charges when threatened. Bring your heaviest firepower to the front lines." },
+    { name: "Behemoth", hp: 600, speed: 0.2, reward: 91, color: "#dc2626", icon: "👺", isBoss: true, abilities: ['regenerate', 'berserk'], description: "Endlessly regenerates and grows more savage as its health drops. The angrier it gets, the more unstoppable it becomes." },
+    { name: "Warlord", hp: 450, speed: 0.28, reward: 72, color: "#7c2d12", icon: "⚔️", isBoss: true, abilities: ['damage_reflect', 'heal_allies'], abilityCooldown: 200, description: "A battlefield commander who reflects every strike and heals surrounding troops. Legends say it has never lost a siege." },
+
     // Advanced Enemies
-    { name: "Necromancer", hp: 320, speed: 0.35, reward: 55, color: "#581c87", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 400 },
-    { name: "Phantom", hp: 140, speed: 0.9, reward: 27, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300 },
-    { name: "Archmage", hp: 280, speed: 0.4, reward: 49, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350 },
-    { name: "Golem", hp: 550, speed: 0.15, reward: 85, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'], moneyBonus: 3.0 },
-    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], moneyBonus: 3.0 },
-    { name: "Kraken", hp: 650, speed: 0.22, reward: 98, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'], moneyBonus: 3.0 },
-    { name: "Hydra", hp: 580, speed: 0.26, reward: 88, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'], moneyBonus: 3.0 },
-    { name: "Colossus", hp: 800, speed: 0.12, reward: 117, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250, moneyBonus: 3.5 },
-    { name: "Tyrant", hp: 750, speed: 0.16, reward: 111, color: "#991b1b", icon: "👑", isBoss: true, abilities: ['berserk', 'damage_reflect', 'charge'], moneyBonus: 3.5 },
-    { name: "Demon", hp: 680, speed: 0.2, reward: 101, color: "#7c2d12", icon: "😈", isBoss: true, abilities: ['teleport', 'poison_aura', 'explode'], moneyBonus: 3.0 },
-    
+    { name: "Necromancer", hp: 320, speed: 0.35, reward: 55, color: "#581c87", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 400, description: "Raises fallen enemies as undead minions and keeps the living topped off with dark energy. Defeat it before the horde snowballs." },
+    { name: "Phantom", hp: 140, speed: 0.9, reward: 27, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300, description: "A ghostly speedster that flickers between visibility and teleports through volleys. Nearly impossible to pin down." },
+    { name: "Archmage", hp: 280, speed: 0.4, reward: 49, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350, description: "Combines tower-disabling magic with a deadly poison cloud. One of the most dangerous single targets you will ever face." },
+    { name: "Golem", hp: 550, speed: 0.15, reward: 85, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'], moneyBonus: 3.0, description: "An ancient stone colossus with an impenetrable shield and total damage reflection. Only sustained magic fire can chip it down." },
+    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], moneyBonus: 3.0, description: "Soars above terrain, poisoning everything it passes and charging at full fury when wounded. A living, flying catastrophe." },
+    { name: "Kraken", hp: 650, speed: 0.22, reward: 98, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'], moneyBonus: 3.0, description: "A deep-sea titan that splits into smaller beasts and freezes every tower in its icy wake. Destroy all tentacles at once." },
+    { name: "Hydra", hp: 580, speed: 0.26, reward: 88, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'], moneyBonus: 3.0, description: "Every time you cut it down, two heads grow back. Eliminate all fragments simultaneously or face an endless resurrection." },
+    { name: "Colossus", hp: 800, speed: 0.12, reward: 117, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250, moneyBonus: 3.5, description: "The largest entity ever deployed. Shields itself, stuns attackers, and heals on the move. A true juggernaut of war." },
+    { name: "Tyrant", hp: 750, speed: 0.16, reward: 111, color: "#991b1b", icon: "👑", isBoss: true, abilities: ['berserk', 'damage_reflect', 'charge'], moneyBonus: 3.5, description: "A rampaging warlord clad in reflecting armor who grows unhinged at low health and charges with terrifying force." },
+    { name: "Demon", hp: 680, speed: 0.2, reward: 101, color: "#7c2d12", icon: "😈", isBoss: true, abilities: ['teleport', 'poison_aura', 'explode'], moneyBonus: 3.0, description: "Teleports across the battlefield, poisons the ground it touches, and explodes violently on death. Hell itself given form." },
+
     // Elite Enemies
-    { name: "Assassin", hp: 160, speed: 1.1, reward: 31, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 400 },
-    { name: "Paladin", hp: 420, speed: 0.32, reward: 68, color: "#fbbf24", icon: "⚔️", abilities: ['shield', 'heal_allies'], abilityCooldown: 180 },
-    { name: "Vampire", hp: 380, speed: 0.38, reward: 62, color: "#be123c", icon: "🧛", abilities: ['regenerate', 'teleport'], abilityCooldown: 320 },
-    { name: "Shaman", hp: 260, speed: 0.42, reward: 46, color: "#9333ea", icon: "🔮", abilities: ['spawn_minions', 'freeze_aura', 'poison_aura'], abilityCooldown: 450 },
-    { name: "Wraith", hp: 200, speed: 0.85, reward: 34, color: "#6366f1", icon: "👤", abilities: ['invisible', 'fly', 'teleport'], abilityCooldown: 350 },
-    { name: "Revenant", hp: 440, speed: 0.3, reward: 70, color: "#4338ca", icon: "💀", isBoss: true, abilities: ['spawn_minions', 'regenerate', 'damage_reflect'], moneyBonus: 3.5 },
-    { name: "Leviathan", hp: 720, speed: 0.14, reward: 107, color: "#0c4a6e", icon: "🌊", isBoss: true, abilities: ['split', 'freeze_aura', 'charge'], moneyBonus: 4.0 },
-    { name: "Phoenix", hp: 600, speed: 0.5, reward: 94, color: "#ea580c", icon: "🔥", isBoss: true, abilities: ['fly', 'regenerate', 'explode'], moneyBonus: 3.5 },
-    { name: "Cerberus", hp: 620, speed: 0.24, reward: 96, color: "#1f2937", icon: "🐕", isBoss: true, abilities: ['split', 'charge', 'stun_attack'], moneyBonus: 3.5 },
-    { name: "Manticore", hp: 640, speed: 0.21, reward: 99, color: "#78350f", icon: "🦂", isBoss: true, abilities: ['fly', 'poison_aura', 'teleport'], abilityCooldown: 400, moneyBonus: 3.5 },
-    
+    { name: "Assassin", hp: 160, speed: 1.1, reward: 31, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 400, description: "Invisible, teleporting, and capable of stunning towers mid-volley. If you can see it, you are already behind." },
+    { name: "Paladin", hp: 420, speed: 0.32, reward: 68, color: "#fbbf24", icon: "⚔️", abilities: ['shield', 'heal_allies'], abilityCooldown: 180, description: "A holy warrior with an unbreakable shield and the power to mend allies mid-battle. Kill the healer first, always." },
+    { name: "Vampire", hp: 380, speed: 0.38, reward: 62, color: "#be123c", icon: "🧛", abilities: ['regenerate', 'teleport'], abilityCooldown: 320, description: "Regenerates wounds and teleports away when cornered. Persistent and nearly impossible to permanently bring down." },
+    { name: "Shaman", hp: 260, speed: 0.42, reward: 46, color: "#9333ea", icon: "🔮", abilities: ['spawn_minions', 'freeze_aura', 'poison_aura'], abilityCooldown: 450, description: "Summons minion hordes, slows your towers with ice, and fills the air with poison. A multi-threat on two legs." },
+    { name: "Wraith", hp: 200, speed: 0.85, reward: 34, color: "#6366f1", icon: "👤", abilities: ['invisible', 'fly', 'teleport'], abilityCooldown: 350, description: "Flies invisibly and teleports at will. Your towers will fire into empty air while it slips past completely unnoticed." },
+    { name: "Revenant", hp: 440, speed: 0.3, reward: 70, color: "#4338ca", icon: "💀", isBoss: true, abilities: ['spawn_minions', 'regenerate', 'damage_reflect'], moneyBonus: 3.5, description: "Refuses to stay dead — spawns undead reinforcements, reflects all damage, and heals itself. Each engagement feels like the first." },
+    { name: "Leviathan", hp: 720, speed: 0.14, reward: 107, color: "#0c4a6e", icon: "🌊", isBoss: true, abilities: ['split', 'freeze_aura', 'charge'], moneyBonus: 4.0, description: "An ocean god that splits into hordes of lesser beasts, freezes every tower in range, and charges when enraged." },
+    { name: "Phoenix", hp: 600, speed: 0.5, reward: 94, color: "#ea580c", icon: "🔥", isBoss: true, abilities: ['fly', 'regenerate', 'explode'], moneyBonus: 3.5, description: "Burns away damage with regenerative fire, flies through aerial corridors, and detonates catastrophically on death." },
+    { name: "Cerberus", hp: 620, speed: 0.24, reward: 96, color: "#1f2937", icon: "🐕", isBoss: true, abilities: ['split', 'charge', 'stun_attack'], moneyBonus: 3.5, description: "A three-headed hound that splits into separate beasts, charges relentlessly, and stuns towers with each savage bite." },
+    { name: "Manticore", hp: 640, speed: 0.21, reward: 99, color: "#78350f", icon: "🦂", isBoss: true, abilities: ['fly', 'poison_aura', 'teleport'], abilityCooldown: 400, moneyBonus: 3.5, description: "Swoops in from above, teleports unpredictably to avoid locks, and drips lethal venom on everything below. Beware the tail." },
+
     // Special Bosses
-    { name: "Overlord", hp: 900, speed: 0.1, reward: 130, color: "#1e1e1e", icon: "👑", isBoss: true, abilities: ['deactivate_towers', 'spawn_minions', 'shield', 'heal_allies'], abilityCooldown: 180, moneyBonus: 5.0 },
-    { name: "Cthulhu", hp: 850, speed: 0.13, reward: 124, color: "#0f172a", icon: "🐙", isBoss: true, abilities: ['teleport', 'split', 'poison_aura', 'stun_attack'], abilityCooldown: 220, moneyBonus: 5.0 },
-    { name: "Archon", hp: 920, speed: 0.11, reward: 133, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200, moneyBonus: 5.0 },
-    { name: "Abomination", hp: 880, speed: 0.14, reward: 127, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'], moneyBonus: 4.5 },
-    { name: "World Eater", hp: 1000, speed: 0.08, reward: 143, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150, moneyBonus: 6.0 },
-    
+    { name: "Overlord", hp: 900, speed: 0.1, reward: 130, color: "#1e1e1e", icon: "👑", isBoss: true, abilities: ['deactivate_towers', 'spawn_minions', 'shield', 'heal_allies'], abilityCooldown: 180, moneyBonus: 5.0, description: "The supreme commander. Disables towers, deploys endless armies, shields itself, and heals everything nearby. Prepare everything you have." },
+    { name: "Cthulhu", hp: 850, speed: 0.13, reward: 124, color: "#0f172a", icon: "🐙", isBoss: true, abilities: ['teleport', 'split', 'poison_aura', 'stun_attack'], abilityCooldown: 220, moneyBonus: 5.0, description: "An elder god of chaos. Teleports without warning, splits into cosmic horrors, and paralyzes towers with psychic venom." },
+    { name: "Archon", hp: 920, speed: 0.11, reward: 133, color: "#581c87", icon: "👤", isBoss: true, abilities: ['invisible', 'teleport', 'damage_reflect', 'heal_allies'], abilityCooldown: 200, moneyBonus: 5.0, description: "An invisible, reflective, self-healing demigod. Strikes unseen and emerges perfectly unharmed from every engagement." },
+    { name: "Abomination", hp: 880, speed: 0.14, reward: 127, color: "#7c2d12", icon: "👹", isBoss: true, abilities: ['split', 'regenerate', 'berserk', 'explode'], moneyBonus: 4.5, description: "A living catastrophe — it splits, regenerates, enrages at low health, then explodes taking everything with it. There is no safe approach." },
+    { name: "World Eater", hp: 1000, speed: 0.08, reward: 143, color: "#000000", icon: "🌑", isBoss: true, abilities: ['fly', 'teleport', 'shield', 'damage_reflect', 'heal_allies'], abilityCooldown: 150, moneyBonus: 6.0, description: "The end of all defenses. Flies, teleports, shields every hit, reflects damage, and heals continuously. Victory here is barely possible." },
+
     // ==========================================
     // NEW ENEMIES (20 new enemies with abilities) - Rewards reduced by ~35%
     // ==========================================
-    { name: "Sapper", hp: 180, speed: 0.4, reward: 29, color: "#f97316", icon: "🔨", abilities: ['attack_towers'], abilityCooldown: 200, minWave: 3 },
-    { name: "Siege Engine", hp: 450, speed: 0.2, reward: 72, color: "#78716c", icon: "⚙️", abilities: ['attack_towers', 'shield'], abilityCooldown: 300, minWave: 8 },
-    { name: "Corruptor", hp: 220, speed: 0.5, reward: 36, color: "#7c3aed", icon: "💜", abilities: ['slow_towers', 'poison_aura'], abilityCooldown: 250, minWave: 5 },
-    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], abilityCooldown: 350, minWave: 6 },
-    { name: "Plague Bearer", hp: 160, speed: 0.7, reward: 26, color: "#14b8a6", icon: "🦠", abilities: ['poison_aura', 'spawn_minions'], abilityCooldown: 400, minWave: 4 },
-    { name: "Shock Trooper", hp: 140, speed: 0.9, reward: 23, color: "#facc15", icon: "⚡", abilities: ['stun_attack', 'charge'], abilityCooldown: 280, minWave: 3 },
-    { name: "Armored Crawler", hp: 380, speed: 0.25, reward: 62, color: "#475569", icon: "🦂", abilities: ['shield', 'damage_reflect'], minWave: 7 },
-    { name: "Void Walker", hp: 200, speed: 0.55, reward: 33, color: "#1e293b", icon: "🌌", abilities: ['teleport', 'invisible'], abilityCooldown: 320, minWave: 5 },
-    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], minWave: 9 },
-    { name: "Shadow Assassin", hp: 120, speed: 1.0, reward: 20, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 380, minWave: 4 },
-    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], minWave: 10 },
-    { name: "Storm Caller", hp: 280, speed: 0.45, reward: 46, color: "#3b82f6", icon: "⛈️", abilities: ['stun_attack', 'deactivate_towers'], abilityCooldown: 300, minWave: 6 },
-    { name: "Bone Collector", hp: 320, speed: 0.35, reward: 52, color: "#f3f4f6", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 450, minWave: 7 },
-    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], abilityCooldown: 350, minWave: 4 },
-    { name: "Frost Giant", hp: 550, speed: 0.15, reward: 91, color: "#bfdbfe", icon: "🧊", isBoss: true, abilities: ['freeze_aura', 'shield', 'stun_attack'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0 },
-    { name: "Chaos Spawn", hp: 240, speed: 0.5, reward: 39, color: "#dc2626", icon: "🌀", abilities: ['teleport', 'split', 'berserk'], abilityCooldown: 400, minWave: 6 },
-    { name: "Iron Maiden", hp: 400, speed: 0.18, reward: 65, color: "#64748b", icon: "⚔️", abilities: ['attack_towers', 'damage_reflect'], abilityCooldown: 250, minWave: 8 }, // Slower
-    { name: "Necrotic Plague", hp: 180, speed: 0.65, reward: 29, color: "#7c2d12", icon: "🦠", abilities: ['poison_aura', 'regenerate', 'spawn_minions'], abilityCooldown: 500, minWave: 5 },
-    { name: "Void Reaper", hp: 350, speed: 0.3, reward: 57, color: "#000000", icon: "🌑", abilities: ['invisible', 'teleport', 'damage_reflect'], abilityCooldown: 360, minWave: 8 },
-    { name: "Titanium Behemoth", hp: 650, speed: 0.08, reward: 107, color: "#94a3b8", icon: "🗿", isBoss: true, abilities: ['attack_towers', 'shield', 'damage_reflect', 'regenerate'], abilityCooldown: 200, minWave: 15, moneyBonus: 4.0 }, // Much slower
+    { name: "Sapper", hp: 180, speed: 0.4, reward: 29, color: "#f97316", icon: "🔨", abilities: ['attack_towers'], abilityCooldown: 200, minWave: 3, description: "Carries demolition charges that destroy tower structures directly. Leave it alone and your defenses will crumble from within." },
+    { name: "Siege Engine", hp: 450, speed: 0.2, reward: 72, color: "#78716c", icon: "⚙️", abilities: ['attack_towers', 'shield'], abilityCooldown: 300, minWave: 8, description: "A massive armored war machine with a forward shield that systematically demolishes towers on contact. Built for one purpose." },
+    { name: "Corruptor", hp: 220, speed: 0.5, reward: 36, color: "#7c3aed", icon: "💜", abilities: ['slow_towers', 'poison_aura'], abilityCooldown: 250, minWave: 5, description: "Infects towers with a digital plague that degrades their firing rate. Its poisonous signal lingers long after it passes." },
+    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], abilityCooldown: 350, minWave: 6, description: "An invisible ice specter that flash-freezes the ground it walks on, slowing every nearby tower's attack speed to nothing." },
+    { name: "Plague Bearer", hp: 160, speed: 0.7, reward: 26, color: "#14b8a6", icon: "🦠", abilities: ['poison_aura', 'spawn_minions'], abilityCooldown: 400, minWave: 4, description: "Oozes contagion that spawns additional enemies even as it marches. Two threats wrapped in one revolting package." },
+    { name: "Shock Trooper", hp: 140, speed: 0.9, reward: 23, color: "#facc15", icon: "⚡", abilities: ['stun_attack', 'charge'], abilityCooldown: 280, minWave: 3, description: "Dashes forward then releases a burst of electricity that stuns nearby towers. Fast, aggressive, and electrifying." },
+    { name: "Armored Crawler", hp: 380, speed: 0.25, reward: 62, color: "#475569", icon: "🦂", abilities: ['shield', 'damage_reflect'], minWave: 7, description: "Layered titanium plating shields it and reflects all incoming damage. Only sustained, heavy fire can wear it down." },
+    { name: "Void Walker", hp: 200, speed: 0.55, reward: 33, color: "#1e293b", icon: "🌌", abilities: ['teleport', 'invisible'], abilityCooldown: 320, minWave: 5, description: "Slips between dimensions to teleport and vanish from tower lock-ons. Only area-of-effect fire has any chance of catching it." },
+    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], minWave: 9, description: "A crystalline titan whose facets regenerate, reflect damage, and project an energy shield. Magic fire is the only real answer." },
+    { name: "Shadow Assassin", hp: 120, speed: 1.0, reward: 20, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 380, minWave: 4, description: "Invisible by default, it teleports to dodge incoming shots and stuns towers on arrival. Do not let it reach the base." },
+    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], minWave: 10, description: "A walking volcano that poisons its surroundings, slowly rebuilds its own health, and erupts violently on death." },
+    { name: "Storm Caller", hp: 280, speed: 0.45, reward: 46, color: "#3b82f6", icon: "⛈️", abilities: ['stun_attack', 'deactivate_towers'], abilityCooldown: 300, minWave: 6, description: "Summons thunderbolts that stun your towers and cause cascading electrical failures across your entire defense grid." },
+    { name: "Bone Collector", hp: 320, speed: 0.35, reward: 52, color: "#f3f4f6", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 450, minWave: 7, description: "Raises skeletal minions from fallen enemies and heals its growing army with necromantic energy. Shut it down fast." },
+    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], abilityCooldown: 350, minWave: 4, description: "Sprays a splitting pool of venom that divides into more threats when destroyed. One becomes many in a matter of seconds." },
+    { name: "Frost Giant", hp: 550, speed: 0.15, reward: 91, color: "#bfdbfe", icon: "🧊", isBoss: true, abilities: ['freeze_aura', 'shield', 'stun_attack'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0, description: "A colossal glacier in humanoid form. Freezes every tower in range, absorbs damage behind a shield, and stuns with each step." },
+    { name: "Chaos Spawn", hp: 240, speed: 0.5, reward: 39, color: "#dc2626", icon: "🌀", abilities: ['teleport', 'split', 'berserk'], abilityCooldown: 400, minWave: 6, description: "Writhes with unstable energy — teleports randomly, shatters into fragments on death, and rages violently at low health." },
+    { name: "Iron Maiden", hp: 400, speed: 0.18, reward: 65, color: "#64748b", icon: "⚔️", abilities: ['attack_towers', 'damage_reflect'], abilityCooldown: 250, minWave: 8, description: "Walks straight through tower structures, destroying them on contact and punishing every attack with lethal reflected damage." },
+    { name: "Necrotic Plague", hp: 180, speed: 0.65, reward: 29, color: "#7c2d12", icon: "🦠", abilities: ['poison_aura', 'regenerate', 'spawn_minions'], abilityCooldown: 500, minWave: 5, description: "An undead pestilence that regenerates endlessly, spawns new units from the rot it leaves behind, and poisons the path ahead." },
+    { name: "Void Reaper", hp: 350, speed: 0.3, reward: 57, color: "#000000", icon: "🌑", abilities: ['invisible', 'teleport', 'damage_reflect'], abilityCooldown: 360, minWave: 8, description: "Appears from nowhere, reflects all incoming damage back at your towers, then vanishes before they can reacquire it." },
+    { name: "Titanium Behemoth", hp: 650, speed: 0.08, reward: 107, color: "#94a3b8", icon: "🗿", isBoss: true, abilities: ['attack_towers', 'shield', 'damage_reflect', 'regenerate'], abilityCooldown: 200, minWave: 15, moneyBonus: 4.0, description: "The most durable threat ever deployed. Destroys towers on contact, shields all damage, reflects every hit, and endlessly regenerates. Good luck." },
 ];
 
 export interface Theme {

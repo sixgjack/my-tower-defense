@@ -359,13 +359,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
       />
 
       {/* --- SIDEBAR --- */}
-      <div className="w-64 flex-shrink-0 flex flex-col border-r border-slate-700 bg-slate-900/95 z-20 shadow-xl">
-        <div className="p-4 border-b border-slate-700 bg-slate-950">
+      <div className="w-64 flex-shrink-0 flex flex-col border-r-2 border-slate-700 bg-slate-900/95 z-20 shadow-xl">
+        <div className="p-3 border-b-2 border-slate-700 bg-slate-950">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{i18n.t('game.title')}</h1>
-            <button 
+            <h1 className="pixel-font text-[10px] text-blue-400 leading-relaxed">{i18n.t('game.title')}</h1>
+            <button
+              type="button"
               onClick={toggleLanguage}
-              className="px-2 py-1 text-xs rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-colors"
+              className="pixel-btn px-2 py-1 text-[8px] border-slate-500 bg-slate-800 text-slate-300"
               title={i18n.t('game.language')}
             >
               {language === 'en' ? '中' : 'EN'}
@@ -373,6 +374,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
           </div>
           {/* Home Button */}
           <button
+            type="button"
             onClick={() => {
               if (onGameEnd) {
                 onGameEnd({
@@ -383,41 +385,41 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                 });
               }
             }}
-            className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            className="pixel-btn w-full mt-2 px-3 py-2 bg-slate-800 border-purple-500 text-purple-300 text-[8px] flex items-center justify-center gap-2"
             title={language === 'zh' ? '返回大廳' : 'Return to Lobby'}
           >
             <span>🏠</span>
-            <span>{language === 'zh' ? '返回大廳' : 'Home'}</span>
+            <span>{language === 'zh' ? '返回大廳' : 'HOME'}</span>
           </button>
-          <div className="flex justify-between items-center mt-1 opacity-70 text-xs">
-              <span>{i18n.t('game.wave')}: {language === 'zh' && currentTheme.nameZh ? currentTheme.nameZh : currentTheme.name}</span>
-              {!waveInProgress && <span className="text-yellow-400 font-bold animate-pulse">{i18n.t('game.nextWaveIn')}: {(waveCountdown/60).toFixed(1)}s</span>}
+          <div className="flex justify-between items-center mt-2 opacity-70 text-[9px]">
+              <span className="text-slate-400">{language === 'zh' && currentTheme.nameZh ? currentTheme.nameZh : currentTheme.name}</span>
+              {!waveInProgress && <span className="pixel-font text-yellow-400 text-[7px] animate-pulse">{(waveCountdown/60).toFixed(1)}s</span>}
           </div>
            {/* Environment Effects Info */}
            {(currentTheme.towerCooldownMultiplier || currentTheme.towerRangeMultiplier || currentTheme.towerDamageMultiplier || currentTheme.enemySpeedMultiplier || currentTheme.enemyHpMultiplier || currentTheme.moneyBonus) && (
-             <div className="p-3 bg-slate-800/50 border-t border-slate-700">
-               <div className="text-xs text-slate-300 font-semibold mb-1">
-                 {language === 'zh' ? '環境效果' : 'Environment Effects'}
+             <div className="p-2 bg-slate-800/50 border-t-2 border-slate-700 mt-2">
+               <div className="pixel-font text-[6px] text-slate-300 mb-1">
+                 {language === 'zh' ? '環境效果' : 'ENV EFFECTS'}
                </div>
-               <div className="text-xs text-slate-400 leading-tight">
+               <div className="text-[9px] text-slate-400 leading-tight">
                  {getThemeDescription(currentTheme)}
                </div>
              </div>
            )}
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {(allowedTowers && allowedTowers.length > 0 
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {(allowedTowers && allowedTowers.length > 0
             ? allowedTowers.map(key => [key, TOWERS[key]] as [string, typeof TOWERS[string]])
             : Object.entries(TOWERS)
           ).map(([key, tower]) => {
             const canAfford = money >= tower.cost;
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}
-                className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
-                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform">{tower.icon}</div>
-                <div className="flex-1">
-                    <div className="font-bold text-sm text-slate-200">{getTowerName(key)}</div>
-                    <div className="flex justify-between items-center"><span className="text-xs text-emerald-400 font-mono">${tower.cost}</span></div>
+                className={`pixel-box relative p-2 flex items-center gap-2 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-slate-800 opacity-40 grayscale cursor-not-allowed'}`}>
+                <div className="text-2xl h-9 w-9 flex items-center justify-center bg-slate-950 border border-slate-700 group-hover:scale-110 transition-transform">{tower.icon}</div>
+                <div className="flex-1 min-w-0">
+                    <div className="pixel-font text-[8px] text-slate-200 leading-relaxed truncate">{getTowerName(key)}</div>
+                    <div className="pixel-font text-[8px] text-emerald-400">${tower.cost}</div>
                 </div>
                 </div>
             );
@@ -430,32 +432,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
         
         {/* HUD */}
         <div className="absolute top-4 w-full max-w-4xl flex justify-between px-4 z-30 pointer-events-none">
-          <div className="flex gap-4 pointer-events-auto">
-             <div className="bg-slate-900/90 border border-slate-600 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 min-w-[120px]">
-                <span className="text-2xl">💵</span><span className="text-emerald-400 font-bold text-xl">${money}</span>
+          <div className="flex gap-3 pointer-events-auto">
+             <div className="pixel-box bg-slate-900/95 border-emerald-600 px-3 py-2 flex items-center gap-2 min-w-[110px]">
+                <span className="text-lg">💵</span>
+                <span className="pixel-font text-emerald-400 text-[11px] leading-none">${money}</span>
              </div>
-             <div className={`bg-slate-900/90 border border-slate-600 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 ${lives < 2 ? 'border-red-500 bg-red-900/50 animate-bounce' : ''}`}>
-                <span className="text-2xl">❤️</span><span className={`font-bold text-xl ${lives < 2 ? 'text-red-200' : 'text-rose-400'}`}>{lives}</span>
+             <div className={`pixel-box bg-slate-900/95 px-3 py-2 flex items-center gap-2 ${lives < 2 ? 'border-red-500 bg-red-900/60 animate-bounce' : 'border-rose-600'}`}>
+                <span className="text-lg">❤️</span>
+                <span className={`pixel-font text-[11px] leading-none ${lives < 2 ? 'text-red-200' : 'text-rose-400'}`}>{lives}</span>
              </div>
           </div>
-          
+
           <div className="flex items-center gap-2 pointer-events-auto">
-             <div className="flex flex-col items-center justify-center bg-indigo-600 px-4 py-1 rounded shadow-lg border border-indigo-400 mr-4 min-w-[100px]">
-                 <span className="text-[10px] uppercase font-bold text-indigo-200">
-                    {waveInProgress ? i18n.t('game.currentWave') : i18n.t('game.nextWaveIn')}
+             <div className="pixel-box bg-indigo-900/95 border-indigo-400 px-3 py-1 flex flex-col items-center justify-center mr-3 min-w-[90px]">
+                 <span className="pixel-font text-[6px] text-indigo-300 mb-1">
+                    {waveInProgress ? 'WAVE' : 'NEXT IN'}
                  </span>
-                 <span className={`text-2xl font-black ${waveInProgress ? 'text-white' : 'text-yellow-300 animate-pulse'}`}>
+                 <span className={`pixel-font text-[13px] leading-none ${waveInProgress ? 'text-white' : 'text-yellow-300 animate-pulse'}`}>
                     {waveInProgress ? wave : (waveCountdown/60).toFixed(1) + 's'}
                  </span>
              </div>
 
-             <button onClick={() => game.toggleTacticalMode()} className={`px-4 py-2 rounded font-bold border transition-all ${isTactical ? 'bg-amber-600 border-amber-400 text-white animate-pulse' : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'}`}>
-                {isTactical ? `⏸ ${i18n.t('game.paused')}` : `▶ ${i18n.t('game.play')}`}
+             <button onClick={() => game.toggleTacticalMode()} className={`pixel-btn px-3 py-2 text-[9px] ${isTactical ? 'bg-amber-600 border-amber-400 text-white animate-pulse' : 'bg-slate-800 border-slate-500 text-slate-300'}`}>
+                {isTactical ? `⏸ PAUSE` : `▶ PLAY`}
              </button>
 
-             <div className="flex bg-slate-900 rounded border border-slate-700 overflow-hidden">
+             <div className="flex border-2 border-slate-600" style={{ boxShadow: '3px 3px 0 0 rgba(0,0,0,0.8)' }}>
                 {[0.5, 1, 2, 4].map(s => (
-                    <button key={s} onClick={() => game.gameSpeed = s} className={`px-3 py-2 text-xs font-bold hover:bg-slate-700 ${gameSpeed === s ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>{s}x</button>
+                    <button key={s} onClick={() => game.gameSpeed = s} className={`pixel-font px-2 py-2 text-[8px] border-r border-slate-700 last:border-r-0 hover:bg-slate-700 transition-colors ${gameSpeed === s ? 'bg-blue-700 text-white' : 'bg-slate-900 text-slate-400'}`}>{s}x</button>
                 ))}
              </div>
           </div>
@@ -633,12 +637,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                           {t.level > 1 && <div className="absolute -top-1 -right-1 bg-blue-600 text-[8px] px-1 rounded-full text-white border border-blue-400">{t.level}</div>}
                      </div>
                      {isSelected && (
-                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-40 animate-in fade-in zoom-in duration-100">
-                             <div className="text-xs font-bold text-slate-100 mb-1 border-b border-slate-600 pb-1 text-center">{getTowerName(t.key)}</div>
-                             <div className="text-[10px] text-slate-400 mb-1 text-center leading-tight">{getTowerDescription(t.key)}</div>
-                             <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
-                             <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">{i18n.t('game.upgrade')} (${upgradeCost})</button>
-                             <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>
+                         <div className="pixel-box absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-slate-900 border-slate-500 p-2 z-50 flex flex-col gap-1 w-44 animate-in fade-in zoom-in duration-100">
+                             <div className="pixel-font text-[8px] text-yellow-300 mb-1 border-b-2 border-slate-600 pb-1 text-center leading-relaxed">{getTowerName(t.key)}</div>
+                             <div className="text-[9px] text-slate-400 mb-1 text-center leading-snug">{getTowerDescription(t.key)}</div>
+                             <div className="pixel-font text-[7px] text-slate-300 mb-1 border-b-2 border-slate-700 pb-1 text-center leading-relaxed">RNG:{Math.floor(t.range)} DMG:{t.damage}</div>
+                             <button type="button" onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="pixel-btn bg-amber-700 border-amber-500 text-amber-100 text-[7px] py-1.5 font-bold w-full">{i18n.t('game.upgrade')} ${upgradeCost}</button>
+                             <button type="button" onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="pixel-btn bg-red-900 border-red-600 text-red-100 text-[7px] py-1.5 w-full">{i18n.t('game.sell')} +${sellPrice}</button>
                          </div>
                      )}
                      {isSelected && <div className="absolute rounded-full border border-white/30 bg-white/5 pointer-events-none" style={{ width: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), height: stats.range * TILE_SIZE * 2 * (1 + (t.level-1)*0.1), top: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), left: TILE_SIZE/2 - (stats.range * TILE_SIZE * (1 + (t.level-1)*0.1)), zIndex: -1 }} /> }
@@ -685,10 +689,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                            }}
                       />
                   )}
-                  <div className="w-8 h-1 bg-slate-800 rounded-full overflow-hidden mb-0.5 border border-slate-600">
-                      <div 
-                        className="h-full bg-rose-500 will-change-[width]" 
-                        style={{ width: `${(e.hp / e.maxHp) * 100}%` }} 
+                  <div className="pixel-hp-bar w-10 overflow-hidden mb-0.5 bg-slate-900">
+                      <div
+                        className="pixel-hp-fill bg-rose-500 will-change-[width]"
+                        style={{ width: `${(e.hp / e.maxHp) * 100}%` }}
                         ref={(el) => {
                              if (el) enemyHpRefs.current.set(e.id, el);
                              else enemyHpRefs.current.delete(e.id);

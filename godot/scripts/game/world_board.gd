@@ -7,12 +7,22 @@ var _camera: Camera2D
 const SPRITE_PX: int = 16
 const TILE_PX_STEP: int = 6
 
-# ── Kenney sprite textures (loaded in _ready, null if file missing) ───────────
-var _tex_towers: Dictionary = {}        # suffix key → Texture2D
-var _tex_enemy_aircraft: Texture2D      # DRONE
-var _tex_enemy_tank: Texture2D          # GOLEM / TITAN boss
-var _tex_obstacle_bush: Texture2D
-var _tex_obstacle_rock: Texture2D
+# ── TD source sprite textures (loaded in _ready, null if missing) ──────────────
+var _tex_tower_base: Dictionary = {}    # "archer"|"catapult"|"guardian"|"mage" → Texture2D
+var _tex_tower_unit: Dictionary = {}    # "archer_1".."catapult_3" → Texture2D (idle strip)
+var _tex_enemy: Dictionary = {}         # sprite_key → {tex: Texture2D, frames: int}
+var _tex_ground: Array[Texture2D] = []  # 4 field ground tiles
+var _tex_path_tile: Array[Texture2D] = [] # 4 path tiles
+var _tex_grave_ground: Array[Texture2D] = [] # 4 graveyard ground tiles
+var _tex_road_tile: Texture2D
+var _tex_bush: Array[Texture2D] = []    # 3 bush sprites
+var _tex_stone: Array[Texture2D] = []   # 3 stone sprites
+var _tex_tower_spot: Texture2D
+var _tex_campfire: Texture2D            # 5-frame campfire strip
+var _tex_windmill: Texture2D            # 6-frame windmill strip
+var _tex_statue: Texture2D
+var _tex_explosion: Array[Texture2D] = []  # 3 explosion Texture2Ds
+var _tex_lightning: Array[Texture2D] = []  # 2 lightning strips
 
 
 func _ready() -> void:
@@ -20,29 +30,94 @@ func _ready() -> void:
 
 
 func _load_kenney_sprites() -> void:
-	var tower_map := {
-		"RIFLE":   "res://assets/sprites/tower_base_rifle.png",
-		"CANNON":  "res://assets/sprites/tower_base_cannon.png",
-		"SNIPER":  "res://assets/sprites/tower_base_sniper.png",
-		"SHOTGUN": "res://assets/sprites/tower_base_shotgun.png",
-		"FREEZE":  "res://assets/sprites/tower_base_freeze.png",
-		"BURN":    "res://assets/sprites/tower_base_burn.png",
-		"STUN":    "res://assets/sprites/tower_base_stun.png",
-		"HEAL":    "res://assets/sprites/tower_base_heal.png",
-	}
-	for k: String in tower_map:
-		var path: String = tower_map[k]
-		if ResourceLoader.exists(path):
-			_tex_towers[k] = load(path)
+	# ── Tower bases ──────────────────────────────────────────────────────────────
+	for tname: String in ["archer", "catapult", "guardian", "mage"]:
+		var p := "res://assets/sprites/towers/%s_base.png" % tname
+		if ResourceLoader.exists(p):
+			_tex_tower_base[tname] = load(p)
 
-	for pair: Array in [
-		["res://assets/sprites/enemy_aircraft.png", "_tex_enemy_aircraft"],
-		["res://assets/sprites/enemy_tank.png",     "_tex_enemy_tank"],
-		["res://assets/sprites/obstacle_bush.png",  "_tex_obstacle_bush"],
-		["res://assets/sprites/obstacle_rock.png",  "_tex_obstacle_rock"],
+	# ── Tower unit idle strips ───────────────────────────────────────────────────
+	for ttype: String in ["archer", "guardian", "mage"]:
+		for tier: int in [1, 2, 3]:
+			var key := "%s_%d" % [ttype, tier]
+			var p := "res://assets/sprites/towers/%s_unit%d.png" % [ttype, tier]
+			if ResourceLoader.exists(p):
+				_tex_tower_unit[key] = load(p)
+	for tier: int in [1, 2, 3]:
+		var key := "catapult_%d" % tier
+		var p := "res://assets/sprites/towers/catapult_unit%d.png" % tier
+		if ResourceLoader.exists(p):
+			_tex_tower_unit[key] = load(p)
+
+	# ── Enemy walk strips ────────────────────────────────────────────────────────
+	var enemy_files: Dictionary = {
+		"field_slime":     ["res://assets/sprites/enemies/field_slime.png",     6],
+		"field_goblin":    ["res://assets/sprites/enemies/field_goblin.png",    6],
+		"field_soldier":   ["res://assets/sprites/enemies/field_soldier.png",   6],
+		"field_mushroom":  ["res://assets/sprites/enemies/field_mushroom.png",  6],
+		"village_knight":  ["res://assets/sprites/enemies/village_knight.png",  6],
+		"village_heavy":   ["res://assets/sprites/enemies/village_heavy.png",   6],
+		"village_archer":  ["res://assets/sprites/enemies/village_archer.png",  6],
+		"village_mounted": ["res://assets/sprites/enemies/village_mounted.png", 6],
+		"med_goblin":      ["res://assets/sprites/enemies/med_goblin.png",      6],
+		"med_giant":       ["res://assets/sprites/enemies/med_giant.png",       6],
+		"med_mage":        ["res://assets/sprites/enemies/med_mage.png",        5],
+		"med_knight":      ["res://assets/sprites/enemies/med_knight.png",      6],
+		"fast_alien":      ["res://assets/sprites/enemies/fast_alien.png",      6],
+		"cavalry":         ["res://assets/sprites/enemies/cavalry.png",         6],
+		"flyer":           ["res://assets/sprites/enemies/flyer.png",           6],
+		"boss_warrior":    ["res://assets/sprites/enemies/boss_warrior.png",    6],
+		"boss_troll":      ["res://assets/sprites/enemies/boss_troll.png",      6],
+		"boss_demon":      ["res://assets/sprites/enemies/boss_demon.png",      6],
+	}
+	for ekey: String in enemy_files:
+		var arr: Array = enemy_files[ekey]
+		var ep: String = arr[0]
+		if ResourceLoader.exists(ep):
+			_tex_enemy[ekey] = {"tex": load(ep), "frames": arr[1]}
+
+	# ── Ground & path tiles ──────────────────────────────────────────────────────
+	for i: int in range(1, 5):
+		var p := "res://assets/sprites/tiles/field_ground_0%d.png" % i
+		if ResourceLoader.exists(p):
+			_tex_ground.append(load(p))
+		var pp := "res://assets/sprites/tiles/field_path_0%d.png" % i
+		if ResourceLoader.exists(pp):
+			_tex_path_tile.append(load(pp))
+		var gp := "res://assets/sprites/tiles/grave_ground_0%d.png" % i
+		if ResourceLoader.exists(gp):
+			_tex_grave_ground.append(load(gp))
+	var rp := "res://assets/sprites/tiles/grave_road_01.png"
+	if ResourceLoader.exists(rp):
+		_tex_road_tile = load(rp)
+
+	# ── Objects ──────────────────────────────────────────────────────────────────
+	for b_idx: int in [1, 2, 3]:
+		var bp := "res://assets/sprites/objects/bush_0%d.png" % b_idx
+		if ResourceLoader.exists(bp):
+			_tex_bush.append(load(bp))
+	for s_num: int in [1, 5, 9]:
+		var sp := "res://assets/sprites/objects/stone_0%d.png" % s_num
+		if ResourceLoader.exists(sp):
+			_tex_stone.append(load(sp))
+	for pair2: Array in [
+		["res://assets/sprites/objects/tower_spot.png", "_tex_tower_spot"],
+		["res://assets/sprites/objects/campfire.png",   "_tex_campfire"],
+		["res://assets/sprites/objects/windmill.png",   "_tex_windmill"],
+		["res://assets/sprites/objects/statue.png",     "_tex_statue"],
 	]:
-		if ResourceLoader.exists(pair[0]):
-			set(pair[1], load(pair[0]))
+		if ResourceLoader.exists(pair2[0]):
+			set(pair2[1], load(pair2[0]))
+
+	# ── Effects ───────────────────────────────────────────────────────────────────
+	for i: int in range(1, 4):
+		var ep2 := "res://assets/sprites/effects/explosion_%d.png" % i
+		if ResourceLoader.exists(ep2):
+			_tex_explosion.append(load(ep2))
+	for i: int in range(1, 3):
+		var lp := "res://assets/sprites/effects/lightning_%d.png" % i
+		if ResourceLoader.exists(lp):
+			_tex_lightning.append(load(lp))
 
 
 func bind_session(session: NeonSession) -> void:
@@ -154,31 +229,165 @@ func _draw() -> void:
 # ─── Kenney sprite helpers ──────────────────────────────────────────────────
 
 func _draw_kenney_tower(rect3: Rect2, key: String) -> bool:
-	for suffix: String in ["RIFLE", "CANNON", "SNIPER", "SHOTGUN", "FREEZE", "BURN", "STUN", "HEAL"]:
-		if key.find(suffix) >= 0 and _tex_towers.has(suffix):
-			var tex: Texture2D = _tex_towers[suffix]
-			draw_texture_rect(tex, rect3, false)
-			return true
-	return false
+	# Map tower key to base sprite type
+	var base_type: String = ""
+	if key.contains("RIFLE") or key.contains("RANGE_BUFF"):
+		base_type = "archer"
+	elif key.contains("SNIPER"):
+		base_type = "guardian"
+	elif key.contains("CANNON") or key.contains("SHOTGUN") or key.contains("BURN") or key.contains("DAMAGE_BUFF") or key.contains("MINE"):
+		base_type = "catapult"
+	elif key.contains("FREEZE") or key.contains("HEAL") or key.contains("SLOW") or key.contains("WEAKEN"):
+		base_type = "mage"
+	elif key.contains("STUN") or key.contains("CHAIN") or key.contains("LASER") or key.contains("SPEED_BUFF"):
+		base_type = "guardian"
+	elif key.contains("MAGE") or key.contains("ARCANE"):
+		base_type = "mage"
+	if base_type == "" or not _tex_tower_base.has(base_type):
+		return false
+
+	# Draw base sprite filling the cell
+	draw_texture_rect(_tex_tower_base[base_type], rect3, false)
+
+	# Draw small unit character at bottom of cell
+	var unit_key: String = _get_tower_unit_key(key)
+	if _tex_tower_unit.has(unit_key):
+		var unit_tex: Texture2D = _tex_tower_unit[unit_key]
+		var unit_frames: int = 4  # archer/guardian/mage units = 4 frames; catapult = 6
+		if unit_key.contains("catapult"):
+			unit_frames = 6
+		var anim_tick: int = int(_session.tick_count / 10)
+		var frame_idx: int = anim_tick % unit_frames
+		var unit_size: float = rect3.size.y * 0.45
+		var unit_rect := Rect2(
+			Vector2(rect3.position.x + (rect3.size.x - unit_size) * 0.5,
+				rect3.position.y + rect3.size.y - unit_size - 2.0),
+			Vector2(unit_size, unit_size))
+		_draw_sprite_frame(unit_tex, unit_rect, frame_idx, unit_frames)
+	return true
+
+
+func _get_tower_unit_key(key: String) -> String:
+	if key.contains("RIFLE"):   return "archer_1"
+	if key.contains("SNIPER"):  return "archer_3"
+	if key.contains("CANNON"):  return "catapult_3"
+	if key.contains("SHOTGUN"): return "catapult_1"
+	if key.contains("BURN"):    return "catapult_2"
+	if key.contains("FREEZE"):  return "mage_2"
+	if key.contains("HEAL"):    return "mage_1"
+	if key.contains("SLOW"):    return "mage_3"
+	if key.contains("CHAIN") or key.contains("LASER"): return "guardian_3"
+	if key.contains("STUN"):    return "guardian_2"
+	if key.contains("SPEED"):   return "guardian_1"
+	if key.contains("DAMAGE"):  return "catapult_2"
+	if key.contains("RANGE"):   return "archer_2"
+	if key.contains("MAGE") or key.contains("ARCANE"): return "mage_2"
+	return "guardian_1"
 
 
 func _draw_kenney_enemy(rect: Rect2, e: Dictionary) -> bool:
 	var name: String = String(e.get("name", "")).to_lower()
-	var col: Color = Color(e.get("color", Color.WHITE))
-	# Modulate the Kenney sprite with the enemy colour (partial tint)
-	var tint := Color(col.r * 0.6 + 0.4, col.g * 0.6 + 0.4, col.b * 0.6 + 0.4, 1.0)
-	if name.contains("drone") and _tex_enemy_aircraft != null:
-		draw_texture_rect(_tex_enemy_aircraft, rect, false, tint)
-		return true
-	if (name.contains("golem") or name.contains("titan")) and _tex_enemy_tank != null:
-		draw_texture_rect(_tex_enemy_tank, rect, false, tint)
-		return true
-	return false
+	var sprite_key: String = _get_enemy_sprite_key(name)
+	if sprite_key == "" or not _tex_enemy.has(sprite_key):
+		return false
+	var data: Dictionary = _tex_enemy[sprite_key]
+	var tex: Texture2D = data["tex"]
+	var num_frames: int = data["frames"]
+	var anim_tick: int = int(_session.tick_count / 8)
+	var frame_idx: int = (anim_tick + int(e.get("id", 0))) % num_frames
+	_draw_sprite_frame(tex, rect, frame_idx, num_frames)
+	return true
+
+
+func _get_enemy_sprite_key(name: String) -> String:
+	# Flying types → flyer
+	if name.contains("fly") or name.contains("drone") or name.contains("ghost") \
+			or name.contains("wraith") or name.contains("phantom") \
+			or name.contains("phoenix") or name.contains("void walker") \
+			or name.contains("void reaper") or name.contains("manticore"):
+		return "flyer"
+	# Boss: troll-type (hulking, golem-like)
+	if name.contains("golem") or name.contains("colossus") or name.contains("kraken") \
+			or name.contains("hydra") or name.contains("cthulhu") \
+			or name.contains("abomination") or name.contains("molten core") \
+			or name.contains("crystal golem") or name.contains("titanium behemoth"):
+		return "boss_troll"
+	# Boss: demon-type
+	if name.contains("dragon") or name.contains("tyrant") or name.contains("demon") \
+			or name.contains("leviathan") or name.contains("world eater"):
+		return "boss_demon"
+	# Boss: warrior-type
+	if name.contains("titan") or name.contains("behemoth") or name.contains("warlord") \
+			or name.contains("overlord") or name.contains("archon") \
+			or name.contains("frost giant") or name.contains("iron maiden") \
+			or name.contains("revenant") or name.contains("cerberus"):
+		return "boss_warrior"
+	# Cavalry/mounted
+	if name.contains("trojan") or name.contains("cavalry"):
+		return "cavalry"
+	# Fast sprinting
+	if name.contains("swift") or name.contains("assassin") or name.contains("shock trooper"):
+		return "fast_alien"
+	# Mage / caster types
+	if name.contains("hacker") or name.contains("teleporter") or name.contains("summoner") \
+			or name.contains("archmage") or name.contains("necromancer") \
+			or name.contains("shaman") or name.contains("healer") \
+			or name.contains("storm caller") or name.contains("corruptor"):
+		return "med_mage"
+	# Heavy armored
+	if name.contains("tank") or name.contains("brute") or name.contains("siege engine") \
+			or name.contains("armored crawler"):
+		return "med_giant"
+	# Armored knight
+	if name.contains("guardian") or name.contains("paladin") or name.contains("vampire") \
+			or name.contains("bone collector"):
+		return "med_knight"
+	# Medium goblin types
+	if name.contains("virus") or name.contains("malware"):
+		return "med_goblin"
+	# Village heavy / brawlers
+	if name.contains("crawler") or name.contains("berserker") or name.contains("bomber") \
+			or name.contains("stunner") or name.contains("chaos spawn"):
+		return "village_heavy"
+	# Village archer / nimble
+	if name.contains("snake") or name.contains("retreater"):
+		return "village_archer"
+	# Village knight
+	if name.contains("glitch") or name.contains("saboteur") or name.contains("sapper"):
+		return "village_knight"
+	# Field goblin
+	if name.contains("worm") or name.contains("splitter") or name.contains("plague bearer") \
+			or name.contains("toxic spitter") or name.contains("necrotic plague"):
+		return "field_goblin"
+	# Field soldier
+	if name.contains("freezer") or name.contains("burrower"):
+		return "field_soldier"
+	# Field mushroom
+	if name.contains("mite") or name.contains("spider"):
+		return "field_mushroom"
+	# Tiny slime
+	if name.contains("bug"):
+		return "field_slime"
+	return "village_knight"
+
+
+func _draw_sprite_frame(tex: Texture2D, dest: Rect2, frame_idx: int, num_frames: int, flip_h: bool = false) -> void:
+	if tex == null or num_frames <= 0:
+		return
+	var frame_w: float = float(tex.get_width()) / float(num_frames)
+	var region := Rect2(float(frame_idx) * frame_w, 0.0, frame_w, float(tex.get_height()))
+	draw_texture_rect_region(tex, dest, region, Color.WHITE, flip_h)
 
 
 # ─── Cell rendering ────────────────────────────────────────────────────────────
 
 func _draw_path_cell(rect: Rect2, theme: Dictionary, anim_tick: int) -> void:
+	# Use path tile textures if loaded
+	if _tex_path_tile.size() > 0:
+		var tile_idx: int = int(rect.position.x / rect.size.x + rect.position.y / rect.size.y * 7.0) % _tex_path_tile.size()
+		draw_texture_rect(_tex_path_tile[tile_idx], rect, false)
+		return
+	# Fallback: procedural road
 	var road: Color = theme.get("path", Color(0.38, 0.34, 0.30))
 	road.a = 1.0
 	var edge: Color = theme.get("path_edge", road.darkened(0.35))
@@ -233,17 +442,27 @@ func _draw_base_cell(rect: Rect2, theme: Dictionary, _anim_tick: int) -> void:
 
 
 func _draw_obstacle_cell(rect: Rect2, theme: Dictionary, r: int, c: int) -> void:
-	var obs: Color = theme.get("obstacle", Color(0.22, 0.22, 0.26))
-	obs.a = 1.0
-	_draw_pixel_cell(rect, obs, r, c)
-	# Overlay Kenney obstacle sprite if available
-	var inner := rect.grow(-4.0)
-	var hash_val: int = _pixel_hash(r, c, 99) % 2
-	if hash_val == 0 and _tex_obstacle_bush != null:
-		draw_texture_rect(_tex_obstacle_bush, inner, false)
-	elif _tex_obstacle_rock != null:
-		draw_texture_rect(_tex_obstacle_rock, inner, false)
-	draw_rect(rect, obs.darkened(0.3), false, 1.5)
+	# Ground tile underneath obstacle
+	if _tex_ground.size() > 0:
+		var tile_idx: int = _pixel_hash(r, c, 7) % _tex_ground.size()
+		draw_texture_rect(_tex_ground[tile_idx], rect, false)
+	else:
+		var obs: Color = theme.get("obstacle", Color(0.22, 0.22, 0.26))
+		obs.a = 1.0
+		_draw_pixel_cell(rect, obs, r, c)
+	# Overlay TD obstacle sprite
+	var inner := rect.grow(-5.0)
+	var hash_val: int = _pixel_hash(r, c, 99) % 6
+	if hash_val < 3 and _tex_bush.size() > 0:
+		draw_texture_rect(_tex_bush[hash_val % _tex_bush.size()], inner, false)
+	elif hash_val < 5 and _tex_stone.size() > 0:
+		draw_texture_rect(_tex_stone[(hash_val - 3) % _tex_stone.size()], inner, false)
+	elif _tex_statue != null:
+		draw_texture_rect(_tex_statue, inner, false)
+	else:
+		var obs2: Color = theme.get("obstacle", Color(0.22, 0.22, 0.26))
+		draw_rect(inner, obs2.darkened(0.25))
+	draw_rect(rect, Color(0.0, 0.0, 0.0, 0.15), false, 1.5)
 
 
 # ─── Tower drawing ─────────────────────────────────────────────────────────────
@@ -771,12 +990,20 @@ func _pixel_hash(r: int, c: int, salt: int = 0) -> int:
 
 
 func _draw_pixel_cell(rect: Rect2, base: Color, r: int, c: int) -> void:
+	# Use tile textures if available
+	var wave: int = _session.wave if _session != null else 0
+	var tile_arr: Array[Texture2D] = _tex_grave_ground if wave >= 20 and _tex_grave_ground.size() > 0 else _tex_ground
+	if tile_arr.size() > 0:
+		var tile_idx: int = _pixel_hash(r, c, 7) % tile_arr.size()
+		draw_texture_rect(tile_arr[tile_idx], rect, false)
+		return
+	# Fallback: procedural pixel noise
 	draw_rect(rect, base)
 	var step: float = float(TILE_PX_STEP)
-	var cols: int = maxi(1, int(floor(rect.size.x / step)))
-	var rows: int = maxi(1, int(floor(rect.size.y / step)))
-	for yy in range(rows):
-		for xx in range(cols):
+	var tcols: int = maxi(1, int(floor(rect.size.x / step)))
+	var trows: int = maxi(1, int(floor(rect.size.y / step)))
+	for yy in range(trows):
+		for xx in range(tcols):
 			var h: int = _pixel_hash(r * 17 + yy, c * 23 + xx, 3) % 100
 			if h < 33:
 				draw_rect(
