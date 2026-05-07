@@ -122,8 +122,23 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
     case 'shuriken':
       return <g transform={`translate(${px}, ${py}) rotate(${tick * 30})`}><polygon points="6,0 0,6 -6,0 0,-6" fill={p.color} stroke="white" strokeWidth="0.5" /></g>;
     
-    case 'boomerang':
-      return <g transform={`translate(${px}, ${py}) rotate(${angle + Math.sin(tick) * 20})`}><path d="M 8,0 Q 0,8 -8,0 Q 0,-8 8,0" fill={p.color} stroke="white" strokeWidth="1" opacity="0.9" /></g>;
+    case 'boomerang': {
+      // Spinning boomerang: two curved arms, continuous full rotation, pierces through enemies
+      const bRot = tick * 28;
+      return (
+        <g transform={`translate(${px}, ${py}) rotate(${bRot})`}>
+          {/* Outer glow ring */}
+          <circle r={10} fill="none" stroke={p.color} strokeWidth={1} opacity={0.2} />
+          {/* Wing 1 — curves up-right */}
+          <path d="M 0,0 Q 9,-3 13,3 Q 9,5 0,0" fill={p.color} stroke="white" strokeWidth="0.7" opacity={0.95} />
+          {/* Wing 2 — curves down-left at 90° */}
+          <path d="M 0,0 Q -3,9 3,13 Q 5,9 0,0" fill={p.color} stroke="white" strokeWidth="0.7" opacity={0.95} />
+          {/* Center hub */}
+          <circle r={2.5} fill="white" opacity={0.9} />
+          <circle r={1.2} fill={p.color} />
+        </g>
+      );
+    }
     
     case 'bloomerang':
       // Flower-shaped boomerang with 5 rotating petals
@@ -215,6 +230,34 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
     case 'orb':
       return <g transform={`translate(${px}, ${py})`}><circle r={5} fill={p.color} opacity="0.9"><animate attributeName="r" values="5;6;5" dur="0.5s" repeatCount="indefinite" /></circle><circle r={3} fill="white" opacity="0.5" /></g>;
     
+    case 'drone': {
+      // Autonomous attack drone: hexagonal body with spinning rotors
+      const dRot = tick * 22;
+      return (
+        <g transform={`translate(${px}, ${py})`}>
+          {/* Pulsing outer glow */}
+          <circle r={12} fill={p.color} opacity={0.08 + Math.sin(tick * 0.15) * 0.05} />
+          {/* Spinning rotor blades */}
+          <g transform={`rotate(${dRot})`}>
+            <ellipse cx={0} cy={-8} rx={3} ry={1.5} fill={p.color} opacity={0.75} />
+            <ellipse cx={0} cy={8} rx={3} ry={1.5} fill={p.color} opacity={0.75} />
+            <ellipse cx={-8} cy={0} rx={1.5} ry={3} fill={p.color} opacity={0.75} />
+            <ellipse cx={8} cy={0} rx={1.5} ry={3} fill={p.color} opacity={0.75} />
+          </g>
+          {/* Arm struts */}
+          <line x1={0} y1={-6} x2={0} y2={6} stroke={p.color} strokeWidth={1} opacity={0.5} />
+          <line x1={-6} y1={0} x2={6} y2={0} stroke={p.color} strokeWidth={1} opacity={0.5} />
+          {/* Hexagonal body */}
+          <polygon points="0,-5 4,-2 4,2 0,5 -4,2 -4,-2" fill="#1e293b" stroke={p.color} strokeWidth={1.5} />
+          {/* Eye/sensor */}
+          <circle r={2} fill={p.color} opacity={0.9}>
+            <animate attributeName="opacity" values="0.9;1;0.9" dur="0.4s" repeatCount="indefinite" />
+          </circle>
+          <circle r={1} fill="white" />
+        </g>
+      );
+    }
+
     default:
       return <g transform={`translate(${px}, ${py}) rotate(${angle})`}><rect x={-6} y={-2} width={10} height={4} rx={2} fill={p.color} stroke="white" strokeWidth="0.5" /><line x1={-15} y1={0} x2={-8} y2={0} stroke={p.color} strokeWidth="1" opacity="0.5" /></g>;
   }

@@ -994,41 +994,89 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                   {e.abilities?.includes('shield_allies') && (
                     <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[10px]">🛡️</div>
                   )}
-                  
-                  {/* Shield bar (gray) */}
-                  {e.shieldHp && e.shieldHp > 0 && (
-                    <div className="overflow-hidden mb-0.5" style={{
-                      width: TILE_SIZE * 0.82, height: 4,
-                      background: '#111827', border: '1px solid #4b5563', borderRadius: 2
-                    }}>
-                      <div
-                        className="h-full will-change-[width]"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, ((e.shieldHp || 0) / Math.max(1, e.maxHp * 0.5)) * 100))}%`,
-                          background: 'linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%)',
-                          borderRadius: 2,
-                        }}
-                      />
-                    </div>
+
+                  {/* === ABILITY AURAS & VISUAL EFFECTS === */}
+                  {/* Poison aura — green mist ring */}
+                  {e.abilities?.includes('poison_aura') && (
+                    <div className="absolute inset-0 pointer-events-none rounded-full ability-aura-poison" />
                   )}
-                  {/* Health bar - sized to match tile */}
-                  <div className="overflow-hidden mb-0.5" style={{
-                    width: TILE_SIZE * 0.82, height: 5,
-                    background: '#1e293b', border: '1px solid #475569', borderRadius: 2
-                  }}>
-                    <div
-                      className="h-full will-change-[width]"
-                      style={{
+                  {/* Freeze aura — ice blue ring */}
+                  {e.abilities?.includes('freeze_aura') && (
+                    <div className="absolute inset-0 pointer-events-none rounded-full ability-aura-freeze" />
+                  )}
+                  {/* Berserk — red rage overlay */}
+                  {(e.abilities?.includes('berserk') || (e as any).berserkActive) && (
+                    <div className="absolute inset-0 pointer-events-none ability-aura-berserk" />
+                  )}
+                  {/* Regenerate — green pulsing glow */}
+                  {e.abilities?.includes('regenerate') && (
+                    <div className="absolute inset-0 pointer-events-none rounded-full ability-aura-regen" />
+                  )}
+                  {/* Damage reflect — silver shimmer */}
+                  {e.abilities?.includes('damage_reflect') && (
+                    <div className="absolute inset-0 pointer-events-none ability-aura-reflect" />
+                  )}
+                  {/* Invisible — semi-transparent shimmer */}
+                  {e.abilities?.includes('invisible') && (
+                    <div className="absolute inset-0 pointer-events-none ability-aura-invisible" />
+                  )}
+                  {/* Teleport — purple ring */}
+                  {e.abilities?.includes('teleport') && (
+                    <div className="absolute inset-0 pointer-events-none rounded-full ability-aura-teleport" />
+                  )}
+                  {/* CC immune — gold barrier */}
+                  {e.abilities?.includes('cc_immune') && (
+                    <div className="absolute inset-0 pointer-events-none rounded-full ability-aura-ccimmune" />
+                  )}
+                  {/* Spawn minions — ghostly shadow halo */}
+                  {e.abilities?.includes('spawn_minions') && (
+                    <div className="absolute inset-0 pointer-events-none ability-aura-spawner" />
+                  )}
+                  {/* Attack towers — orange threat glow */}
+                  {e.abilities?.includes('attack_towers') && (
+                    <div className="absolute inset-0 pointer-events-none ability-aura-assault" />
+                  )}
+
+                  {/* Premium pixel HP bar system */}
+                  <div className="flex flex-col items-center gap-0.5 mb-0.5" style={{ width: TILE_SIZE * 0.85 }}>
+                    {/* Shield bar — blue/grey, only when shield active */}
+                    {e.shieldHp && e.shieldHp > 0 && (
+                      <div className="w-full overflow-hidden" style={{
+                        height: 5, background: '#0f172a',
+                        border: '1px solid #60a5fa', borderRadius: 1,
+                        boxShadow: '0 0 4px #60a5fa80'
+                      }}>
+                        <div className="h-full transition-none" style={{
+                          width: `${Math.max(2, Math.min(100, (e.shieldHp / Math.max(1, e.maxHp * 0.5)) * 100))}%`,
+                          background: 'linear-gradient(90deg, #60a5fa 0%, #bfdbfe 60%, #93c5fd 100%)',
+                          boxShadow: '0 0 3px #60a5fa',
+                        }} />
+                      </div>
+                    )}
+                    {/* HP bar — colour shifts by %, segmented notches */}
+                    <div className="w-full relative overflow-hidden" style={{
+                      height: e.isBoss ? 9 : 6,
+                      background: '#0f172a',
+                      border: `1px solid ${e.hp/e.maxHp > 0.5 ? '#166534' : e.hp/e.maxHp > 0.25 ? '#92400e' : '#991b1b'}`,
+                      borderRadius: 1
+                    }}>
+                      <div className="h-full transition-none will-change-[width]" style={{
                         width: `${(e.hp / e.maxHp) * 100}%`,
-                        background: e.hp / e.maxHp > 0.5 ? '#22c55e' : e.hp / e.maxHp > 0.25 ? '#f59e0b' : '#ef4444',
-                        borderRadius: 2,
-                        transition: 'background-color 0.3s'
+                        background: e.hp/e.maxHp > 0.65
+                          ? 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)'
+                          : e.hp/e.maxHp > 0.35
+                          ? 'linear-gradient(90deg, #b45309 0%, #f59e0b 100%)'
+                          : 'linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)',
+                        boxShadow: e.hp/e.maxHp > 0.65 ? '0 0 3px #22c55e80' : e.hp/e.maxHp > 0.35 ? '0 0 3px #f59e0b80' : '0 0 3px #ef444480',
                       }}
-                      ref={(el) => {
-                           if (el) enemyHpRefs.current.set(e.id, el);
-                           else enemyHpRefs.current.delete(e.id);
-                      }}
-                    />
+                      ref={(el) => { if (el) enemyHpRefs.current.set(e.id, el); else enemyHpRefs.current.delete(e.id); }}
+                      />
+                      {/* Segment notches at 25%, 50%, 75% */}
+                      {[25, 50, 75].map(pct => (
+                        <div key={pct} className="absolute top-0 bottom-0 pointer-events-none"
+                             style={{ left: `${pct}%`, width: 1, background: 'rgba(0,0,0,0.5)' }} />
+                      ))}
+                    </div>
                   </div>
                   <div className="drop-shadow-md flex items-center justify-center overflow-hidden"
                        style={{ fontSize: `${TILE_SIZE * 0.52}px`, width: TILE_SIZE * 0.78, height: TILE_SIZE * 0.78 }}>
@@ -1158,8 +1206,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                     if(!target) return null;
                     const sx = t.c * TILE_SIZE + TILE_SIZE/2;
                     const sy = t.r * TILE_SIZE + TILE_SIZE/2;
-                    const ex = (target.c + (target.xOffset||0)) * TILE_SIZE + TILE_SIZE/2;
-                    const ey = (target.r + (target.yOffset||0)) * TILE_SIZE + TILE_SIZE/2;
+                    // Laser beams extend to stored map-edge endpoint; other beams go to target
+                    const beamEndX = (t as any).beamEndX;
+                    const beamEndY = (t as any).beamEndY;
+                    const ex = beamEndX !== undefined
+                      ? beamEndX * TILE_SIZE + TILE_SIZE/2
+                      : (target.c + (target.xOffset||0)) * TILE_SIZE + TILE_SIZE/2;
+                    const ey = beamEndY !== undefined
+                      ? beamEndY * TILE_SIZE + TILE_SIZE/2
+                      : (target.r + (target.yOffset||0)) * TILE_SIZE + TILE_SIZE/2;
                     
                     // Ramp intensity based on damage charge
                     const ramp = Math.min(1, (t.damageCharge || 0) / 5);
@@ -1266,7 +1321,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
         
         {/* GOLD BUTTON */}
         <div className="absolute bottom-8 right-8 z-50">
-           <button onClick={() => game.requestEarnMoney()} disabled={isTactical} className={`group relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${isTactical ? 'grayscale cursor-not-allowed opacity-50' : 'hover:scale-105 active:scale-95 hover:shadow-yellow-500/50'}`}>
+           <button type="button" onClick={() => game.requestEarnMoney()} disabled={isTactical} className={`group relative overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${isTactical ? 'grayscale cursor-not-allowed opacity-50' : 'hover:scale-105 active:scale-95 hover:shadow-yellow-500/50'}`}>
                 {/* Animated gradient background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 animate-gradient-x"></div>
                 {/* Shine effect */}

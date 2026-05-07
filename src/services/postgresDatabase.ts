@@ -59,14 +59,23 @@ async function initDatabase(): Promise<void> {
           credits INTEGER DEFAULT 0,
           unlocked_towers JSONB DEFAULT '[]',
           encountered_enemies JSONB DEFAULT '[]',
+          tower_exp JSONB DEFAULT '{}',
           last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-        
+
         -- Add encountered_enemies column if it doesn't exist (for existing databases)
-        DO $$ 
-        BEGIN 
+        DO $$
+        BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'students' AND column_name = 'encountered_enemies') THEN
             ALTER TABLE students ADD COLUMN encountered_enemies JSONB DEFAULT '[]';
+          END IF;
+        END $$;
+
+        -- Add tower_exp column if it doesn't exist (for existing databases)
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'students' AND column_name = 'tower_exp') THEN
+            ALTER TABLE students ADD COLUMN tower_exp JSONB DEFAULT '{}';
           END IF;
         END $$;
 
@@ -362,6 +371,7 @@ export interface StudentStatus {
   credits: number;
   unlockedTowers: string[];
   encounteredEnemies: string[];
+  towerExp: Record<string, number>;
   lastPlayed: string;
 }
 
@@ -396,6 +406,9 @@ export async function getStudentStatus(userId: string): Promise<DatabaseResult<S
         encounteredEnemies: typeof row.encountered_enemies === 'string'
           ? JSON.parse(row.encountered_enemies)
           : (row.encountered_enemies || []),
+        towerExp: typeof row.tower_exp === 'string'
+          ? JSON.parse(row.tower_exp)
+          : (row.tower_exp || {}),
         lastPlayed: row.last_played
       }
     };
@@ -410,8 +423,8 @@ export async function createStudentStatus(userId: string, initialData: Partial<S
     await database.query(
       `INSERT INTO students (
         user_id, total_games, total_waves, total_enemies_killed,
-        total_money_earned, highest_wave, credits, unlocked_towers, encountered_enemies
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        total_money_earned, highest_wave, credits, unlocked_towers, encountered_enemies, tower_exp
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ON CONFLICT (user_id) DO NOTHING`,
       [
         userId,
@@ -422,7 +435,8 @@ export async function createStudentStatus(userId: string, initialData: Partial<S
         initialData.highestWave || 0,
         initialData.credits || 0,
         JSON.stringify(initialData.unlockedTowers || []),
-        JSON.stringify(initialData.encounteredEnemies || [])
+        JSON.stringify(initialData.encounteredEnemies || []),
+        JSON.stringify(initialData.towerExp || {})
       ]
     );
     return { success: true };
@@ -516,6 +530,10 @@ export async function updateStudentStatus(
       if ((regularUpdates as any).encounteredEnemies !== undefined) {
         setClauses.push(`encountered_enemies = $${paramIndex++}`);
         values.push(JSON.stringify((regularUpdates as any).encounteredEnemies));
+      }
+      if ((regularUpdates as any).towerExp !== undefined) {
+        setClauses.push(`tower_exp = $${paramIndex++}`);
+        values.push(JSON.stringify((regularUpdates as any).towerExp));
       }
 
       if (setClauses.length > 0) {

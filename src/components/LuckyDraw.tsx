@@ -1,9 +1,24 @@
 // src/components/LuckyDraw.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import * as db from '../services/postgresDatabase';
 import { TOWERS } from '../engine/data';
-import { useLanguage } from '../i18n/useTranslation';
+import { i18n } from '../utils/i18n';
+
+// ═══════════════════════════════════════════
+//  Types & Constants
+// ═══════════════════════════════════════════
+
+type Rarity = 'N' | 'R' | 'SR' | 'SSR';
+type AnimPhase = 'idle' | 'orb' | 'flash' | 'reveal-single' | 'reveal-ten';
+
+interface DrawResult {
+  towerKey: string;
+  rarity: Rarity;
+  isDuplicate: boolean;
+  newExpTotal: number;
+  newStarLevel: number;
+}
 
 interface LuckyDrawProps {
   user: GoogleUser;
@@ -13,254 +28,564 @@ interface LuckyDrawProps {
   onStatusUpdate: () => Promise<void>;
 }
 
-const DRAW_COST = 100;
-const RARITY_WEIGHTS = {
-  common: 60,
-  rare: 25,
-  epic: 12,
-  legendary: 3
+const SINGLE_COST = 100;
+const TEN_COST = 900;
+// ★1=0 exp (base), ★2=3, ★3=6, ★4=10
+const STAR_EXP_THRESHOLDS = [0, 3, 6, 10];
+
+const RARITY_WEIGHTS: Record<Rarity, number> = { SSR: 3, SR: 12, R: 25, N: 60 };
+
+const RARITY_CONFIG: Record<Rarity, {
+  labelZh: string; gradient: string; glow: string;
+  border: string; bg: string; text: string; badge: string;
+}> = {
+  SSR: {
+    labelZh: '最稀有',
+    gradient: 'from-yellow-400 via-orange-300 to-yellow-500',
+    glow: '#facc15',
+    border: 'border-yellow-400',
+    bg: 'bg-yellow-500/15',
+    text: 'text-yellow-300',
+    badge: 'bg-gradient-to-r from-yellow-500 to-orange-400 text-black font-black',
+  },
+  SR: {
+    labelZh: '超稀有',
+    gradient: 'from-purple-500 via-pink-400 to-purple-600',
+    glow: '#a855f7',
+    border: 'border-purple-400',
+    bg: 'bg-purple-500/15',
+    text: 'text-purple-300',
+    badge: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold',
+  },
+  R: {
+    labelZh: '稀有',
+    gradient: 'from-blue-500 to-cyan-400',
+    glow: '#3b82f6',
+    border: 'border-blue-400',
+    bg: 'bg-blue-500/15',
+    text: 'text-blue-300',
+    badge: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold',
+  },
+  N: {
+    labelZh: '普通',
+    gradient: 'from-slate-500 to-slate-600',
+    glow: '#64748b',
+    border: 'border-slate-500',
+    bg: 'bg-slate-600/15',
+    text: 'text-slate-300',
+    badge: 'bg-slate-600 text-slate-200 font-semibold',
+  },
 };
 
-function getRarity(): 'common' | 'rare' | 'epic' | 'legendary' {
-  const rand = Math.random() * 100;
-  if (rand < RARITY_WEIGHTS.legendary) return 'legendary';
-  if (rand < RARITY_WEIGHTS.legendary + RARITY_WEIGHTS.epic) return 'epic';
-  if (rand < RARITY_WEIGHTS.legendary + RARITY_WEIGHTS.epic + RARITY_WEIGHTS.rare) return 'rare';
-  return 'common';
+// ═══════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════
+
+function getStarLevel(exp: number): number {
+  for (let i = STAR_EXP_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (exp >= STAR_EXP_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
+}
+
+function starDisplay(level: number) {
+  return '★'.repeat(level) + '☆'.repeat(4 - level);
+}
+
+function pickRarity(): Rarity {
+  const r = Math.random() * 100;
+  if (r < RARITY_WEIGHTS.SSR) return 'SSR';
+  if (r < RARITY_WEIGHTS.SSR + RARITY_WEIGHTS.SR) return 'SR';
+  if (r < RARITY_WEIGHTS.SSR + RARITY_WEIGHTS.SR + RARITY_WEIGHTS.R) return 'R';
+  return 'N';
 }
 
 function pickOne<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function normalizeUnlocked(input: string[]): string[] {
-  const valid = new Set(Object.keys(TOWERS));
-  return Array.from(new Set((input || []).filter((k) => valid.has(k))));
-}
-
-function splitPoolsByRarity(allKeys: string[]) {
-  const sorted = [...allKeys].sort((a, b) => TOWERS[b].cost - TOWERS[a].cost); // Expensive first
+function splitPools(allKeys: string[]): Record<Rarity, string[]> {
+  const sorted = [...allKeys].sort((a, b) => (TOWERS[b]?.cost ?? 0) - (TOWERS[a]?.cost ?? 0));
   const len = sorted.length;
-  const legendaryEnd = Math.max(1, Math.floor(len * 0.1));
-  const epicEnd = Math.max(legendaryEnd + 1, Math.floor(len * 0.4));
-  const rareEnd = Math.max(epicEnd + 1, Math.floor(len * 0.7));
-
-  const pools = {
-    legendary: sorted.slice(0, legendaryEnd),
-    epic: sorted.slice(legendaryEnd, epicEnd),
-    rare: sorted.slice(epicEnd, rareEnd),
-    common: sorted.slice(rareEnd),
+  const ssrEnd = Math.max(1, Math.floor(len * 0.1));
+  const srEnd  = Math.max(ssrEnd + 1, Math.floor(len * 0.4));
+  const rEnd   = Math.max(srEnd + 1, Math.floor(len * 0.7));
+  const pools: Record<Rarity, string[]> = {
+    SSR: sorted.slice(0, ssrEnd),
+    SR:  sorted.slice(ssrEnd, srEnd),
+    R:   sorted.slice(srEnd, rEnd),
+    N:   sorted.slice(rEnd),
   };
-
-  // Guard against empty groups in tiny datasets.
-  if (pools.common.length === 0) pools.common = [...sorted];
-  if (pools.rare.length === 0) pools.rare = [...pools.common];
-  if (pools.epic.length === 0) pools.epic = [...pools.rare];
-  if (pools.legendary.length === 0) pools.legendary = [...pools.epic];
+  if (pools.N.length === 0)   pools.N   = [...sorted];
+  if (pools.R.length === 0)   pools.R   = [...pools.N];
+  if (pools.SR.length === 0)  pools.SR  = [...pools.R];
+  if (pools.SSR.length === 0) pools.SSR = [...pools.SR];
   return pools;
 }
 
-export const LuckyDraw: React.FC<LuckyDrawProps> = ({ user, credits, unlockedTowers, onBack, onStatusUpdate }) => {
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawnTower, setDrawnTower] = useState<string | null>(null);
-  const [drawnRarity, setDrawnRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | null>(null);
-  const [animationPhase, setAnimationPhase] = useState<'idle' | 'spinning' | 'reveal'>('idle');
-  const { language, t } = useLanguage();
-  const allTowerKeys = Object.keys(TOWERS);
-  const normalizedPropUnlocked = normalizeUnlocked(unlockedTowers || []);
-  const lockedTowers = allTowerKeys.filter((k) => !normalizedPropUnlocked.includes(k));
-  const sourceKeys = lockedTowers.length > 0 ? lockedTowers : allTowerKeys;
-  const pools = splitPoolsByRarity(sourceKeys);
+function normalizeKeys(input: string[]): string[] {
+  const valid = new Set(Object.keys(TOWERS));
+  return Array.from(new Set((input || []).filter(k => valid.has(k))));
+}
 
-  const handleDraw = async () => {
-    if (credits < DRAW_COST) {
-      alert(t('luckyDraw.notEnough'));
-      return;
+// ═══════════════════════════════════════════
+//  Background Particles
+// ═══════════════════════════════════════════
+
+const BG_SHAPES = ['★', '◆', '✦', '✧', '✶', '●'];
+const BG_COLORS = ['#facc15', '#a855f7', '#3b82f6', '#ec4899', '#22d3ee', '#fb923c'];
+
+function BackgroundParticles() {
+  const particles = useMemo(() =>
+    Array.from({ length: 38 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 14 + 7,
+      delay: Math.random() * 5,
+      duration: Math.random() * 4 + 4,
+      shape: BG_SHAPES[i % BG_SHAPES.length],
+      color: BG_COLORS[i % BG_COLORS.length],
+      opacity: Math.random() * 0.22 + 0.04,
+    }))
+  , []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute gacha-float"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            fontSize: `${p.size}px`,
+            opacity: p.opacity,
+            color: p.color,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          }}
+        >
+          {p.shape}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+//  Gacha Card
+// ═══════════════════════════════════════════
+
+function GachaCard({ result, delay = 0 }: { result: DrawResult; delay?: number }) {
+  const tower = TOWERS[result.towerKey];
+  const cfg   = RARITY_CONFIG[result.rarity];
+  const isZh  = i18n.getLanguage() === 'zh';
+  const name  = isZh && (tower as any).nameZh ? (tower as any).nameZh : tower.name;
+  const desc  = isZh && (tower as any).descriptionZh ? (tower as any).descriptionZh : tower.description;
+  const stars = starDisplay(result.newStarLevel);
+
+  return (
+    <div
+      className="gacha-card-reveal flex flex-col items-center"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+    >
+      <div
+        className={`relative rounded-xl border-2 ${cfg.border} p-3 ${cfg.bg} flex flex-col items-center gap-1.5`}
+        style={{
+          boxShadow: `0 0 18px ${cfg.glow}55, 0 0 36px ${cfg.glow}25`,
+          minWidth: 140,
+          maxWidth: 180,
+        }}
+      >
+        {/* Rarity badge */}
+        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] ${cfg.badge} whitespace-nowrap`}>
+          {result.rarity} {isZh ? cfg.labelZh : ''}
+        </div>
+
+        {/* SSR shimmer overlay */}
+        {result.rarity === 'SSR' && (
+          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none gacha-ssr-shimmer" />
+        )}
+
+        {/* Tower icon */}
+        <div
+          className="w-16 h-16 rounded-lg flex items-center justify-center mt-2"
+          style={{
+            background: `radial-gradient(circle, ${tower.color}45, ${tower.color}12)`,
+            boxShadow: `0 0 10px ${cfg.glow}70`,
+            fontSize: 40,
+          }}
+        >
+          {tower.icon}
+        </div>
+
+        {/* Stars */}
+        <div className="text-yellow-400 text-xs tracking-widest">{stars}</div>
+
+        {/* Name */}
+        <div className={`font-bold text-center text-xs leading-tight ${cfg.text}`}>{name}</div>
+
+        {/* Quote */}
+        {(tower as any).quote && (
+          <div className="text-[10px] italic text-yellow-200/75 text-center leading-snug px-1">
+            {(tower as any).quote}
+          </div>
+        )}
+
+        {/* Desc */}
+        <div className="text-[9px] text-white/50 text-center leading-snug px-1">{desc}</div>
+
+        {/* Duplicate / new label */}
+        {result.isDuplicate ? (
+          <div className="mt-0.5 px-2 py-0.5 rounded-full bg-blue-500/30 border border-blue-400/50 text-blue-300 text-[9px] font-bold">
+            +1 EXP → ★{result.newStarLevel} {isZh ? '已強化' : 'Enhanced'}
+          </div>
+        ) : (
+          <div className="mt-0.5 px-2 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/50 text-emerald-300 text-[9px] font-bold">
+            ✨ {isZh ? '新解鎖' : 'New Unlock'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+//  Main Component
+// ═══════════════════════════════════════════
+
+export const LuckyDraw: React.FC<LuckyDrawProps> = ({
+  user, credits, unlockedTowers, onBack, onStatusUpdate
+}) => {
+  const [phase, setPhase]               = useState<AnimPhase>('idle');
+  const [results, setResults]           = useState<DrawResult[]>([]);
+  const [revealedCount, setRevealed]    = useState(0);
+  const [flashRarity, setFlashRarity]   = useState<Rarity | null>(null);
+
+  const isZh = i18n.getLanguage() === 'zh';
+  const allKeys = useMemo(() => Object.keys(TOWERS), []);
+  const pools   = useMemo(() => splitPools(allKeys), [allKeys]);
+  const ssrList = useMemo(() => pools.SSR.slice(0, 6), [pools]);
+
+  const canSingle = credits >= SINGLE_COST;
+  const canTen    = credits >= TEN_COST;
+
+  // Stagger the 10-pull reveals
+  useEffect(() => {
+    if (phase === 'reveal-ten' && revealedCount < results.length) {
+      const t = setTimeout(() => setRevealed(c => c + 1), 160);
+      return () => clearTimeout(t);
     }
+  }, [phase, revealedCount, results.length]);
 
-    setIsDrawing(true);
-    setAnimationPhase('spinning');
-    setDrawnTower(null);
-    setDrawnRarity(null);
+  const executeDraw = useCallback(async (count: 1 | 10) => {
+    const cost = count === 1 ? SINGLE_COST : TEN_COST;
+    if (credits < cost) return;
 
-    // Spinning animation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    setPhase('orb');
+    setResults([]);
+    setRevealed(0);
+    await new Promise(r => setTimeout(r, 1900));
 
     try {
       const statusResult = await db.getStudentStatus(user.uid);
+      if (!statusResult.success || !statusResult.data) throw new Error('Cannot load status');
 
-      if (statusResult.success && statusResult.data) {
-        const currentStatus = statusResult.data;
-        const currentUnlocked = normalizeUnlocked(currentStatus.unlockedTowers || []);
-        const currentLocked = allTowerKeys.filter((k) => !currentUnlocked.includes(k));
-        const currentSource = currentLocked.length > 0 ? currentLocked : allTowerKeys;
-        const currentPools = splitPoolsByRarity(currentSource);
-        const rarity = getRarity();
-        const towerKey = pickOne(currentPools[rarity]);
+      const status = statusResult.data;
+      const currentUnlocked = normalizeKeys(status.unlockedTowers || []);
+      const towerExp: Record<string, number> = { ...(status.towerExp || {}) };
 
-        // Reveal after final pick is resolved from latest DB state
-        setDrawnRarity(rarity);
-        setDrawnTower(towerKey);
-        setAnimationPhase('reveal');
+      const drawResults: DrawResult[] = [];
+      for (let i = 0; i < count; i++) {
+        const rarity   = pickRarity();
+        const towerKey = pickOne(pools[rarity]);
+        const isDupe   = currentUnlocked.includes(towerKey);
+        const prevExp  = isDupe ? (towerExp[towerKey] ?? 0) : 0;
+        const newExp   = isDupe ? prevExp + 1 : 0;
+        const starLvl  = getStarLevel(newExp);
 
-        const nextUnlocked = Array.from(new Set([...currentUnlocked, towerKey]));
-        const updateResult = await db.updateStudentStatus(user.uid, {
-          increment: {
-            credits: -DRAW_COST
-          },
-          unlockedTowers: nextUnlocked
-        });
-        if (!updateResult.success) {
-          throw new Error(updateResult.error || 'Failed to save draw result');
+        if (isDupe) {
+          towerExp[towerKey] = newExp;
+        } else {
+          currentUnlocked.push(towerKey);
+          towerExp[towerKey] = towerExp[towerKey] ?? 0;
         }
-        await onStatusUpdate();
-      } else {
-        throw new Error(statusResult.error || 'Cannot load student status');
+
+        drawResults.push({ towerKey, rarity, isDuplicate: isDupe, newExpTotal: newExp, newStarLevel: starLvl });
       }
-    } catch (error) {
-      console.error('Error updating credits:', error);
+
+      // Best rarity for flash color
+      const order: Rarity[] = ['SSR', 'SR', 'R', 'N'];
+      const best = order.find(r => drawResults.some(d => d.rarity === r)) ?? 'N';
+      setFlashRarity(best);
+
+      await db.updateStudentStatus(user.uid, {
+        increment: { credits: -cost },
+        unlockedTowers: currentUnlocked,
+        towerExp,
+      } as any);
+      await onStatusUpdate();
+
+      setResults(drawResults);
+      setPhase('flash');
+      await new Promise(r => setTimeout(r, 550));
+
+      if (count === 1) {
+        setPhase('reveal-single');
+      } else {
+        setPhase('reveal-ten');
+        setRevealed(1);
+      }
+    } catch (err) {
+      console.error('Draw error:', err);
+      setPhase('idle');
     }
+  }, [credits, user.uid, pools, onStatusUpdate]);
 
-    setIsDrawing(false);
-  };
-
-  const rarityColors = {
-    common: 'from-gray-500 to-gray-600',
-    rare: 'from-blue-500 to-blue-600',
-    epic: 'from-purple-500 to-purple-600',
-    legendary: 'from-yellow-500 to-orange-500'
-  };
-
-  const getRarityName = (rarity: string) => {
-    return t(`rarity.${rarity}`);
+  const reset = () => {
+    setPhase('idle');
+    setResults([]);
+    setFlashRarity(null);
+    setRevealed(0);
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 overflow-y-auto">
-      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
-        <div className="max-w-2xl w-full">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              {t('luckyDraw.title')}
+    <div
+      className="fixed inset-0 overflow-y-auto"
+      style={{ background: 'radial-gradient(ellipse at 50% -10%, #2d0a5c 0%, #0d0520 50%, #000 100%)' }}
+    >
+      <BackgroundParticles />
+
+      {/* Rarity flash */}
+      {phase === 'flash' && flashRarity && (
+        <div
+          className="fixed inset-0 z-50 pointer-events-none gacha-flash"
+          style={{ background: RARITY_CONFIG[flashRarity].glow + '50' }}
+        />
+      )}
+
+      <div className="relative z-10 min-h-screen p-4 md:p-6 flex flex-col items-center">
+
+        {/* ── HEADER ── */}
+        <div className="w-full max-w-3xl flex items-center justify-between mb-6 mt-2">
+          <div>
+            <h1
+              className="pixel-font text-xl md:text-2xl text-transparent bg-clip-text"
+              style={{ backgroundImage: 'linear-gradient(90deg,#facc15,#fb923c,#f472b6,#a78bfa)' }}
+            >
+              {isZh ? '傳說召喚門' : 'Legend Summoning Gate'}
             </h1>
+            <p className="text-slate-400 text-[9px] mt-1 pixel-font">
+              {isZh ? '重複召喚強化星級' : 'Duplicates power up star level'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="pixel-box px-3 py-2 border-yellow-500/50 bg-black/60 text-yellow-400 font-bold flex items-center gap-1.5">
+              <span>💎</span>
+              <span className="pixel-font text-sm">{credits}</span>
+            </div>
             <button
+              type="button"
               onClick={onBack}
-              className="px-6 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg transition-all backdrop-blur-sm border border-slate-600"
+              className="pixel-btn px-4 py-2 text-xs bg-slate-700/60 border-slate-500 text-slate-300 hover:text-white"
             >
-              {t('luckyDraw.back')}
+              {isZh ? '返回' : 'Back'}
             </button>
           </div>
+        </div>
 
-          {/* Draw Box */}
-          <div className="bg-slate-800/90 backdrop-blur-lg rounded-2xl p-8 border border-slate-700/50 shadow-2xl mb-6">
-            <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl border-2 border-slate-700 flex items-center justify-center relative overflow-hidden">
-              {animationPhase === 'idle' && (
-                <div className="text-center">
-                  <div className="text-8xl mb-4">🎁</div>
-                  <p className="text-slate-400">{t('luckyDraw.clickToDraw')}</p>
-                </div>
-              )}
-              
-              {animationPhase === 'spinning' && (
-                <div className="text-center animate-spin">
-                  <div className="text-8xl mb-4">⚡</div>
-                  <p className="text-slate-300 font-bold">{t('luckyDraw.drawing')}</p>
-                </div>
-              )}
+        {/* ══════════════════════════════ IDLE VIEW ══════════════════════════════ */}
+        {phase === 'idle' && (
+          <div className="w-full max-w-3xl flex flex-col gap-5">
 
-              {animationPhase === 'reveal' && drawnTower && drawnRarity && (
-                <div className={`text-center p-8 bg-gradient-to-br ${rarityColors[drawnRarity]} rounded-xl border-4 border-white/50 shadow-2xl animate-in zoom-in duration-500`}>
-                  <div className="text-8xl mb-4">{TOWERS[drawnTower].icon}</div>
-                  <div className={`text-2xl font-bold text-white mb-2 ${rarityColors[drawnRarity].includes('yellow') ? 'text-yellow-900' : ''}`}>
-                    {TOWERS[drawnTower].name}
+            {/* Orb + Draw Buttons */}
+            <div className="pixel-box border-purple-500/30 bg-black/50 p-6 flex flex-col items-center gap-5">
+              {/* Orb */}
+              <div className="relative w-36 h-36 flex items-center justify-center">
+                <div
+                  className="absolute inset-0 rounded-full gacha-orb-idle"
+                  style={{
+                    background: 'radial-gradient(circle at 38% 32%, #7c3aed, #4c1d95, #1e0a3c)',
+                  }}
+                />
+                <div
+                  className="absolute inset-3 rounded-full"
+                  style={{ background: 'radial-gradient(circle at 40% 30%, rgba(255,255,255,0.12), transparent 60%)' }}
+                />
+                <span className="relative z-10 text-5xl" style={{ filter: 'drop-shadow(0 0 10px #a855f7)' }}>🌟</span>
+              </div>
+
+              {/* Pull buttons */}
+              <div className="flex gap-4 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => executeDraw(1)}
+                  disabled={!canSingle}
+                  className={`flex-1 pixel-btn py-3 ${canSingle ? 'bg-purple-800/50 border-purple-400 text-purple-100' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}`}
+                >
+                  <div className="pixel-font text-[10px] mb-1">{isZh ? '單次召喚' : '1× Summon'}</div>
+                  <div className="text-yellow-400 font-bold">💎 {SINGLE_COST}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeDraw(10)}
+                  disabled={!canTen}
+                  className={`flex-1 pixel-btn py-3 relative ${canTen ? 'bg-yellow-800/40 border-yellow-500 text-yellow-100' : 'bg-slate-800 border-slate-700 text-slate-600 cursor-not-allowed'}`}
+                >
+                  <div className="absolute -top-2.5 -right-2.5 bg-red-600 text-white pixel-font text-[8px] px-1.5 py-0.5 rounded">
+                    -10%
                   </div>
-                  <div className="text-lg text-white/90 mb-4">{TOWERS[drawnTower].description}</div>
-                  <div className={`inline-block px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white font-bold`}>
-                    {getRarityName(drawnRarity)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Draw Button */}
-            <button
-              onClick={handleDraw}
-              disabled={isDrawing || credits < DRAW_COST}
-              className={`w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 ${
-                credits >= DRAW_COST && !isDrawing
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg hover:scale-105 active:scale-95'
-                  : 'bg-slate-700 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {isDrawing ? t('luckyDraw.drawing') : `${language === 'zh-TW' ? '抽獎' : 'Draw'} (${DRAW_COST} ${language === 'zh-TW' ? '積分' : 'credits'})`}
-            </button>
-
-            {/* Credits Display */}
-            <div className="mt-4 text-center text-slate-300">
-              {t('luckyDraw.yourCredits')} <span className="text-yellow-400 font-bold text-xl">{credits}</span>
-            </div>
-          </div>
-
-          {/* Rarity Info */}
-          <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-white font-bold mb-4">{t('luckyDraw.rarityChances')}</h3>
-            <div className="grid grid-cols-4 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-2xl mb-2">⚪</div>
-                <div className="text-slate-300">{t('rarity.common')}</div>
-                <div className="text-slate-400">{RARITY_WEIGHTS.common}%</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">🔵</div>
-                <div className="text-blue-300">{t('rarity.rare')}</div>
-                <div className="text-blue-400">{RARITY_WEIGHTS.rare}%</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">🟣</div>
-                <div className="text-purple-300">{t('rarity.epic')}</div>
-                <div className="text-purple-400">{RARITY_WEIGHTS.epic}%</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">🟡</div>
-                <div className="text-yellow-300">{t('rarity.legendary')}</div>
-                <div className="text-yellow-400">{RARITY_WEIGHTS.legendary}%</div>
+                  <div className="pixel-font text-[10px] mb-1">{isZh ? '十連召喚' : '10× Summon'}</div>
+                  <div className="text-yellow-400 font-bold">💎 {TEN_COST}</div>
+                </button>
               </div>
             </div>
-            <div className="mt-5 border-t border-slate-700/60 pt-4">
-              <h4 className="text-slate-200 font-semibold mb-3">
-                {language === 'zh-TW' ? '本次可抽取獎池' : 'Current draw pool'}
-              </h4>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                {(['legendary', 'epic', 'rare', 'common'] as const).map((rarity) => (
-                  <div key={rarity} className="rounded-lg border border-slate-700 bg-slate-900/40 p-2">
-                    <div className="mb-1 font-bold text-slate-300">
-                      {getRarityName(rarity)} ({pools[rarity].length})
+
+            {/* Rarity rate table */}
+            <div className="pixel-box border-slate-600/30 bg-black/50 p-4">
+              <div className="pixel-font text-[10px] text-slate-400 mb-3">{isZh ? '召喚機率' : 'Summon Rates'}</div>
+              <div className="grid grid-cols-4 gap-2">
+                {(['SSR', 'SR', 'R', 'N'] as Rarity[]).map(r => {
+                  const cfg = RARITY_CONFIG[r];
+                  return (
+                    <div
+                      key={r}
+                      className={`flex flex-col items-center p-2.5 rounded-lg ${cfg.bg} border ${cfg.border}/40`}
+                    >
+                      <div className={`pixel-font text-sm font-black ${cfg.text}`}>{r}</div>
+                      <div className={`text-[9px] ${cfg.text} opacity-60 mb-1`}>{isZh ? cfg.labelZh : r}</div>
+                      <div className="text-white font-bold text-xl">{RARITY_WEIGHTS[r]}%</div>
                     </div>
-                    <div className="space-y-1 max-h-24 overflow-auto">
-                      {pools[rarity].slice(0, 5).map((k) => (
-                        <div key={k} className="flex items-center gap-1.5 text-slate-300">
-                          <span>{TOWERS[k].icon}</span>
-                          <span className="truncate">{TOWERS[k].name}</span>
-                        </div>
-                      ))}
-                      {pools[rarity].length > 5 && (
-                        <div className="text-slate-500">+{pools[rarity].length - 5} more</div>
-                      )}
-                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* SSR Showcase */}
+            <div className="pixel-box border-yellow-500/25 bg-black/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">👑</span>
+                <span className="pixel-font text-[10px] text-yellow-300">
+                  {isZh ? 'SSR 最稀有砲台' : 'SSR Rarest Towers'}
+                </span>
+                <span className="ml-auto text-[10px] text-slate-500 pixel-font">
+                  {RARITY_WEIGHTS.SSR}% {isZh ? '機率' : 'rate'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {ssrList.map(k => (
+                  <div
+                    key={k}
+                    className="flex flex-col items-center gap-1 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/25 min-w-[52px]"
+                    style={{ boxShadow: '0 0 8px #facc1525' }}
+                  >
+                    <span className="text-3xl" style={{ filter: 'drop-shadow(0 0 5px #facc15)' }}>
+                      {TOWERS[k].icon}
+                    </span>
+                    <span className="text-yellow-200 text-[8px] pixel-font text-center leading-tight max-w-[56px]">
+                      {isZh && (TOWERS[k] as any).nameZh
+                        ? (TOWERS[k] as any).nameZh
+                        : TOWERS[k].name}
+                    </span>
                   </div>
                 ))}
               </div>
-              {lockedTowers.length === 0 && (
-                <div className="mt-3 text-[11px] text-amber-300">
-                  {language === 'zh-TW'
-                    ? '已全部解鎖：現在會抽到重複塔（僅扣積分）。'
-                    : 'All towers unlocked: draws can repeat towers (credits still spent).'}
-                </div>
-              )}
+            </div>
+
+            {/* Star level guide */}
+            <div className="pixel-box border-blue-500/25 bg-black/50 p-4">
+              <div className="pixel-font text-[10px] text-blue-300 mb-3">
+                {isZh ? '砲台星級強化' : 'Tower Star Enhancement'}
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {STAR_EXP_THRESHOLDS.map((exp, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="text-yellow-400 text-sm">{starDisplay(i + 1)}</div>
+                    <div className="text-slate-400 text-[9px] pixel-font">Lv.{i + 1}</div>
+                    <div className="text-slate-500 text-[8px]">{exp} EXP</div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-slate-600 text-[9px] mt-2 text-center">
+                {isZh
+                  ? '重複抽到相同砲台可累積EXP並提升星級'
+                  : 'Redrawing a tower grants +1 EXP toward the next star level'}
+              </p>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* ══════════════════════════════ ORB SPINNING ══════════════════════════════ */}
+        {phase === 'orb' && (
+          <div className="flex flex-col items-center justify-center gap-8" style={{ minHeight: '60vh' }}>
+            <div className="relative w-52 h-52 flex items-center justify-center">
+              {/* Spinning outer orb */}
+              <div
+                className="absolute inset-0 rounded-full gacha-orb-spin"
+                style={{
+                  background: 'radial-gradient(circle at 35% 35%, #a855f7, #4c1d95, #1e0a3c)',
+                  boxShadow: '0 0 60px #a855f780, 0 0 100px #7c3aed40',
+                }}
+              />
+              {/* Orbit rings */}
+              <div className="absolute inset-5 rounded-full border border-white/20 gacha-orbit-ring" />
+              <div className="absolute inset-10 rounded-full border border-white/10 gacha-orbit-ring-2" />
+              {/* Gloss */}
+              <div
+                className="absolute inset-3 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle at 38% 28%, rgba(255,255,255,0.18), transparent 55%)' }}
+              />
+              <span className="relative z-10 text-6xl gacha-icon-pulse">⚡</span>
+            </div>
+            <p className="pixel-font text-purple-300 text-xs animate-pulse">
+              {isZh ? '召喚降臨中...' : 'Summoning...'}
+            </p>
+          </div>
+        )}
+
+        {/* ══════════════════════════════ SINGLE REVEAL ══════════════════════════════ */}
+        {phase === 'reveal-single' && results.length === 1 && (
+          <div className="flex flex-col items-center gap-6 w-full max-w-xs mt-6">
+            <GachaCard result={results[0]} />
+            <button
+              type="button"
+              onClick={reset}
+              className="pixel-btn px-8 py-3 text-sm bg-purple-800/50 border-purple-400 text-purple-100"
+            >
+              {isZh ? '繼續召喚' : 'Summon Again'}
+            </button>
+          </div>
+        )}
+
+        {/* ══════════════════════════════ TEN PULL REVEAL ══════════════════════════════ */}
+        {phase === 'reveal-ten' && results.length === 10 && (
+          <div className="flex flex-col items-center gap-5 w-full max-w-3xl mt-4">
+            <div className="grid grid-cols-5 gap-3 w-full">
+              {results.map((r, i) =>
+                i < revealedCount ? (
+                  <GachaCard key={i} result={r} delay={0} />
+                ) : (
+                  <div key={i} className="flex items-center justify-center" style={{ minHeight: 200 }}>
+                    <div className="w-20 h-28 rounded-xl bg-purple-950/70 border-2 border-purple-500/30 flex items-center justify-center text-4xl gacha-card-back text-purple-400">
+                      ?
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+            {revealedCount >= results.length && (
+              <button
+                type="button"
+                onClick={reset}
+                className="pixel-btn px-8 py-3 text-sm bg-purple-800/50 border-purple-400 text-purple-100"
+              >
+                {isZh ? '繼續召喚' : 'Summon Again'}
+              </button>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

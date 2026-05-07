@@ -86,10 +86,13 @@ export type TowerType =
 
 export interface TowerStats {
     name: string;
+    nameZh?: string;        // Traditional Chinese name
+    descriptionZh?: string; // Traditional Chinese Clash Royale style description
+    quote?: string;         // Battle cry quote in Chinese
     cost: number;
     damage: number;
-    range: number;      
-    cooldown: number;   
+    range: number;
+    cooldown: number;
     type: TowerType;
     color: string;
     icon: string;

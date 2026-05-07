@@ -1,9 +1,11 @@
 // src/utils/i18n.ts
 // Internationalization support (English/Traditional Chinese)
 
+import { TOWERS } from '../engine/data';
+
 export type Language = 'en' | 'zh';
 
-let currentLanguage: Language = 'en';
+let currentLanguage: Language = 'zh';
 
 export const i18n = {
   setLanguage: (lang: Language) => {
@@ -14,7 +16,7 @@ export const i18n = {
   getLanguage: (): Language => {
     const saved = localStorage.getItem('gameLanguage');
     if (saved === 'zh' || saved === 'en') return saved as Language;
-    return currentLanguage;
+    return 'zh'; // default to zh
   },
   
   t: (key: string): string => {
@@ -25,11 +27,23 @@ export const i18n = {
 
 // Helper function to get translated tower name
 export const getTowerName = (towerKey: string): string => {
+  const lang = i18n.getLanguage();
+  const tower = TOWERS[towerKey];
+  if (tower) {
+    if (lang === 'zh' && tower.nameZh) return tower.nameZh;
+    return tower.name;
+  }
   return i18n.t(`tower.${towerKey}.name`) || towerKey;
 };
 
 // Helper function to get translated tower description
 export const getTowerDescription = (towerKey: string): string => {
+  const lang = i18n.getLanguage();
+  const tower = TOWERS[towerKey];
+  if (tower) {
+    if (lang === 'zh' && tower.descriptionZh) return tower.descriptionZh;
+    return tower.description || '';
+  }
   return i18n.t(`tower.${towerKey}.description`) || '';
 };
 

@@ -828,24 +828,93 @@ export class GameEngine {
             return;
         }
 
-        // Flamethrower passive: 3x3 square aura DoT (no beam projectile)
+        // Drone Spawner: emits autonomous attack drones
+        if (tower.key === 'SUMMONER') {
+            if (tower.cooldown <= 0) {
+                tower.cooldown = effectiveCooldown;
+                const droneSlotsUsed = this.projectiles.filter(
+                    p => (p as any).droneOwner === tower.id
+                ).length;
+                const maxDrones = 5;
+                const toSpawn = Math.max(0, maxDrones - droneSlotsUsed);
+                for (let i = 0; i < Math.min(toSpawn, 2); i++) {
+                    const spawnAngle = (i * Math.PI) + (this.tickCount * 0.05);
+                    const spawnX = tower.c + Math.cos(spawnAngle) * 0.6;
+                    const spawnY = tower.r + Math.sin(spawnAngle) * 0.6;
+                    this.projectiles.push({
+                        id: Math.random(),
+                        x: spawnX, y: spawnY,
+                        startX: spawnX, startY: spawnY,
+                        tx: spawnX, ty: spawnY,
+                        targetId: undefined,
+                        color: stats.color,
+                        life: 300, maxLife: 300,
+                        style: 'drone',
+                        damage: tower.damage,
+                        speed: 0.055,
+                        splash: 0,
+                        progress: 0,
+                        type: 'drone',
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: (stats.element as ElementType) || 'physical',
+                        droneOwner: tower.id,
+                    } as any);
+                }
+                this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'electric', stats.color);
+            }
+            return;
+        }
+
+        // Flamethrower: passive 3×3 zone DoT + active fire-stream projectiles at enemies
         if (tower.key === 'BASIC_BURN') {
             if (tower.cooldown <= 0) {
                 tower.cooldown = effectiveCooldown;
+
+                // Zone damage — any enemy stepping into the 3×3 flame field takes DoT
+                let auraHit = false;
                 this.enemies.forEach(enemy => {
                     if (!this.canTowerTargetEnemy(stats, enemy)) return;
                     const ex = enemy.c + (enemy.xOffset || 0);
                     const ey = enemy.r + (enemy.yOffset || 0);
-                    const inAuraSquare = Math.abs(ex - tower.c) <= 1 && Math.abs(ey - tower.r) <= 1;
-                    if (!inAuraSquare) return;
-
+                    const inAura = Math.abs(ex - tower.c) <= 1 && Math.abs(ey - tower.r) <= 1;
+                    if (!inAura) return;
                     if (!this.applyTowerDamage(enemy, tower.damage, stats)) return;
                     effectManager.applyEffectToEnemy(enemy, 'burning');
                     if (Math.random() < 0.45) {
                         this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
                     }
                     if (enemy.hp <= 0) this.killEnemy(enemy);
+                    auraHit = true;
                 });
+
+                // Active fire-stream: shoot a fire projectile at the nearest enemy in range
+                let fireTarget: any = null;
+                let fireMinD = Infinity;
+                for (const e of this.enemies) {
+                    if (!this.canTowerTargetEnemy(stats, e)) continue;
+                    const fd = Math.sqrt((e.r - tower.r) ** 2 + (e.c - tower.c) ** 2);
+                    if (fd <= tower.range && fd < fireMinD) { fireMinD = fd; fireTarget = e; }
+                }
+                if (fireTarget) {
+                    this.projectiles.push({
+                        id: Math.random(),
+                        x: tower.c, y: tower.r,
+                        startX: tower.c, startY: tower.r,
+                        tx: fireTarget.c + (fireTarget.xOffset || 0),
+                        ty: fireTarget.r + (fireTarget.yOffset || 0),
+                        targetId: fireTarget.id,
+                        color: '#ef4444',
+                        life: 80, maxLife: 80,
+                        style: 'fire',
+                        damage: tower.damage * 1.5,
+                        speed: 0.12,
+                        splash: 0.6,
+                        progress: 0,
+                        type: 'arrow',
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: 'fire',
+                    });
+                }
                 this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'flame', '#ef4444');
             }
             return;
@@ -979,62 +1048,74 @@ export class GameEngine {
             tower.angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90) % 360; // Convert to degrees, adjust for sprite orientation
             
             if (stats.type === 'beam') {
-                // Continuous Laser/Beam
+                // Continuous Laser/Beam — fires through ALL enemies in a straight line to map edge
                 tower.targetId = target.id;
-                
-                // Beam ramp damage - damage increases over time while targeting same enemy
+
+                // Beam ramp damage - damage increases over time while facing same direction
                 if (!tower.damageCharge) tower.damageCharge = 0;
                 if (!tower.beamDuration) tower.beamDuration = 0;
-                
+
                 if (tower.lastTargetId === target.id) {
-                    tower.damageCharge = Math.min(tower.damageCharge + (stats.beamRamp || 0.3), 5); // Max 5x ramp (reduced from 10x)
+                    tower.damageCharge = Math.min(tower.damageCharge + (stats.beamRamp || 0.3), 5);
                     tower.beamDuration++;
-                    
-                    // Beam overheats after 300 ticks (5 seconds) - needs cooldown
                     if (tower.beamDuration > 300) {
-                      tower.damageCharge = Math.max(0, tower.damageCharge - 0.5); // Decay damage
-                      if (tower.beamDuration > 360) { // After 6s, force reset
-                        tower.beamDuration = 0;
-                        tower.damageCharge = 0;
-                      }
+                      tower.damageCharge = Math.max(0, tower.damageCharge - 0.5);
+                      if (tower.beamDuration > 360) { tower.beamDuration = 0; tower.damageCharge = 0; }
                     }
                 } else {
-                    tower.damageCharge = 0; // Reset on target change
+                    tower.damageCharge = 0;
                     tower.beamDuration = 0;
                     tower.lastFireBeamBurnTick = 0;
                 }
                 tower.lastTargetId = target.id;
-                
+
                 const rampMultiplier = 1 + tower.damageCharge;
-                const damage = tower.damage * 0.08 * rampMultiplier; // Reduced base multiplier from 0.1 to 0.08
-                this.applyTowerDamage(target, damage, stats);
-                
-                // Apply status effects based on beam type
-                if (stats.projectileStyle === 'ice') {
-                    effectManager.applyEffectToEnemy(target, 'frostbite');
-                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'freeze', '#60a5fa');
-                } else if (stats.projectileStyle === 'lightning') {
-                    // Lightning has chance to stun
-                    if (Math.random() < 0.05) {
-                        this.applyStunToEnemy(target, 90);
-                    }
-                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
-                } else if (
-                    stats.element === 'fire' &&
-                    stats.burnDamage &&
-                    stats.burnDamage > 0
-                ) {
-                    const lastBurn = tower.lastFireBeamBurnTick || 0;
-                    if (!lastBurn || this.tickCount - lastBurn >= 22) {
-                        tower.lastFireBeamBurnTick = this.tickCount;
-                        effectManager.applyEffectToEnemy(target, 'burning');
-                        if (Math.random() < 0.35) {
-                            this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'flame', '#ef4444');
+                const damage = tower.damage * 0.08 * rampMultiplier;
+
+                // LASER_BEAM fires a line through entire map — damage ALL enemies in line
+                const bdx = (target.c + (target.xOffset || 0)) - tower.c;
+                const bdy = (target.r + (target.yOffset || 0)) - tower.r;
+                const blen = Math.sqrt(bdx * bdx + bdy * bdy) || 1;
+                const bnx = bdx / blen, bny = bdy / blen;
+
+                // Store beam endpoint at map edge for rendering (30 cells covers any map size)
+                (tower as any).beamEndX = tower.c + bnx * 30;
+                (tower as any).beamEndY = tower.r + bny * 30;
+
+                const beamLineEnemies = this.enemies.filter(e => {
+                    if (!this.canTowerTargetEnemy(stats, e)) return false;
+                    const ex = (e.c + (e.xOffset || 0)) - tower.c;
+                    const ey = (e.r + (e.yOffset || 0)) - tower.r;
+                    const proj = ex * bnx + ey * bny;
+                    if (proj < 0.3) return false;
+                    return Math.abs(ex * bny - ey * bnx) < 0.6;
+                });
+
+                beamLineEnemies.forEach(e => {
+                    this.applyTowerDamage(e, damage, stats);
+                    // Apply status effects based on beam type
+                    if (stats.projectileStyle === 'ice') {
+                        effectManager.applyEffectToEnemy(e, 'frostbite');
+                        this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'freeze', '#60a5fa');
+                    } else if (stats.projectileStyle === 'lightning') {
+                        if (Math.random() < 0.05) this.applyStunToEnemy(e, 90);
+                        this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'electric', '#facc15');
+                    } else if (stats.element === 'fire' && stats.burnDamage && stats.burnDamage > 0) {
+                        const lastBurn = tower.lastFireBeamBurnTick || 0;
+                        if (!lastBurn || this.tickCount - lastBurn >= 22) {
+                            tower.lastFireBeamBurnTick = this.tickCount;
+                            effectManager.applyEffectToEnemy(e, 'burning');
+                            if (Math.random() < 0.35) this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'flame', '#ef4444');
                         }
                     }
+                    if (e.hp <= 0) this.killEnemy(e);
+                });
+
+                // Fallback: still damage primary target if not caught by line filter
+                if (beamLineEnemies.length === 0) {
+                    this.applyTowerDamage(target, damage, stats);
+                    if (target.hp <= 0) this.killEnemy(target);
                 }
-                
-                if (target.hp <= 0) this.killEnemy(target);
             } else if (tower.cooldown <= 0) {
                 // Shoot (reset cooldown to effective cooldown)
                 tower.cooldown = effectiveCooldown;
@@ -1101,50 +1182,39 @@ export class GameEngine {
                     soundSystem.play('shoot');
 
                 } else if (stats.type === 'spread') {
-                    // Spread/Shotgun: Fire multiple projectiles in an arc
-                    const pelletCount = stats.multiTarget || 5; // Default to 5 pellets if not specified
-                    const spreadAngle = 40; // Wider spread angle for visibility
+                    // Shotgun: Wide arc of pellets — each pellet deals FULL damage
+                    // Close-range enemies get hit by multiple pellets = naturally higher damage
+                    const pelletCount = stats.multiTarget || 5;
+                    const spreadAngle = 65; // Wide arc for authentic shotgun spread
                     const baseAngle = Math.atan2(
                         (target.r + (target.yOffset || 0)) - tower.r,
                         (target.c + (target.xOffset || 0)) - tower.c
                     );
-                    
-                    // Calculate distance to target
                     const distance = Math.sqrt(
                         Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
                         Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
                     );
-                    
+
                     for (let i = 0; i < pelletCount; i++) {
-                        // Calculate angle offset for this pellet
-                        // Distribute pellets evenly across the spread angle
                         const angleOffset = (i / (pelletCount - 1) - 0.5) * spreadAngle * (Math.PI / 180);
                         const pelletAngle = baseAngle + angleOffset;
-                        
-                        // Calculate target position for this pellet (at same distance as original target)
-                        const pelletTx = tower.c + Math.cos(pelletAngle) * distance;
-                        const pelletTy = tower.r + Math.sin(pelletAngle) * distance;
-                        
-                        // Damage per pellet (total damage divided by pellet count)
-                        const pelletDamage = tower.damage / pelletCount;
-                        
-                        // Create projectile - spread pellets don't home, they go straight
+                        // Pellets travel to max range, not just to target distance
+                        const pelletRange = stats.range * 1.1;
+                        const pelletTx = tower.c + Math.cos(pelletAngle) * pelletRange;
+                        const pelletTy = tower.r + Math.sin(pelletAngle) * pelletRange;
+
                         this.projectiles.push({
                             id: Math.random(),
-                            x: tower.c, 
-                            y: tower.r,
-                            startX: tower.c, 
-                            startY: tower.r,
-                            tx: pelletTx,
-                            ty: pelletTy,
-                            targetId: undefined, // No homing for spread pellets - they go straight
-                            color: stats.color, 
-                            life: 100, 
-                            maxLife: 100,
-                            style: stats.projectileStyle || 'shotgun', 
-                            damage: pelletDamage, 
-                            speed: stats.projectileSpeed || 0.15, // Slightly faster for visibility
-                            splash: 0, // No splash for individual pellets
+                            x: tower.c, y: tower.r,
+                            startX: tower.c, startY: tower.r,
+                            tx: pelletTx, ty: pelletTy,
+                            targetId: undefined,
+                            color: stats.color,
+                            life: 80, maxLife: 80,
+                            style: stats.projectileStyle || 'shotgun',
+                            damage: tower.damage, // Full damage per pellet — close range = multiple hits
+                            speed: stats.projectileSpeed || 0.18,
+                            splash: 0,
                             progress: 0,
                             type: 'arrow',
                             targetMode: this.getTowerTargetMode(stats),
@@ -1182,7 +1252,7 @@ export class GameEngine {
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', muzzleColor);
                 } else if (tower.key === 'PENETRATOR') {
-                    // Railgun: pierce through all enemies in a line, 20% damage reduction per enemy
+                    // Railgun: pierce through ALL enemies in a line, FULL damage to every target
                     const dx = (target.c + (target.xOffset || 0)) - tower.c;
                     const dy = (target.r + (target.yOffset || 0)) - tower.r;
                     const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -1201,17 +1271,15 @@ export class GameEngine {
                             const pb = ((b.c + (b.xOffset || 0)) - tower.c) * nx + ((b.r + (b.yOffset || 0)) - tower.r) * ny;
                             return pa - pb;
                         });
-                    let damMult = 1.0;
                     lineEnemies.forEach(e => {
                         if (!this.canTowerTargetEnemy(stats, e)) return;
-                        this.applyTowerDamage(e, tower.damage * damMult, stats);
+                        this.applyTowerDamage(e, tower.damage, stats); // Full damage, no falloff
                         this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'electric', stats.color);
                         if (e.hp <= 0) this.killEnemy(e);
-                        damMult *= 0.8;
                     });
-                    // Visual: instant full-line bolt
-                    const endX = tower.c + nx * (stats.range + 1);
-                    const endY = tower.r + ny * (stats.range + 1);
+                    // Visual: instant bolt extending to map edge
+                    const endX = tower.c + nx * 30;
+                    const endY = tower.r + ny * 30;
                     this.projectiles.push({
                         id: Math.random(), x: tower.c, y: tower.r,
                         startX: tower.c, startY: tower.r,
@@ -1340,6 +1408,41 @@ export class GameEngine {
 
   updateProjectiles() {
     this.projectiles.forEach(p => {
+        // Drone autonomous attack behavior
+        if (p.type === 'drone' || p.style === 'drone') {
+            p.life!--;
+            if ((p.life ?? 0) <= 0) return;
+
+            // Find nearest valid enemy
+            let bestEnemy: any = null;
+            let bestDist = Infinity;
+            this.enemies.forEach(e => {
+                const ex = e.c + (e.xOffset || 0);
+                const ey = e.r + (e.yOffset || 0);
+                const d = Math.sqrt((ex - p.x) ** 2 + (ey - p.y) ** 2);
+                if (d < bestDist && this.projectileCanHitEnemy(p, e)) {
+                    bestDist = d; bestEnemy = e;
+                }
+            });
+
+            if (bestEnemy) {
+                const ex = bestEnemy.c + (bestEnemy.xOffset || 0);
+                const ey = bestEnemy.r + (bestEnemy.yOffset || 0);
+                const ddx = ex - p.x, ddy = ey - p.y;
+                const dl = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                p.x += (ddx / dl) * (p.speed ?? 0.055);
+                p.y += (ddy / dl) * (p.speed ?? 0.055);
+
+                if (bestDist < 0.4) {
+                    applyDamageToEnemy(bestEnemy, p.damage);
+                    this.addParticle(p.x * 60 + 30, p.y * 60 + 30, 'electric', p.color);
+                    if (bestEnemy.hp <= 0) this.killEnemy(bestEnemy);
+                    p.life! -= 40; // Partial life drain per hit; drone persists
+                }
+            }
+            return;
+        }
+
         // Visuals fade out
         if (p.style === 'lightning' || p.style === 'laser') {
             p.life!--;
@@ -1454,27 +1557,25 @@ export class GameEngine {
                 const dy = p.ty - (p.startY!);
                 p.x = (p.startX!) + dx * p.progress;
                 p.y = (p.startY!) + dy * p.progress;
-                
+
                 // Check if projectile hits any enemy in its path
+                // Wider hit radius (0.45) = more forgiving at close range
                 let hitEnemy = false;
                 this.enemies.forEach(enemy => {
-                    if (hitEnemy) return; // Already hit one enemy
+                    if (hitEnemy) return;
                     const enemyX = enemy.c + (enemy.xOffset || 0);
                     const enemyY = enemy.r + (enemy.yOffset || 0);
-                    const dist = Math.sqrt((enemyX - p.x)**2 + (enemyY - p.y)**2);
-                    if (dist < 0.3 && p.progress > 0.1) { // Hit radius, must have traveled some distance
+                    const dist = Math.sqrt((enemyX - p.x) ** 2 + (enemyY - p.y) ** 2);
+                    if (dist < 0.45 && p.progress > 0.08) {
                         if (!this.projectileCanHitEnemy(p, enemy)) return;
-                        // Hit enemy
                         applyDamageToEnemy(enemy, p.damage);
                         if (enemy.hp <= 0) this.killEnemy(enemy);
-                        // Create hit effect
                         this.createExplosion(p.x * 60 + 30, p.y * 60 + 30, p.color, 0.5, 'impact');
                         hitEnemy = true;
-                        p.life = 0; // Remove projectile
+                        p.life = 0;
                     }
                 });
-                
-                // If reached target position without hitting, remove
+
                 if (p.progress >= 1.0 && !hitEnemy) {
                     p.life = 0;
                 }

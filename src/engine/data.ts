@@ -466,6 +466,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#fbbf24', icon: '🔫',
     targetMode: 'ground', element: 'physical',
     description: 'Basic rapid-fire turret. Reliable single-target damage with moderate range. Perfect for early game defense.',
+    nameZh: '速射砲台',
+    descriptionZh: '基礎速射型砲台，子彈如傾盆大雨。可靠耐用，是每位指揮官的初始依靠。雖單次傷害不高，但持續輸出驚人，任何波次的第一道防線。',
+    quote: '「彈雨不停，敵人休想通過！」',
     projectileStyle: 'bullet',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.95, projectileSpeed: 1.05 }
   },
@@ -474,6 +477,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'area', color: '#1e293b', icon: '💣',
     targetMode: 'ground', element: 'explosive',
     description: 'Explosive area damage. Shells arc over obstacles, dealing splash damage to groups. Slow but devastating.',
+    nameZh: '迫擊砲台',
+    descriptionZh: '拋物線砲擊，彈著範圍內的敵人無一倖免。裝填雖慢，但一旦命中，威力震天撼地。敵人密集時最為致命。',
+    quote: '「轟！爆！散！一切都是灰燼！」',
     areaRadius: 1.8,
     projectileStyle: 'arc',
     upgradeStats: { damage: 1.25, range: 1.08, cooldown: 0.92, areaRadius: 1.15 }
@@ -483,6 +489,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#ef4444', icon: '🎯',
     targetMode: 'both', element: 'physical',
     description: 'Long-range precision shots. Extreme single-target damage but very slow reload. Pierces through enemies.',
+    nameZh: '狙擊砲台',
+    descriptionZh: '千里之外取敵首級。超遠射程加上恐怖的單次傷害，空中地面目標皆可精準狙擊。裝填甚慢，但一彈就是大傷。',
+    quote: '「一彈定乾坤。」',
     projectileStyle: 'sniper',
     upgradeStats: { damage: 1.3, range: 1.12, cooldown: 0.88, penetration: 1.2 }
   },
@@ -491,6 +500,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'spread', color: '#d97706', icon: '💥',
     targetMode: 'ground', element: 'physical',
     description: 'Fires 5 pellets in a wide spread. Hits multiple enemies at close range. High burst damage.',
+    nameZh: '霰彈砲台',
+    descriptionZh: '一槍五彈，近距離爆炸式全面覆蓋。對成群聚集的敵人有奇效，子彈散布廣泛，讓每個角落都充滿彈孔。',
+    quote: '「就是要把你們全打散！」',
     multiTarget: 5,
     projectileStyle: 'shotgun',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.93, multiTarget: 1.1 }
@@ -500,6 +512,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#60a5fa', icon: '❄️',
     targetMode: 'both', element: 'ice',
     description: 'Freezing projectiles slow enemies by 50%. No damage over time, pure crowd control.',
+    nameZh: '冰凍砲台',
+    descriptionZh: '發射冰晶彈，命中即凍。敵人速度瞬間降至一半，讓其他砲台輕鬆補刀。空地通殺，是絕佳的輔助型砲台。',
+    quote: '「凍結一切，讓時間為我服務。」',
     slowFactor: 0.5,
     projectileStyle: 'ice',
     specialAbility: 'slow',
@@ -510,6 +525,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'aura', color: '#ef4444', icon: '🌋',
     targetMode: 'ground', element: 'fire',
     description: 'Passive 3x3 flame zone. Enemies passing through suffer burning damage over time.',
+    nameZh: '火焰域塔',
+    descriptionZh: '在周圍建立持續燃燒的火焰地帶，所有踏入範圍的敵人都將持續受到灼燒傷害。放置在路徑關鍵節點上，威力倍增。',
+    quote: '「大地在我腳下燃燒！」',
     burnDamage: 4,
     upgradeStats: { damage: 1.08, range: 1.04, cooldown: 0.96, burnDamage: 1.08 }
   },
@@ -518,6 +536,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#facc15', icon: '⚡',
     targetMode: 'both', element: 'electric',
     description: 'Electric projectiles stun enemies for 1.5 seconds. Stops enemy movement and abilities.',
+    nameZh: '電擊砲台',
+    descriptionZh: '電流炮彈命中後使敵人完全癱瘓長達1.5秒，技能同步停用。電弧穿透效果驚人，BOSS也難逃一擊。',
+    quote: '「噼啪作響，雷霆萬鈞！」',
     stunDuration: 90,
     projectileStyle: 'lightning',
     specialAbility: 'stun',
@@ -527,6 +548,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Medic Station', cost: 300, damage: 0, range: 2.5, cooldown: 60,
     type: 'aura', color: '#10b981', icon: '💚',
     description: 'Heals nearby towers for 20 HP per tick. No damage output, pure support. Essential for tower survival.',
+    nameZh: '修復醫療站',
+    descriptionZh: '默默守護身旁砲台，持續為範圍內所有友方砲台恢復耐久。雖無攻擊能力，卻是讓陣線屹立不倒的關鍵支柱。',
+    quote: '「我治癒，你殺敵，相輔相成！」',
     upgradeStats: { range: 1.12, cooldown: 0.9, healAmount: 1.25 }
   },
 
@@ -540,6 +564,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#fcd34d', icon: '⚡',
     targetMode: 'both', element: 'electric',
     description: 'Lightning chains between 3-5 enemies. Each chain deals full damage. Excellent against groups.',
+    nameZh: '鏈式閃電',
+    descriptionZh: '閃電在3至5個敵人之間跳躍傳遞，每次跳躍皆造成全額傷害。敵人越密集效果越恐怖，是對付密集波次的惡夢。',
+    quote: '「電一個，劈一串！」',
     projectileStyle: 'lightning',
     multiTarget: 4,
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.92, multiTarget: 1.1 }
@@ -549,6 +576,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#020617', icon: '⚫',
     targetMode: 'both', element: 'physical',
     description: 'Piercing projectile travels through ALL enemies in a line. Damage decreases by 20% per enemy hit.',
+    nameZh: '磁軌炮',
+    descriptionZh: '磁軌加速的穿甲彈，以接近光速貫穿整排敵人。每穿過一個目標傷害微降，但面對縱向排列的敵人是災難性的存在。',
+    quote: '「任何防禦，在我面前都是紙。」',
     projectileStyle: 'bolt',
     upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, penetration: 1.2 }
   },
@@ -556,6 +586,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Gatling Gun', cost: 500, damage: 4, range: 4.0, cooldown: 4,
     type: 'projectile', color: '#ec4899', icon: '⚡',
     description: 'Extremely fast attack rate (4ms cooldown). Low damage per shot but overwhelming DPS. Long range.',
+    nameZh: '加特林機槍',
+    descriptionZh: '每4毫秒發射一顆子彈，持續不間斷的彈幕讓敵人永無喘息。單次傷害低，但累積DPS令人震驚，射程廣闊無比。',
+    quote: '「打！打！打！永遠不停地打！」',
     projectileSpeed: 0.3,
     projectileStyle: 'arrow_classic',
     upgradeStats: { damage: 1.15, range: 1.08, cooldown: 0.97, projectileSpeed: 1.05 }
@@ -566,6 +599,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Artillery', cost: 450, damage: 90, range: 6.0, cooldown: 200,
     type: 'area', color: '#475569', icon: '🎯',
     description: 'Long-range bombardment. Massive area damage (2.5 radius). Very slow but devastating.',
+    nameZh: '重型榴彈砲',
+    descriptionZh: '超遠射程的重型炮擊，爆炸半徑達2.5格，地圖幾乎無死角覆蓋。裝填緩慢，但每次落點皆帶來大面積毀滅性打擊。',
+    quote: '「炮聲響起，大地震顫！」',
     areaRadius: 2.5,
     projectileStyle: 'arc',
     upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, areaRadius: 1.1 }
@@ -574,6 +610,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Grenade Launcher', cost: 350, damage: 60, range: 3.0, cooldown: 100,
     type: 'area', color: '#dc2626', icon: '💥',
     description: 'Timed grenades explode on impact. 2.0 radius splash damage. Good for clustered enemies.',
+    nameZh: '手榴彈發射器',
+    descriptionZh: '拋射延時手榴彈，落地後爆炸。2格爆炸半徑對密集敵群有奇效，連環爆炸時讓敵方陣型瞬間潰散。',
+    quote: '「轟炸吧！讓他們在烈焰中消散！」',
     areaRadius: 2.0,
     projectileStyle: 'grenade',
     upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, areaRadius: 1.12 }
@@ -585,6 +624,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'beam', color: '#ff5722', icon: '🔴',
     targetMode: 'both', element: 'fire',
     description: 'Continuous laser beam. Damage ramps up 0.8x per second. Burns enemies in a straight line.',
+    nameZh: '鐳射炮',
+    descriptionZh: '持續照射的高能鐳射，傷害隨時間指數級增長。開始時微弱，持續聚焦後威力爆炸，灼燒效果讓敵人持續受損。',
+    quote: '「光是最鋒利的刀！」',
     beamRamp: 0.8,
     burnDamage: 2,
     upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.06 }
@@ -593,6 +635,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Inferno Tower', cost: 700, damage: 3, range: 3.0, cooldown: 3,
     type: 'beam', color: '#ea580c', icon: '👿',
     description: 'Extreme damage ramp (2.0x per second). Starts weak but becomes devastating. Short range.',
+    nameZh: '地獄業火塔',
+    descriptionZh: '末日熔爐化身砲台，傷害倍增速率高達每秒2倍。初期看似無害，鎖定後卻化為吞噬萬物的業火。近距離無法阻擋。',
+    quote: '「讓地獄的烈火將汝吞噬！」',
     beamRamp: 2.0,
     upgradeStats: { damage: 1.05, range: 1.1, cooldown: 0.98, beamRamp: 1.2 }
   },
@@ -603,6 +648,9 @@ export const TOWERS: Record<string, TowerStats> = {
     type: 'projectile', color: '#14b8a6', icon: '🐍',
     targetMode: 'ground', element: 'poison',
     description: 'Poison projectiles deal 15 damage per second for 3 seconds. Stacks up to 3 times.',
+    nameZh: '毒素發射器',
+    descriptionZh: '毒液彈命中後持續侵蝕，每秒造成15點毒傷，疊加上限三層。對高血量目標緩慢磨耗，毒素一旦附體，不死不休。',
+    quote: '「毒液入骨，無藥可解。」',
     burnDamage: 15,
     projectileStyle: 'acid',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.92, burnDamage: 1.2 }
@@ -611,6 +659,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Slow Field', cost: 400, damage: 5, range: 3.5, cooldown: 15,
     type: 'aura', color: '#fef08a', icon: '🦊',
     description: 'Aura slows all enemies by 60%. Minimal damage, maximum crowd control. Large area.',
+    nameZh: '緩速磁場塔',
+    descriptionZh: '在寬廣範圍內建立減速磁場，所有敵人速度降至原本40%。傷害雖低，但能為友軍砲台提供充裕的攻擊視窗，戰術核心。',
+    quote: '「慢下來，讓我的戰友好好款待你！」',
     slowFactor: 0.4,
     specialAbility: 'slow',
     upgradeStats: { damage: 1.1, range: 1.12, cooldown: 0.93, slowFactor: 1.1 }
@@ -619,6 +670,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Stun Turret', cost: 380, damage: 30, range: 3.2, cooldown: 90,
     type: 'projectile', color: '#facc15', icon: '⚡',
     description: 'Stuns enemies for 2 seconds. Completely stops movement and abilities. Moderate damage.',
+    nameZh: '電磁癱瘓塔',
+    descriptionZh: '發射高強度電磁波，命中後令敵人完全靜止長達2秒，技能同步封鎖。敵人能力越強，越怕這一招的完全壓制。',
+    quote: '「動！你給我動一動！動不了了吧！」',
     stunDuration: 120,
     projectileStyle: 'lightning',
     specialAbility: 'stun',
@@ -630,6 +684,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Vortex Launcher', cost: 500, damage: 50, range: 3.5, cooldown: 100,
     type: 'pull', color: '#1e3a8a', icon: '⚓',
     description: 'Pulls enemies 1.5 tiles closer. Repositions enemies for better targeting. Moderate damage.',
+    nameZh: '漩渦牽引炮',
+    descriptionZh: '發射重力漩渦彈，命中後將敵人強制向砲台方向牽引1.5格。巧妙搭配其他砲台的射程，讓敵人永遠在交火圈內。',
+    quote: '「過來，到我的射程裡來！」',
     pullStrength: 1.5,
     projectileStyle: 'vortex',
     specialAbility: 'pull',
@@ -639,6 +696,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Ice Blast', cost: 450, damage: 35, range: 2.8, cooldown: 80,
     type: 'pull', color: '#2dd4bf', icon: '🌊',
     description: 'Pushes enemies 2.0 tiles backward. Slows by 40%. Repositions enemies away from base.',
+    nameZh: '冰爆後推炮',
+    descriptionZh: '強力冰爆衝擊將敵人向後推開2格並附帶減速效果。能將突破防線的敵人強行推回，為後方防禦爭取寶貴時間。',
+    quote: '「退！退回去！你到底從哪裡來的！」',
     pullStrength: -2.0,
     slowFactor: 0.6,
     projectileStyle: 'ice',
@@ -650,24 +710,36 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Damage Amplifier', cost: 600, damage: 0, range: 3.0, cooldown: 0,
     type: 'aura', color: '#ef4444', icon: '💥',
     description: 'Aura increases nearby tower damage by 50%. No direct damage. Pure support.',
+    nameZh: '傷害增幅光環',
+    descriptionZh: '釋放增幅光環，範圍內所有砲台傷害提升50%。本身不具攻擊力，但一旦部署在高密度火力區，整個陣線的殺傷力翻天覆地。',
+    quote: '「有我在，大家都能打得更猛！」',
     upgradeStats: { range: 1.12, buffAmount: 1.1 }
   },
   'SPEED_BUFF': {
     name: 'Speed Enhancer', cost: 550, damage: 0, range: 3.0, cooldown: 0,
     type: 'aura', color: '#fbbf24', icon: '⚡',
     description: 'Aura increases nearby tower attack speed by 30%. Reduces cooldown of all towers in range.',
+    nameZh: '攻速加速光環',
+    descriptionZh: '釋放時間加速光環，縮短範圍內所有砲台30%的射擊冷卻時間。配合快速砲台，可達到讓敵人應接不暇的彈幕密度。',
+    quote: '「快！快！快！射速是生存之道！」',
     upgradeStats: { range: 1.12, buffAmount: 1.1 }
   },
   'RANGE_BUFF': {
     name: 'Range Extender', cost: 500, damage: 0, range: 3.0, cooldown: 0,
     type: 'aura', color: '#3b82f6', icon: '📡',
     description: 'Aura increases nearby tower range by 25%. Extends reach of all towers in radius.',
+    nameZh: '射程延伸光環',
+    descriptionZh: '信號放大光環延伸範圍內所有砲台25%的攻擊射程。讓後排狙擊手能提前開火，讓近距塔化身中程主力。',
+    quote: '「夠遠嗎？有我在，還要更遠！」',
     upgradeStats: { range: 1.12, buffAmount: 1.1 }
   },
   'HEALER': {
     name: 'Repair Station', cost: 400, damage: 0, range: 2.5, cooldown: 50,
     type: 'aura', color: '#10b981', icon: '🔨',
     description: 'Heals nearby towers for 30 HP per tick. Keeps towers alive longer. Essential support.',
+    nameZh: '強力修復站',
+    descriptionZh: '隨時為附近砲台提供每回合30HP的高速修復，戰場持久力遠超普通醫療站。有它在，最前線陣地堅不可摧。',
+    quote: '「只要我在，你們就能繼續戰鬥！」',
     upgradeStats: { range: 1.12, cooldown: 0.9, healAmount: 1.25 }
   },
   
@@ -676,6 +748,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Boomerang', cost: 420, damage: 55, range: 3.0, cooldown: 50,
     type: 'projectile', color: '#f0abfc', icon: '🪃',
     description: 'Projectile returns after hitting target. Can hit same enemy twice. Double damage potential.',
+    nameZh: '迴旋鏢砲台',
+    descriptionZh: '投擲可回收的迴旋鏢，去程打一次，回程再打一次，同一目標可受到雙倍傷害。出奇不意的攻擊路徑讓敵人防不勝防。',
+    quote: '「走，要打你；回，還是打你！」',
     projectileStyle: 'boomerang',
     upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.92 }
   },
@@ -683,12 +758,18 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Mine Layer', cost: 500, damage: 80, range: 3.5, cooldown: 180,
     type: 'projectile', color: '#f59e0b', icon: '💣',
     description: 'Plants mines on path. Mines explode when enemies step on them. Max 3 mines. No direct attack.',
+    nameZh: '地雷佈設者',
+    descriptionZh: '在敵人路徑上悄悄埋設致命地雷，踩中立即爆炸，傷害驚人。最多同時維持3顆地雷，是最被動卻最致命的伏擊手。',
+    quote: '「嘿嘿，你踩到了！」',
     upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, maxMines: 1.2 }
   },
   'ORBITAL': {
     name: 'Orbital Strike', cost: 1000, damage: 300, range: 80.0, cooldown: 400,
     type: 'area', color: '#fff', icon: '🛰️',
     description: 'Strikes anywhere on map. 3.0 radius explosion. Very slow but global range.',
+    nameZh: '軌道離子炮',
+    descriptionZh: '從太空軌道鎖定任意位置，發動毀滅性的離子炮轟擊，波及半徑達3格。冷卻漫長，但這一擊足以決定戰場勝負。',
+    quote: '「來自星辰之力，降臨你們之間！」',
     areaRadius: 3.0,
     projectileStyle: 'arc',
     specialAbility: 'aoe',
@@ -701,6 +782,9 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Executioner', cost: 800, damage: 200, range: 3.5, cooldown: 150,
     type: 'projectile', color: '#1e293b', icon: '🌾',
     description: 'Deals 3x damage to enemies below 30% HP. Executes weakened enemies instantly.',
+    nameZh: '處刑者',
+    descriptionZh: '專門獵殺殘血敵人的終結者。對生命值低於30%的敵人造成三倍傷害，或直接秒殺。別讓任何敵人帶傷逃脫！',
+    quote: '「你的終結，由我親手送來！」',
     projectileStyle: 'void',
     upgradeStats: { damage: 1.3, range: 1.1, cooldown: 0.88, executeThreshold: 1.05 }
   },
@@ -708,18 +792,27 @@ export const TOWERS: Record<string, TowerStats> = {
     name: 'Money Printer', cost: 600, damage: 0, range: 0, cooldown: 300,
     type: 'farm', color: '#10b981', icon: '💰',
     description: 'Generates money over time. 50 gold per cycle. No combat ability. Pure economy.',
+    nameZh: '貨幣製造機',
+    descriptionZh: '默默運作的財富引擎，每個周期產生50金幣，不費一兵一卒。毫無戰鬥能力，卻是支撐整條防線升級費用的無聲英雄。',
+    quote: '「錢滾錢，才是真正的王道！」',
     upgradeStats: { moneyPerCycle: 1.2, cooldown: 0.9 }
   },
   'WEAKEN': {
     name: 'Weakening Field', cost: 450, damage: 0, range: 3.0, cooldown: 0,
     type: 'aura', color: '#fff', icon: '🔔',
     description: 'Aura reduces enemy armor by 30%. No damage, but makes enemies take more damage from other towers.',
+    nameZh: '弱化詛咒塔',
+    descriptionZh: '釋放使敵人護甲降低30%的詛咒磁場。自身無傷害，但讓範圍內每個敵人都更容易被友軍擊殺，隱藏攻擊收益極高。',
+    quote: '「護甲？在我的詛咒前，都是紙！」',
     upgradeStats: { range: 1.12, debuffAmount: 1.1 }
   },
   'SUMMONER': {
     name: 'Drone Spawner', cost: 650, damage: 40, range: 2.5, cooldown: 120,
     type: 'summon', color: '#4c1d95', icon: '👻',
     description: 'Spawns combat drones from defeated enemies. Drones attack nearby enemies. Self-sustaining.',
+    nameZh: '無人機召喚師',
+    descriptionZh: '從擊殺的敵人殘骸中召喚戰鬥無人機，讓其對附近敵人展開攻擊。自我維持的戰鬥循環，敵人越多，無人機越多。',
+    quote: '「以你的死亡，召喚更多的殺戮！」',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.9, droneCount: 1.15 }
   }
 };
