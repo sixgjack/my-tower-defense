@@ -1345,6 +1345,16 @@ export class GameEngine {
             p.life!--;
             return;
         }
+        // Instant-hit tracers (e.g. sniper visual) should never linger at spawn point.
+        if ((p.speed ?? 0) <= 0) {
+            p.life = (p.life ?? p.maxLife ?? 10) - 1;
+            const maxLife = Math.max(1, p.maxLife ?? 10);
+            const life = Math.max(0, p.life ?? 0);
+            const t = 1 - life / maxLife;
+            p.x = (p.startX ?? p.x) + (p.tx - (p.startX ?? p.x)) * t;
+            p.y = (p.startY ?? p.y) + (p.ty - (p.startY ?? p.y)) * t;
+            return;
+        }
 
         // Handle boomerang return logic - can hit multiple targets
         if (p.returnToTower && p.returnProgress !== undefined) {

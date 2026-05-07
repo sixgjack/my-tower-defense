@@ -82,6 +82,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
     if (!label) return ability;
     return language === 'zh' ? `${label.zh} / ${label.en}` : `${label.en} / ${label.zh}`;
   };
+  const formatTargetMode = (mode?: string) => {
+    if (mode === 'air') return language === 'zh' ? '對空 / Air' : 'Air / 對空';
+    if (mode === 'both') return language === 'zh' ? '對地空 / Ground+Air' : 'Ground+Air / 對地空';
+    return language === 'zh' ? '對地 / Ground' : 'Ground / 對地';
+  };
+  const formatTowerType = (type?: string) => {
+    const map: Record<string, { en: string; zh: string }> = {
+      projectile: { en: 'Projectile', zh: '投射' },
+      area: { en: 'Area', zh: '範圍' },
+      beam: { en: 'Beam', zh: '光束' },
+      spread: { en: 'Spread', zh: '散射' },
+      aura: { en: 'Aura', zh: '光環' },
+      pull: { en: 'Control', zh: '控制' },
+      farm: { en: 'Economy', zh: '經濟' },
+      summon: { en: 'Summon', zh: '召喚' },
+    };
+    const v = map[type || 'projectile'] || { en: type || 'Unknown', zh: type || '未知' };
+    return language === 'zh' ? `${v.zh} / ${v.en}` : `${v.en} / ${v.zh}`;
+  };
 
   // --- PERFORMANCE OPTIMIZATION: REFS ---
   // We store direct DOM references to enemies to bypass React's render cycle for movement
@@ -485,24 +504,45 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
             : Object.entries(TOWERS)
           ).map(([key, tower]) => {
             const canAfford = isDeveloperMode() || money >= tower.cost;
+            const dmg = Math.round(tower.damage || 0);
+            const cooldownTicks = Math.max(1, tower.cooldown || 1);
+            const atkPerSec = (60 / cooldownTicks).toFixed(2);
+            const towerType = formatTowerType((tower as any).type);
+            const targetLabel = formatTargetMode((tower as any).targetMode);
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}
-                className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
-                <div className="text-2xl h-10 w-10 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform overflow-hidden">
-                  {getTowerGifAsset(key) ? (
-                    <img
-                      src={getTowerGifAsset(key)}
-                      alt={`${tower.name} sprite`}
-                      className="h-full w-full object-contain pixel-art"
-                      draggable={false}
-                    />
-                  ) : (
-                    tower.icon
-                  )}
-                </div>
-                <div className="flex-1">
-                    <div className="font-bold text-sm text-slate-200">{getTowerName(key)}</div>
-                    <div className="flex justify-between items-center"><span className="text-xs text-emerald-400 font-mono">${tower.cost}</span></div>
+                className={`relative p-2.5 rounded-lg border transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/70 hover:bg-slate-700/80 hover:border-cyan-400/60 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl h-10 w-10 shrink-0 flex items-center justify-center bg-slate-950 rounded shadow group-hover:scale-110 transition-transform overflow-hidden">
+                    {getTowerGifAsset(key) ? (
+                      <img
+                        src={getTowerGifAsset(key)}
+                        alt={`${tower.name} sprite`}
+                        className="h-full w-full object-contain pixel-art"
+                        draggable={false}
+                      />
+                    ) : (
+                      tower.icon
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-slate-100 truncate">{getTowerName(key)}</div>
+                      <div className="flex justify-between items-center mt-0.5">
+                        <span className="text-xs text-emerald-400 font-mono">${tower.cost}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/50 text-cyan-300 bg-cyan-900/20">{targetLabel}</span>
+                      </div>
+                      <div className="mt-1.5 grid grid-cols-2 gap-1 text-[10px]">
+                        <div className="rounded bg-slate-900/70 border border-slate-700 px-1.5 py-0.5 text-rose-200">
+                          {language === 'zh' ? '傷害' : 'DMG'}: <span className="font-semibold text-rose-300">{dmg}</span>
+                        </div>
+                        <div className="rounded bg-slate-900/70 border border-slate-700 px-1.5 py-0.5 text-amber-200">
+                          {language === 'zh' ? '速度' : 'SPD'}: <span className="font-semibold text-amber-300">{atkPerSec}/s</span>
+                        </div>
+                        <div className="col-span-2 rounded bg-slate-900/70 border border-slate-700 px-1.5 py-0.5 text-violet-200 truncate">
+                          {language === 'zh' ? '類型' : 'TYPE'}: <span className="font-semibold text-violet-300">{towerType}</span>
+                        </div>
+                      </div>
+                  </div>
                 </div>
                 </div>
             );

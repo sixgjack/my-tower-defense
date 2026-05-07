@@ -22,7 +22,7 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Bug", hp: 30, speed: 1.0, reward: 10, color: "#f87171", icon: "🐛" },
     { name: "Spider", hp: 25, speed: 1.3, reward: 8, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'] },
     { name: "Mite", hp: 20, speed: 1.5, reward: 7, color: "#ef4444", icon: "🪲" },
-    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'], movementType: 'air' },
+    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🦋", abilities: ['fly'], movementType: 'air' },
     
     // Balanced Enemies
     { name: "Glitch", hp: 80, speed: 0.7, reward: 16, color: "#c084fc", icon: "👾" },

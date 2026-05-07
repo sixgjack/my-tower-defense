@@ -12,10 +12,12 @@ interface TowerGalleryProps {
 
 export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBack }) => {
   const [selectedTower, setSelectedTower] = useState<string | null>(null);
+  const [showUnlockedOnly, setShowUnlockedOnly] = useState(true);
   const towerKeys = Object.keys(TOWERS);
-  const { language, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const isUnlocked = (key: string) => unlockedTowers.includes(key);
+  const visibleTowerKeys = showUnlockedOnly ? towerKeys.filter(isUnlocked) : towerKeys;
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 overflow-y-auto">
@@ -28,10 +30,22 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
             </h1>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => {}}
+                onClick={() => setLanguage(language === 'en' ? 'zh-TW' : 'en')}
                 className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-lg transition-all backdrop-blur-sm border border-slate-600 text-sm"
               >
                 {language === 'en' ? '中文' : 'EN'}
+              </button>
+              <button
+                onClick={() => setShowUnlockedOnly(v => !v)}
+                className={`px-4 py-2 rounded-lg transition-all backdrop-blur-sm border text-sm ${
+                  showUnlockedOnly
+                    ? 'bg-cyan-600/30 border-cyan-400/70 text-cyan-100'
+                    : 'bg-slate-700/50 hover:bg-slate-600/50 border-slate-600 text-white'
+                }`}
+              >
+                {showUnlockedOnly
+                  ? (language === 'zh-TW' ? '僅顯示已解鎖' : 'Unlocked Only')
+                  : (language === 'zh-TW' ? '顯示全部' : 'Show All')}
               </button>
               <button
                 onClick={onBack}
@@ -44,7 +58,7 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
 
           {/* Tower Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
-            {towerKeys.map((key) => {
+            {visibleTowerKeys.map((key) => {
               const tower = TOWERS[key];
               const unlocked = isUnlocked(key);
               const personality = getTowerPersonality(key, tower.name);
@@ -70,12 +84,19 @@ export const TowerGallery: React.FC<TowerGalleryProps> = ({ unlockedTowers, onBa
                   </div>
                   <div className="text-slate-400 text-xs">${tower.cost}</div>
                   {unlocked && (
-                    <div className="absolute top-2 right-2 text-blue-400 text-xs">✓</div>
+                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-emerald-500/25 border border-emerald-400/60 text-emerald-200 text-[10px] font-bold">
+                      {language === 'zh-TW' ? '已解鎖' : 'UNLOCKED'}
+                    </div>
                   )}
                 </button>
               );
             })}
           </div>
+          {visibleTowerKeys.length === 0 && (
+            <div className="text-center text-slate-300 bg-slate-800/60 border border-slate-700 rounded-xl py-10">
+              {language === 'zh-TW' ? '目前沒有已解鎖防禦塔。' : 'No unlocked towers yet.'}
+            </div>
+          )}
 
           {/* Tower Detail Modal */}
           {selectedTower && (

@@ -39,6 +39,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
+  const unlockedCount = Array.from(new Set((studentStatus?.unlockedTowers || []).filter(Boolean))).length;
   const godotQuestionCacheRef = useRef<Record<string, { correct: string }>>({});
 
   useEffect(() => {
@@ -171,7 +172,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   }
 
   if (activeView === 'lucky-draw') {
-    return <LuckyDraw user={user} credits={studentStatus?.credits || 0} onBack={() => setActiveView('lobby')} onStatusUpdate={onStatusUpdate} />;
+    return (
+      <LuckyDraw
+        user={user}
+        credits={studentStatus?.credits || 0}
+        unlockedTowers={studentStatus?.unlockedTowers || []}
+        onBack={() => setActiveView('lobby')}
+        onStatusUpdate={onStatusUpdate}
+      />
+    );
   }
 
   if (activeView === 'towers') {
@@ -340,7 +349,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                 <p className="text-blue-100 text-sm mb-3">{language === 'zh-TW' ? '查看所有可用的防禦塔' : 'View all available towers'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-200 bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">
-                    {studentStatus?.unlockedTowers.length || 0} {language === 'zh-TW' ? '已解鎖' : 'unlocked'}
+                    {unlockedCount} {language === 'zh-TW' ? '已解鎖' : 'unlocked'}
                   </span>
                   <span className="text-blue-300 text-2xl">→</span>
                 </div>

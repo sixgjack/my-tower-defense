@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, signOut, onAuthStateChanged, type GoogleUser } from '../services/googleAuth';
 import { getStudentStatus, createStudentStatus } from '../services/studentService';
+import * as db from '../services/postgresDatabase';
 import { LobbyScreen } from './LobbyScreen';
 import {
   DEMO_LOCAL_USER_ID,
@@ -38,6 +39,8 @@ const DEMO_GOOGLE_USER: GoogleUser = {
   email: 'demo@local.play',
   displayName: 'Demo Player',
 };
+const DEV_CREDIT_EMAILS = new Set(['ttn@cpss.edu.hk']);
+const DEV_CREDIT_BALANCE = 99_999;
 
 function buildDemoStudentStatus(): StudentStatus {
   return {
@@ -62,14 +65,28 @@ export const MenuScreen: React.FC = () => {
   );
   const [showLobby, setShowLobby] = useState(false);
 
-  const loadStudentStatus = async (uid: string) => {
+  const loadStudentStatus = async (uid: string, email?: string | null) => {
     try {
       const status = await getStudentStatus(uid);
+      const isDevUser = Boolean(email && DEV_CREDIT_EMAILS.has(email.toLowerCase()));
       
       if (status) {
+        if (isDevUser && (status.credits || 0) < DEV_CREDIT_BALANCE) {
+          await db.updateStudentStatus(uid, { credits: DEV_CREDIT_BALANCE });
+          const refreshed = await getStudentStatus(uid);
+          if (refreshed) {
+            const mergedUnlocked = [...new Set([...(refreshed.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+            setStudentStatus({
+              ...refreshed,
+              unlockedTowers: mergedUnlocked,
+            });
+            return;
+          }
+        }
         const mergedUnlocked = [...new Set([...(status.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
         setStudentStatus({
           ...status,
+          credits: isDevUser ? Math.max(status.credits || 0, DEV_CREDIT_BALANCE) : status.credits,
           unlockedTowers: mergedUnlocked,
         });
       } else {
@@ -81,7 +98,7 @@ export const MenuScreen: React.FC = () => {
           totalEnemiesKilled: 0,
           totalMoneyEarned: 0,
           highestWave: 0,
-          credits: 0,
+          credits: isDevUser ? DEV_CREDIT_BALANCE : 0,
           unlockedTowers: basicTowers,
           encounteredEnemies: [],
           lastPlayed: new Date().toISOString()
@@ -113,7 +130,7 @@ export const MenuScreen: React.FC = () => {
       setLoading(false);
 
       if (currentUser) {
-        await loadStudentStatus(currentUser.uid);
+        await loadStudentStatus(currentUser.uid, currentUser.email);
       } else {
         setStudentStatus(null);
       }
@@ -150,7 +167,7 @@ export const MenuScreen: React.FC = () => {
 
   const handleStatusUpdate = async () => {
     if (!user) return;
-    await loadStudentStatus(user.uid);
+    await loadStudentStatus(user.uid, user.email);
   };
 
   if (showLobby && user) {
