@@ -760,13 +760,21 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
 
           {/* 2. Ghost */}
           {ghost && (
-             <div className="absolute pointer-events-none z-40 transition-all duration-75" 
+             <div className="absolute pointer-events-none z-40 transition-all duration-75"
                   style={{ left: hoverPos!.c * TILE_SIZE, top: hoverPos!.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
-                {draggingKey !== 'BASIC_BURN' && (
+                {/* Range circle — hidden for aura towers like Flamethrower */}
+                {(ghost.stats as any).type !== 'aura' && (
                 <div className={`absolute rounded-full border-2 opacity-40 transition-colors ${ghost.isValid ? 'bg-emerald-500/30 border-emerald-400' : 'bg-rose-500/30 border-rose-400'}`}
                      style={{ width: ghost.rangePx * 2, height: ghost.rangePx * 2, top: TILE_SIZE/2 - ghost.rangePx, left: TILE_SIZE/2 - ghost.rangePx }} />
                 )}
-                <div className="w-full h-full flex items-center justify-center text-2xl opacity-80 overflow-hidden">
+                {/* Aura tower: show coverage grid instead of circle */}
+                {(ghost.stats as any).type === 'aura' && hoverPos && (
+                  <div className={`absolute inset-0 pointer-events-none border-2 ${ghost.isValid ? 'border-emerald-400 bg-emerald-500/20' : 'border-rose-400 bg-rose-500/20'}`}
+                       style={{ boxShadow: ghost.isValid ? `0 0 0 ${TILE_SIZE}px rgba(34,197,94,0.08)` : `0 0 0 ${TILE_SIZE}px rgba(239,68,68,0.08)` }} />
+                )}
+                {/* Tower preview icon with color background */}
+                <div className={`w-full h-full flex items-center justify-center overflow-hidden border-2 ${ghost.isValid ? 'border-emerald-400/70' : 'border-rose-400/70'}`}
+                     style={{ backgroundColor: ghost.stats.color + '25', fontSize: `${TILE_SIZE * 0.5}px` }}>
                   {getTowerGifAsset(draggingKey || '') ? (
                     <img
                       src={getTowerGifAsset(draggingKey || '')}
@@ -775,7 +783,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                       draggable={false}
                     />
                   ) : (
-                    ghost.stats.icon
+                    <span style={{ opacity: 0.85, filter: `drop-shadow(0 0 4px ${ghost.stats.color})` }}>
+                      {ghost.stats.icon}
+                    </span>
                   )}
                 </div>
              </div>
@@ -784,12 +794,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
           {/* 3. Towers */}
           {game.towers.map(t => {
              const stats = TOWERS[t.key];
-             const targetMode = (stats as any).targetMode || 'ground';
-             const element = (stats as any).element || 'physical';
              const isSelected = selectedTowerId === t.id;
-             let invest = stats.cost; for(let i=1; i<t.level; i++) invest += Math.floor(stats.cost * 1.5 * i);
-             const sellPrice = Math.floor(invest * Math.max(0.5, 0.85 - (t.level * 0.05)));
-             const upgradeCost = Math.floor(stats.cost * 1.5 * t.level);
              const auraColor = effectManager.getTowerAuraColor(t);
              
              // Check if this is a support/aura tower
@@ -914,18 +919,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                             {t.level}
                           </div>}
                      </div>
-                     {isSelected && (
-                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-40 animate-in fade-in zoom-in duration-100">
-                             <div className="text-xs font-bold text-slate-100 mb-1 border-b border-slate-600 pb-1 text-center">{getTowerName(t.key)}</div>
-                             <div className="text-[10px] text-slate-400 mb-1 text-center leading-tight">{getTowerDescription(t.key)}</div>
-                            <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
-                            <div className="text-[10px] text-center text-cyan-300 mb-1 border-b border-slate-600 pb-1">
-                              {targetMode === 'ground' ? '對地 / Ground' : targetMode === 'air' ? '對空 / Air' : '對地空 / Ground+Air'} · {String(element).toUpperCase()}
-                            </div>
-                             <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">{i18n.t('game.upgrade')} (${upgradeCost})</button>
-                             <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>
-                         </div>
-                     )}
                      {isSelected && <div className="absolute rounded-full border border-white/30 bg-white/5 pointer-events-none" style={{ width: t.range * TILE_SIZE * 2, height: t.range * TILE_SIZE * 2, top: TILE_SIZE/2 - t.range * TILE_SIZE, left: TILE_SIZE/2 - t.range * TILE_SIZE, zIndex: -1 }} /> }
                  </div>
              );
@@ -1063,6 +1056,54 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
               </div>
               );
           })}
+
+          {/* 4b. Selected Tower Popup — rendered at board level to escape z-10 stacking context */}
+          {selectedTowerId !== null && (() => {
+            const t = game.towers.find(tt => tt.id === selectedTowerId);
+            if (!t) return null;
+            const stats = TOWERS[t.key];
+            const targetMode = (stats as any).targetMode || 'ground';
+            const element = (stats as any).element || 'physical';
+            let invest = stats.cost; for(let i=1; i<t.level; i++) invest += Math.floor(stats.cost * 1.5 * i);
+            const sellPrice = Math.floor(invest * Math.max(0.5, 0.85 - (t.level * 0.05)));
+            const upgradeCost = Math.floor(stats.cost * 1.5 * t.level);
+            const popupLeft = t.c * TILE_SIZE + TILE_SIZE / 2;
+            const popupTop = t.r * TILE_SIZE;
+            const nearTop = t.r < 4;
+            return (
+              <div
+                className="absolute z-[60] pointer-events-auto"
+                style={{
+                  left: popupLeft,
+                  top: nearTop ? popupTop + TILE_SIZE + 8 : popupTop - 8,
+                  transform: nearTop ? 'translateX(-50%)' : 'translate(-50%, -100%)',
+                }}
+              >
+                <div className="bg-slate-900 border-2 border-slate-500 p-2 shadow-2xl flex flex-col gap-1 w-44"
+                     style={{ boxShadow: `0 0 0 1px #000, 0 4px 20px rgba(0,0,0,0.8), 0 0 12px ${stats.color}40` }}>
+                  <div className="pixel-font text-[8px] text-yellow-300 mb-1 border-b-2 border-slate-600 pb-1 text-center leading-relaxed truncate"
+                       style={{ color: stats.color }}>{getTowerName(t.key)}</div>
+                  <div className="text-[9px] text-slate-400 mb-1 text-center leading-tight line-clamp-2">{getTowerDescription(t.key)}</div>
+                  <div className="pixel-font text-[7px] text-slate-300 mb-1 border-b-2 border-slate-700 pb-1 text-center leading-relaxed">
+                    RNG:{Math.floor(t.range)} DMG:{t.damage} LV:{t.level}
+                  </div>
+                  <div className="text-[9px] text-center text-cyan-300 mb-1 border-b border-slate-700 pb-1">
+                    {targetMode === 'ground' ? 'Ground' : targetMode === 'air' ? 'Air' : 'Ground+Air'} · {String(element).toUpperCase()}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }}
+                    className="pixel-btn bg-amber-700 border-amber-500 text-amber-100 text-[7px] py-1.5 font-bold w-full"
+                  >{i18n.t('game.upgrade')} ${upgradeCost}</button>
+                  <button
+                    type="button"
+                    onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }}
+                    className="pixel-btn bg-red-900 border-red-600 text-red-100 text-[7px] py-1.5 w-full"
+                  >{i18n.t('game.sell')} +${sellPrice}</button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 5. Projectiles */}
           <svg className="absolute inset-0 pointer-events-none w-full h-full z-30 overflow-visible">
