@@ -1,0 +1,147 @@
+[
+  {
+    "id": "math-001",
+    "subject": "math",
+    "prompt": "15 + 27 = ?",
+    "choices": ["41", "42", "43", "44"],
+    "answerIndex": 1
+  },
+  {
+    "id": "math-002",
+    "subject": "math",
+    "prompt": "9 × 6 = ?",
+    "choices": ["48", "52", "54", "56"],
+    "answerIndex": 2
+  },
+  {
+    "id": "math-003",
+    "subject": "math",
+    "prompt": "56 ÷ 8 = ?",
+    "choices": ["6", "7", "8", "9"],
+    "answerIndex": 1
+  },
+  {
+    "id": "math-004",
+    "subject": "math",
+    "prompt": "What is 25% of 200?",
+    "choices": ["25", "40", "50", "75"],
+    "answerIndex": 2
+  },
+  {
+    "id": "math-005",
+    "subject": "math",
+    "prompt": "Solve: 3x = 21. x = ?",
+    "choices": ["6", "7", "8", "9"],
+    "answerIndex": 1
+  },
+  {
+    "id": "math-006",
+    "subject": "math",
+    "prompt": "The next prime after 11 is:",
+    "choices": ["12", "13", "15", "17"],
+    "answerIndex": 1
+  },
+  {
+    "id": "sci-001",
+    "subject": "science",
+    "prompt": "Plants absorb which gas for photosynthesis?",
+    "choices": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"],
+    "answerIndex": 1
+  },
+  {
+    "id": "sci-002",
+    "subject": "science",
+    "prompt": "Water freezes at what temperature in Celsius?",
+    "choices": ["0", "10", "-10", "32"],
+    "answerIndex": 0
+  },
+  {
+    "id": "sci-003",
+    "subject": "science",
+    "prompt": "Which planet is known as the Red Planet?",
+    "choices": ["Venus", "Mars", "Jupiter", "Mercury"],
+    "answerIndex": 1
+  },
+  {
+    "id": "sci-004",
+    "subject": "science",
+    "prompt": "The center of an atom is called:",
+    "choices": ["Orbit", "Electron shell", "Nucleus", "Proton"],
+    "answerIndex": 2
+  },
+  {
+    "id": "sci-005",
+    "subject": "science",
+    "prompt": "Which organ pumps blood in the human body?",
+    "choices": ["Lungs", "Liver", "Heart", "Kidney"],
+    "answerIndex": 2
+  },
+  {
+    "id": "sci-006",
+    "subject": "science",
+    "prompt": "Lightning is a form of:",
+    "choices": ["Sound energy", "Electrical energy", "Heat only", "Chemical energy"],
+    "answerIndex": 1
+  },
+  {
+    "id": "prog-001",
+    "subject": "programming",
+    "prompt": "Which symbol starts a single-line comment in JavaScript?",
+    "choices": ["<!--", "//", "#", "/*"],
+    "answerIndex": 1
+  },
+  {
+    "id": "prog-002",
+    "subject": "programming",
+    "prompt": "Which data type stores true/false values?",
+    "choices": ["String", "Number", "Boolean", "Array"],
+    "answerIndex": 2
+  },
+  {
+    "id": "prog-003",
+    "subject": "programming",
+    "prompt": "Which loop repeats while a condition is true?",
+    "choices": ["for", "switch", "while", "if"],
+    "answerIndex": 2
+  },
+  {
+    "id": "prog-004",
+    "subject": "programming",
+    "prompt": "What does HTML stand for?",
+    "choices": [
+      "Hyperlinks and Text Markup Language",
+      "Hyper Text Markup Language",
+      "Home Tool Markup Language",
+      "High Text Machine Language"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "id": "prog-005",
+    "subject": "programming",
+    "prompt": "In CSS, which property changes text color?",
+    "choices": ["font-color", "text-style", "color", "foreground"],
+    "answerIndex": 2
+  },
+  {
+    "id": "prog-006",
+    "subject": "programming",
+    "prompt": "Which keyword is used to define a class in TypeScript?",
+    "choices": ["object", "prototype", "class", "struct"],
+    "answerIndex": 2
+  },
+  {
+    "id": "mix-001",
+    "subject": "mixed",
+    "prompt": "If a game runs at 60 FPS, about how many frames in 2 seconds?",
+    "choices": ["30", "60", "90", "120"],
+    "answerIndex": 3
+  },
+  {
+    "id": "mix-002",
+    "subject": "mixed",
+    "prompt": "Which is a renewable energy source?",
+    "choices": ["Coal", "Solar", "Diesel", "Natural gas"],
+    "answerIndex": 1
+  }
+]
