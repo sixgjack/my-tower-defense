@@ -13,6 +13,7 @@ import { getThemeDescription } from '../utils/themeHelpers';
 import type { Particle } from '../engine/types';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { getEnemyGifAsset, getTowerGifAsset } from '../config/visualAssets';
+import { isDeveloperMode } from '../config/developerMode';
 
 const TILE_SIZE = 60; // Increased tile size for better visibility
 const BOARD_WIDTH = COLS * TILE_SIZE; 
@@ -451,7 +452,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
             ? allowedTowers.map(key => [key, TOWERS[key]] as [string, typeof TOWERS[string]])
             : Object.entries(TOWERS)
           ).map(([key, tower]) => {
-            const canAfford = money >= tower.cost;
+            const canAfford = isDeveloperMode() || money >= tower.cost;
             return (
                 <div key={key} draggable={canAfford} onDragStart={(e) => { if(canAfford) { setDraggingKey(key); e.dataTransfer.setData('text', key); }}}
                 className={`relative p-2 rounded-lg border flex items-center gap-3 transition-all group ${canAfford ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700 cursor-grab active:cursor-grabbing' : 'border-transparent opacity-40 grayscale cursor-not-allowed'}`}>
@@ -484,7 +485,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
         <div className="absolute top-4 w-full max-w-4xl flex justify-between px-4 z-30 pointer-events-none">
           <div className="flex gap-4 pointer-events-auto">
              <div className="bg-slate-900/90 border border-slate-600 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 min-w-[120px]">
-                <span className="text-2xl">💵</span><span className="text-emerald-400 font-bold text-xl">${money}</span>
+                <span className="text-2xl">💵</span>
+                <span className="text-emerald-400 font-bold text-xl">
+                  {isDeveloperMode() ? '∞' : `$${money}`}
+                </span>
+                {isDeveloperMode() && (
+                  <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-amber-300 bg-amber-900/60 border border-amber-500/50 px-1.5 py-0.5 rounded">
+                    Dev
+                  </span>
+                )}
              </div>
              <div className={`bg-slate-900/90 border border-slate-600 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 ${lives < 2 ? 'border-red-500 bg-red-900/50 animate-bounce' : ''}`}>
                 <span className="text-2xl">❤️</span><span className={`font-bold text-xl ${lives < 2 ? 'text-red-200' : 'text-rose-400'}`}>{lives}</span>
@@ -873,11 +882,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                     )}
                   </div>
                   
-                  {/* Boss indicator */}
-                  {e.bossType && (
+                  {/* Boss indicator (dev: also show catalog bosses e.g. Archon random spawn) */}
+                  {(e.bossType || (isDeveloperMode() && e.isBoss)) && (
                     <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black text-yellow-300 px-1.5 py-0.5 whitespace-nowrap"
                          style={{ background: '#7c2d12', border: '1px solid #f59e0b', boxShadow: '0 0 6px #f59e0b80', letterSpacing: '0.05em' }}>
-                      {e.bossType === 'big' ? '⚠ BOSS ⚠' : '★ MINI'}
+                      {e.bossType === 'big' ? '⚠ BOSS ⚠' : e.bossType === 'mini' ? '★ MINI' : '👑 BOSS'}
                     </div>
                   )}
               </div>

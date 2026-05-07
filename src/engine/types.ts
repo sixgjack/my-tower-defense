@@ -70,6 +70,9 @@ export interface Enemy {
     isBurrowed?: boolean; // For burrow ability
     bossType?: BossType; // 'mini' or 'big' for bosses
     bossShieldHp?: number; // Shield HP for boss shield ability
+    /** Catalog boss flag (mini/big waves set bossType; rare boss spawns use this) */
+    isBoss?: boolean;
+    name?: string;
 }
 
 // --- TOWERS ---

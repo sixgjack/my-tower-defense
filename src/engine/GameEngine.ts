@@ -5,6 +5,7 @@ import { soundSystem } from './SoundSystem';
 import { effectManager } from './EffectManager';
 import { applyDamageToEnemy } from './BossAbilities';
 import type { Particle, Projectile, Tower } from './types';
+import { isDeveloperMode, DEV_STARTING_MONEY } from '../config/developerMode';
 
 type ActionType = { type: 'BUILD', r: number, c: number, towerKey: string } 
   | { type: 'UPGRADE', towerId: number, cost: number } 
@@ -75,7 +76,7 @@ export class GameEngine {
 
   startNewGame() {
     this.wave = 1;
-    this.money = 500; // Reduced starting money for better balance
+    this.money = isDeveloperMode() ? DEV_STARTING_MONEY : 500;
     this.lives = 20;
     this.towers = [];
     this.enemies = [];
@@ -325,6 +326,10 @@ export class GameEngine {
           const selected = additionalAbilities.sort(() => Math.random() - 0.5).slice(0, Math.min(2, additionalAbilities.length));
           bossAbilities = [...new Set([...bossAbilities, ...selected])];
       }
+
+      if (isDeveloperMode()) {
+        bossAbilities = bossAbilities.filter((a) => a !== 'invisible');
+      }
       
       // Boss speed multiplier
       const bossSpeedMultiplier = isBigBoss ? 0.5 : 0.7;
@@ -351,13 +356,14 @@ export class GameEngine {
           abilities: bossAbilities,
           abilityCooldown: stats.abilityCooldown || 200,
           lastAbilityUse: -999,
-          isInvisible: bossAbilities.includes('invisible') || false,
+          isInvisible: isDeveloperMode() ? false : bossAbilities.includes('invisible'),
           isFlying: bossAbilities.includes('fly') || false,
           isBurrowed: bossAbilities.includes('burrow') || false,
           bossType: bossType,
           bossShieldHp: bossAbilities.includes('shield') ? (isBigBoss ? hp * 0.5 : hp * 0.3) : undefined,
           statusEffects: [],
-          name: stats.name
+          name: stats.name,
+          isBoss: true,
       });
   }
 
@@ -514,14 +520,18 @@ export class GameEngine {
         abilities: stats.abilities || [],
         abilityCooldown: stats.abilityCooldown || 0,
         lastAbilityUse: -999,
-        isInvisible: (stats.abilities && stats.abilities.includes('invisible')) || false,
+        isInvisible:
+          isDeveloperMode() && stats.isBoss
+            ? false
+            : Boolean(stats.abilities && stats.abilities.includes('invisible')),
         isFlying: (stats.abilities && stats.abilities.includes('fly')) || false,
         isBurrowed: (stats.abilities && stats.abilities.includes('burrow')) || false,
         isCCImmune: (stats.abilities && stats.abilities.includes('cc_immune')) || false,
         bossType: undefined,
         bossShieldHp: undefined,
         statusEffects: [],
-        name: stats.name // Track enemy name for dictionary
+        name: stats.name, // Track enemy name for dictionary
+        isBoss: Boolean(stats.isBoss),
     };
     this.enemies.push(enemy);
     
@@ -533,6 +543,9 @@ export class GameEngine {
 
   updateEnemies() {
      this.enemies.forEach(enemy => {
+        if (isDeveloperMode() && (enemy.bossType || enemy.isBoss)) {
+          enemy.isInvisible = false;
+        }
         // Update status effects (decrease duration, apply tick damage/healing)
         effectManager.updateEnemyEffects(enemy);
         
@@ -1691,7 +1704,7 @@ export class GameEngine {
         return;
     }
     const stats = TOWERS[towerKey];
-    if (this.money < stats.cost) { 
+    if (!isDeveloperMode() && this.money < stats.cost) { 
         this.addTextParticle(c, r, "Need Funds!", "#ef4444"); 
         return; 
     }
@@ -1702,7 +1715,7 @@ export class GameEngine {
     const tower = this.towers.find(t => t.id === towerId);
     if (!tower) return;
     const upgradeCost = Math.floor(TOWERS[tower.key].cost * 1.5 * tower.level);
-    if (this.money < upgradeCost) { this.addTextParticle(tower.c, tower.r, "Need Funds!", "#ef4444"); return; }
+    if (!isDeveloperMode() && this.money < upgradeCost) { this.addTextParticle(tower.c, tower.r, "Need Funds!", "#ef4444"); return; }
     this.pendingAction = { type: 'UPGRADE', towerId, cost: upgradeCost };
   }
 
@@ -1732,7 +1745,9 @@ export class GameEngine {
             return;
         }
         
-        this.money -= stats.cost;
+        if (!isDeveloperMode()) {
+          this.money -= stats.cost;
+        }
         const maxHp = stats.maxHp || 100;
         const newTower: Tower = { 
             id: Date.now(), 
@@ -1764,7 +1779,9 @@ export class GameEngine {
         const { towerId, cost } = this.pendingAction;
         const tower = this.towers.find(t => t.id === towerId);
         if (tower) { 
-            this.money -= cost; 
+            if (!isDeveloperMode()) {
+              this.money -= cost;
+            }
             tower.level++;
             // Update stats using upgradeStats multipliers
             const baseStats = TOWERS[tower.key];
