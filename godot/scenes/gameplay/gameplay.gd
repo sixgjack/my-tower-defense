@@ -113,7 +113,7 @@ func _setup_play_viewport() -> void:
 	_play_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_play_viewport.transparent_bg = false
 	# Set a non-zero initial size so something renders before layout settles
-	_play_viewport.size = Vector2i(1280, 580)
+	_play_viewport.size = Vector2i(1920, 880)
 	svc.add_child(_play_viewport)
 
 	remove_child(_world)

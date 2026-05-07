@@ -3,7 +3,7 @@ extends Node
 
 const ROWS: int = 12
 const COLS: int = 20
-const CELL_SIZE: int = 48
+const CELL_SIZE: int = 64
 
 ## Map cell kinds (integer grid in Godot; web used 0,1,'S','B','X').
 const CELL_EMPTY: int = 0

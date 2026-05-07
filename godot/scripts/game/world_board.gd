@@ -7,6 +7,43 @@ var _camera: Camera2D
 const SPRITE_PX: int = 16
 const TILE_PX_STEP: int = 6
 
+# ── Kenney sprite textures (loaded in _ready, null if file missing) ───────────
+var _tex_towers: Dictionary = {}        # suffix key → Texture2D
+var _tex_enemy_aircraft: Texture2D      # DRONE
+var _tex_enemy_tank: Texture2D          # GOLEM / TITAN boss
+var _tex_obstacle_bush: Texture2D
+var _tex_obstacle_rock: Texture2D
+
+
+func _ready() -> void:
+	_load_kenney_sprites()
+
+
+func _load_kenney_sprites() -> void:
+	var tower_map := {
+		"RIFLE":   "res://assets/sprites/tower_base_rifle.png",
+		"CANNON":  "res://assets/sprites/tower_base_cannon.png",
+		"SNIPER":  "res://assets/sprites/tower_base_sniper.png",
+		"SHOTGUN": "res://assets/sprites/tower_base_shotgun.png",
+		"FREEZE":  "res://assets/sprites/tower_base_freeze.png",
+		"BURN":    "res://assets/sprites/tower_base_burn.png",
+		"STUN":    "res://assets/sprites/tower_base_stun.png",
+		"HEAL":    "res://assets/sprites/tower_base_heal.png",
+	}
+	for k: String in tower_map:
+		var path: String = tower_map[k]
+		if ResourceLoader.exists(path):
+			_tex_towers[k] = load(path)
+
+	for pair: Array in [
+		["res://assets/sprites/enemy_aircraft.png", "_tex_enemy_aircraft"],
+		["res://assets/sprites/enemy_tank.png",     "_tex_enemy_tank"],
+		["res://assets/sprites/obstacle_bush.png",  "_tex_obstacle_bush"],
+		["res://assets/sprites/obstacle_rock.png",  "_tex_obstacle_rock"],
+	]:
+		if ResourceLoader.exists(pair[0]):
+			set(pair[1], load(pair[0]))
+
 
 func bind_session(session: NeonSession) -> void:
 	_session = session
@@ -70,34 +107,37 @@ func _draw() -> void:
 				_draw_pixel_cell(rect, bg.lightened(0.04), r, c)
 			draw_rect(rect, grid_line, false, 1.0)
 
-	# Towers — glow pad → sprite → accent → outline
+	# ── Towers: glow pad → Kenney base sprite (or pixel art fallback) → accent → outline
 	for t in _session.towers:
 		var tr: int = int(t["r"])
 		var tc: int = int(t["c"])
-		# Bigger tower rect: only 2px margin (was 4px)
 		var rect3 := Rect2(Vector2(tc * cs + 2, tr * cs + 2), Vector2(cs - 4, cs - 4))
 		var key: String = String(t["key"])
 		var tcol: Color = _tower_color(key)
-		# Soft coloured glow pad
+		# Glow pad beneath tower
 		draw_rect(Rect2(Vector2(tc * cs, tr * cs), Vector2(cs, cs)),
-			Color(tcol.r, tcol.g, tcol.b, 0.15))
-		_draw_pixel_tower(rect3, key, anim_tick + int(t.get("id", 0)))
+			Color(tcol.r, tcol.g, tcol.b, 0.18))
+		# Tower body
+		if not _draw_kenney_tower(rect3, key):
+			_draw_pixel_tower(rect3, key, anim_tick + int(t.get("id", 0)))
+		# Animated accent on top (always)
 		_draw_tower_accent(rect3, key, anim_tick)
-		draw_rect(rect3, Color(1, 1, 1, 0.9), false, 1.5)
+		# Crisp outline
+		draw_rect(rect3, Color(1, 1, 1, 0.85), false, 1.5)
 
-	# Enemies — boss aura → sprite → HP bar
+	# ── Enemies: boss aura → sprite → HP bar
 	for e in _session.enemies:
 		var px: float = float(e["c"]) + float(e.get("x_offset", 0.0))
 		var py: float = float(e["r"]) + float(e.get("y_offset", 0.0))
 		var center := Vector2((px + 0.5) * cs, (py + 0.5) * cs)
 		var scale: float = float(e.get("scale", 1.0))
-		# Bigger enemies: 36px base (was 28px)
-		var size_px: float = 36.0 * scale
+		var size_px: float = 38.0 * scale
 		var enemy_rect := Rect2(center - Vector2(size_px, size_px) * 0.5, Vector2(size_px, size_px))
 		var is_boss: bool = bool(e.get("is_boss", false)) or String(e.get("boss_type", "")) != ""
 		if is_boss:
 			_draw_boss_aura(center, size_px, e, anim_tick)
-		_draw_pixel_enemy(enemy_rect, e, anim_tick + int(e.get("id", 0)))
+		if not _draw_kenney_enemy(enemy_rect, e):
+			_draw_pixel_enemy(enemy_rect, e, anim_tick + int(e.get("id", 0)))
 		_draw_enemy_hp_bar(enemy_rect, e, is_boss)
 
 	for p in _session.projectiles:
@@ -111,7 +151,32 @@ func _draw() -> void:
 		draw_string(fnt, pos2, String(ft.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, ft.get("color", Color.WHITE))
 
 
-# ─── Cell rendering ─────────────────────────────────────────────────────────────
+# ─── Kenney sprite helpers ──────────────────────────────────────────────────
+
+func _draw_kenney_tower(rect3: Rect2, key: String) -> bool:
+	for suffix: String in ["RIFLE", "CANNON", "SNIPER", "SHOTGUN", "FREEZE", "BURN", "STUN", "HEAL"]:
+		if key.find(suffix) >= 0 and _tex_towers.has(suffix):
+			var tex: Texture2D = _tex_towers[suffix]
+			draw_texture_rect(tex, rect3, false)
+			return true
+	return false
+
+
+func _draw_kenney_enemy(rect: Rect2, e: Dictionary) -> bool:
+	var name: String = String(e.get("name", "")).to_lower()
+	var col: Color = Color(e.get("color", Color.WHITE))
+	# Modulate the Kenney sprite with the enemy colour (partial tint)
+	var tint := Color(col.r * 0.6 + 0.4, col.g * 0.6 + 0.4, col.b * 0.6 + 0.4, 1.0)
+	if name.contains("drone") and _tex_enemy_aircraft != null:
+		draw_texture_rect(_tex_enemy_aircraft, rect, false, tint)
+		return true
+	if (name.contains("golem") or name.contains("titan")) and _tex_enemy_tank != null:
+		draw_texture_rect(_tex_enemy_tank, rect, false, tint)
+		return true
+	return false
+
+
+# ─── Cell rendering ────────────────────────────────────────────────────────────
 
 func _draw_path_cell(rect: Rect2, theme: Dictionary, anim_tick: int) -> void:
 	var road: Color = theme.get("path", Color(0.38, 0.34, 0.30))
@@ -119,17 +184,15 @@ func _draw_path_cell(rect: Rect2, theme: Dictionary, anim_tick: int) -> void:
 	var edge: Color = theme.get("path_edge", road.darkened(0.35))
 	var stripe: Color = theme.get("path_stripe", Color(0.95, 0.82, 0.28))
 
-	# Road fill
 	draw_rect(rect, road)
-	# Dark edges (kerb effect)
+	# Dark kerb edges
 	draw_rect(Rect2(rect.position, Vector2(2.0, rect.size.y)), edge)
 	draw_rect(Rect2(Vector2(rect.position.x + rect.size.x - 2.0, rect.position.y), Vector2(2.0, rect.size.y)), edge)
 
-	# Dashed centre-line
-	var dash_h: float = 7.0
-	var gap_h: float = 7.0
+	# Dashed centre-line (static)
+	var dash_h: float = 8.0
+	var gap_h: float = 8.0
 	var cx: float = rect.position.x + rect.size.x * 0.5 - 1.0
-	var offset: float = float(anim_tick % int(dash_h + gap_h)) * 0.0  # static (no scroll)
 	var y: float = rect.position.y
 	while y < rect.position.y + rect.size.y:
 		var end_y: float = minf(y + dash_h, rect.position.y + rect.size.y)
@@ -142,10 +205,8 @@ func _draw_start_cell(rect: Rect2, theme: Dictionary, _anim_tick: int) -> void:
 	road.a = 1.0
 	var col := Color(0.1, 1.0, 0.45)
 	draw_rect(rect, road)
-	# Bright green top/bottom border
 	draw_rect(Rect2(rect.position, Vector2(rect.size.x, 3.0)), col)
 	draw_rect(Rect2(Vector2(rect.position.x, rect.position.y + rect.size.y - 3.0), Vector2(rect.size.x, 3.0)), col)
-	# "S" marker bar
 	var bar_w: float = rect.size.x * 0.6
 	var bar_h: float = rect.size.y * 0.45
 	var bar_pos := Vector2(rect.position.x + (rect.size.x - bar_w) * 0.5, rect.position.y + (rect.size.y - bar_h) * 0.5)
@@ -160,10 +221,8 @@ func _draw_base_cell(rect: Rect2, theme: Dictionary, _anim_tick: int) -> void:
 	road.a = 1.0
 	var col := Color(1.0, 0.22, 0.18)
 	draw_rect(rect, road)
-	# Bright red top/bottom border
 	draw_rect(Rect2(rect.position, Vector2(rect.size.x, 3.0)), col)
 	draw_rect(Rect2(Vector2(rect.position.x, rect.position.y + rect.size.y - 3.0), Vector2(rect.size.x, 3.0)), col)
-	# "BASE" marker
 	var bar_w: float = rect.size.x * 0.7
 	var bar_h: float = rect.size.y * 0.45
 	var bar_pos := Vector2(rect.position.x + (rect.size.x - bar_w) * 0.5, rect.position.y + (rect.size.y - bar_h) * 0.5)
@@ -177,6 +236,13 @@ func _draw_obstacle_cell(rect: Rect2, theme: Dictionary, r: int, c: int) -> void
 	var obs: Color = theme.get("obstacle", Color(0.22, 0.22, 0.26))
 	obs.a = 1.0
 	_draw_pixel_cell(rect, obs, r, c)
+	# Overlay Kenney obstacle sprite if available
+	var inner := rect.grow(-4.0)
+	var hash_val: int = _pixel_hash(r, c, 99) % 2
+	if hash_val == 0 and _tex_obstacle_bush != null:
+		draw_texture_rect(_tex_obstacle_bush, inner, false)
+	elif _tex_obstacle_rock != null:
+		draw_texture_rect(_tex_obstacle_rock, inner, false)
 	draw_rect(rect, obs.darkened(0.3), false, 1.5)
 
 
@@ -313,40 +379,60 @@ func _draw_pixel_tower(rect3: Rect2, key: String, tick: int) -> void:
 func _draw_tower_accent(rect3: Rect2, key: String, anim_tick: int) -> void:
 	var pulse: float = 0.5 + 0.3 * sin(float(anim_tick) * 0.65)
 	var center := rect3.get_center()
-	var r: float = rect3.size.x
+	var r: float = rect3.size.x * 0.5
+
+	# Subtle range ring on every tower
+	draw_arc(center, r * 0.46, 0.0, TAU, 24, Color(1.0, 1.0, 1.0, 0.06), 1.0)
 
 	if key.find("HEAL") >= 0:
-		draw_circle(center, r * 0.18, Color(0.12, 1.0, 0.6, pulse * 0.8))
-		draw_circle(center, r * 0.09, Color(0.5, 1.0, 0.8, pulse))
-		var orbit_angle: float = float(anim_tick) * 0.15
-		draw_circle(center + Vector2(cos(orbit_angle), sin(orbit_angle)) * r * 0.36, 2.5, Color(0.3, 1.0, 0.7, pulse))
-	elif key.find("BURN") >= 0:
-		var nozzle := center + Vector2(-r * 0.42, 0.0)
-		draw_circle(nozzle, r * 0.18 * pulse, Color(1.0, 0.28, 0.05, 0.9))
-		draw_circle(nozzle + Vector2(-2.5, -1.0), r * 0.10, Color(1.0, 0.72, 0.18, pulse))
-		draw_circle(nozzle + Vector2(-5.0, 0.0), r * 0.06, Color(1.0, 0.95, 0.6, pulse * 0.7))
-	elif key.find("FREEZE") >= 0:
+		# Three orbiting green particles + pulsing core
 		for i in range(3):
-			var angle: float = float(i) * TAU / 3.0 + float(anim_tick) * 0.09
-			draw_circle(center + Vector2(cos(angle), sin(angle)) * r * 0.32, 2.2, Color(0.72, 0.96, 1.0, pulse))
-		draw_circle(center, r * 0.08, Color(0.92, 1.0, 1.0, pulse))
+			var orbit_a: float = float(i) * TAU / 3.0 + float(anim_tick) * 0.12
+			draw_circle(center + Vector2(cos(orbit_a), sin(orbit_a)) * r * 0.4, 2.5,
+				Color(0.12, 1.0, 0.6, pulse))
+		draw_arc(center, r * 0.42, 0.0, TAU, 24, Color(0.12, 1.0, 0.58, 0.35 * pulse), 2.0)
+		draw_circle(center, r * 0.14, Color(0.2, 1.0, 0.65, pulse * 0.9))
+	elif key.find("BURN") >= 0:
+		var nozzle := center + Vector2(-r * 0.44, 0.0)
+		draw_circle(nozzle, r * 0.20 * pulse, Color(1.0, 0.25, 0.04, 0.88))
+		draw_circle(nozzle + Vector2(-3.0, -1.0), r * 0.12, Color(1.0, 0.65, 0.15, pulse))
+		draw_circle(nozzle + Vector2(-6.0, 0.0), r * 0.07, Color(1.0, 0.95, 0.6, pulse * 0.6))
+		# Drifting smoke dots
+		for i in range(3):
+			var smoke_y: float = float(_pixel_hash(i, anim_tick, 11) % 8) - 4.0
+			draw_circle(nozzle + Vector2(-8.0 - float(i) * 3.0, smoke_y), 1.5,
+				Color(0.25, 0.22, 0.20, 0.35 - float(i) * 0.10))
+	elif key.find("FREEZE") >= 0:
+		for i in range(4):
+			var angle: float = float(i) * TAU / 4.0 + float(anim_tick) * 0.08
+			draw_circle(center + Vector2(cos(angle), sin(angle)) * r * 0.36, 2.2,
+				Color(0.72, 0.96, 1.0, pulse))
+		draw_arc(center, r * 0.40, 0.0, TAU, 24, Color(0.55, 0.88, 1.0, 0.28 * pulse), 2.0)
+		draw_circle(center, r * 0.09, Color(0.92, 1.0, 1.0, pulse))
 	elif key.find("STUN") >= 0:
-		var top := center + Vector2(0.0, -r * 0.42)
-		var spark_offset: float = float(anim_tick % 4) * 2.2 - 4.4
-		draw_line(top, top + Vector2(spark_offset, -5.0), Color(1.0, 0.95, 0.3, pulse), 1.5)
-		draw_line(top, top + Vector2(-spark_offset, -7.0), Color(1.0, 0.85, 0.2, pulse * 0.7), 1.5)
-		draw_circle(top, 2.8, Color(1.0, 1.0, 0.5, pulse))
+		var top := center + Vector2(0.0, -r * 0.44)
+		var spark_off: float = float(anim_tick % 4) * 2.5 - 5.0
+		draw_line(top, top + Vector2(spark_off, -6.0), Color(1.0, 0.95, 0.3, pulse), 1.5)
+		draw_line(top, top + Vector2(-spark_off, -8.0), Color(1.0, 0.85, 0.15, pulse * 0.7), 1.5)
+		draw_circle(top, 3.0, Color(1.0, 1.0, 0.5, pulse))
+		draw_arc(center, r * 0.38, 0.0, TAU, 24, Color(1.0, 0.95, 0.28, 0.18 * pulse), 1.5)
 	elif key.find("SNIPER") >= 0:
-		var barrel_tip := center + Vector2(r * 0.46, 0.0)
-		draw_circle(barrel_tip, 2.8, Color(1.0, 0.18, 0.18, pulse))
-		draw_circle(barrel_tip, 1.4, Color(1.0, 0.7, 0.7, pulse))
+		var barrel_tip := center + Vector2(r * 0.48, 0.0)
+		draw_circle(barrel_tip, 3.2, Color(1.0, 0.12, 0.12, pulse))
+		draw_arc(barrel_tip, 5.0, 0.0, TAU, 16, Color(1.0, 0.15, 0.15, 0.45 * pulse), 1.0)
+		draw_circle(barrel_tip, 1.5, Color(1.0, 0.8, 0.8, pulse))
 	elif key.find("CANNON") >= 0:
-		draw_circle(center + Vector2(0.0, -r * 0.46), r * 0.14 * pulse, Color(0.55, 0.52, 0.58, 0.35 * pulse))
+		var barrel_top := center + Vector2(0.0, -r * 0.46)
+		draw_circle(barrel_top, r * 0.14 * pulse, Color(0.55, 0.52, 0.58, 0.40 * pulse))
+		draw_circle(barrel_top, r * 0.07, Color(0.85, 0.82, 0.88, pulse * 0.6))
+		draw_circle(barrel_top + Vector2(-3.0, -4.0), r * 0.06, Color(0.48, 0.45, 0.50, pulse * 0.4))
 	elif key.find("SHOTGUN") >= 0:
-		draw_circle(center + Vector2(r * 0.4, -r * 0.12), 2.2, Color(1.0, 0.65, 0.15, pulse))
-		draw_circle(center + Vector2(r * 0.4, r * 0.12), 2.2, Color(1.0, 0.65, 0.15, pulse))
+		draw_circle(center + Vector2(r * 0.42, -r * 0.12), 2.8, Color(1.0, 0.68, 0.18, pulse))
+		draw_circle(center + Vector2(r * 0.42, r * 0.12), 2.8, Color(1.0, 0.68, 0.18, pulse))
+		draw_circle(center + Vector2(r * 0.48, 0.0), 1.5, Color(1.0, 0.95, 0.75, pulse))
 	elif key.find("RIFLE") >= 0:
-		draw_circle(center + Vector2(r * 0.44, 0.0), 2.5, Color(1.0, 0.88, 0.32, pulse * 0.75))
+		draw_circle(center + Vector2(r * 0.46, 0.0), 2.8, Color(1.0, 0.88, 0.32, pulse * 0.85))
+		draw_circle(center + Vector2(r * 0.50, 0.0), 1.5, Color(1.0, 1.0, 0.8, pulse))
 
 
 # ─── Enemy drawing ─────────────────────────────────────────────────────────────
@@ -355,12 +441,13 @@ func _draw_boss_aura(center: Vector2, size_px: float, e: Dictionary, anim_tick: 
 	var pulse: float = 0.55 + 0.35 * sin(float(anim_tick) * 0.5)
 	var base: Color = Color(e.get("color", Color.WHITE))
 	var aura_r: float = size_px * 0.78
-	draw_arc(center, aura_r + 3.0, 0.0, TAU, 32, Color(base.r, base.g, base.b, 0.22 * pulse), 3.0)
+	draw_arc(center, aura_r + 4.0, 0.0, TAU, 32, Color(base.r, base.g, base.b, 0.18 * pulse), 4.0)
 	draw_arc(center, aura_r, 0.0, TAU, 32, Color(base.r, base.g, base.b, 0.55 * pulse), 2.0)
 	for i in range(4):
 		var angle: float = float(i) * TAU / 4.0 + float(anim_tick) * 0.06
-		var tip := center + Vector2(cos(angle), sin(angle)) * (aura_r + 6.0)
-		draw_line(center + Vector2(cos(angle), sin(angle)) * aura_r, tip, Color(1.0, 0.85, 0.3, 0.85 * pulse), 2.0)
+		var tip := center + Vector2(cos(angle), sin(angle)) * (aura_r + 7.0)
+		draw_line(center + Vector2(cos(angle), sin(angle)) * aura_r, tip,
+			Color(1.0, 0.85, 0.3, 0.85 * pulse), 2.0)
 
 
 func _draw_pixel_enemy(rect: Rect2, e: Dictionary, tick: int) -> void:
@@ -529,11 +616,11 @@ func _draw_enemy_hp_bar(enemy_rect: Rect2, e: Dictionary, is_boss: bool = false)
 	var hp: float = float(e.get("hp", 0.0))
 	var max_hp: float = maxf(1.0, float(e.get("max_hp", 1.0)))
 	var ratio: float = clampf(hp / max_hp, 0.0, 1.0)
-	var w: float = enemy_rect.size.x * (1.15 if is_boss else 0.88)
+	var w: float = enemy_rect.size.x * (1.15 if is_boss else 0.92)
 	var h: float = maxf(4.0 if is_boss else 3.0, enemy_rect.size.y * 0.1)
 	var x: float = enemy_rect.position.x + (enemy_rect.size.x - w) * 0.5
 	var y: float = enemy_rect.position.y - h - 3.0
-	draw_rect(Rect2(Vector2(x, y), Vector2(w, h)), Color(0.0, 0.0, 0.0, 0.72))
+	draw_rect(Rect2(Vector2(x, y), Vector2(w, h)), Color(0.0, 0.0, 0.0, 0.75))
 	var bar_col: Color
 	if ratio > 0.6:
 		bar_col = Color(0.2, 1.0, 0.35)
@@ -546,10 +633,11 @@ func _draw_enemy_hp_bar(enemy_rect: Rect2, e: Dictionary, is_boss: bool = false)
 		draw_rect(Rect2(Vector2(x, y), Vector2(w, h)), Color(1.0, 0.82, 0.1, 0.6), false, 1.0)
 
 
-# ─── Projectile drawing ────────────────────────────────────────────────────────
+# ─── Projectile drawing ─────────────────────────────────────────────────────────
 
 func _draw_projectile(p: Dictionary, cs: int, anim_tick: int) -> void:
-	var start := Vector2(float(p.get("x", 0.0)) * cs + cs * 0.5, float(p.get("y", 0.0)) * cs + cs * 0.5)
+	var start := Vector2(float(p.get("x", 0.0)) * cs + cs * 0.5,
+		float(p.get("y", 0.0)) * cs + cs * 0.5)
 	var tx := float(p.get("tx", p.get("x", 0.0)))
 	var ty := float(p.get("ty", p.get("y", 0.0)))
 	var target := Vector2(tx * cs + cs * 0.5, ty * cs + cs * 0.5)
@@ -559,57 +647,122 @@ func _draw_projectile(p: Dictionary, cs: int, anim_tick: int) -> void:
 	var t: float = 1.0 - clampf(float(p.get("life", 0.0)) / life, 0.0, 1.0)
 	var pos: Vector2 = start.lerp(target, t)
 	var pulse: float = 0.7 + 0.3 * sin(float(anim_tick) * 1.2)
-
-	if style == "sniper":
-		_draw_pixel_beam(start, target, Color(1.0, 0.12, 0.12, 0.22), 5.0)
-		_draw_pixel_beam(start, target, Color(1.0, 0.25, 0.25, 0.55), 2.0)
-		_draw_pixel_beam(start, target, Color(1.0, 0.8, 0.8, 0.85), 1.0)
-		draw_rect(Rect2(target - Vector2(3, 3), Vector2(6, 6)), Color(1.0, 0.95, 0.95, 0.9))
-		draw_rect(Rect2(target - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 1.0, 1.0, 1.0))
-	elif style == "lightning":
-		var segs: int = 6
-		var prev := start
-		for i in range(1, segs + 1):
-			var ft: float = float(i) / float(segs)
-			var mid := start.lerp(target, ft)
-			var dir := (target - start).normalized()
-			var perp := Vector2(-dir.y, dir.x)
-			var offset: float = (float(_pixel_hash(i, anim_tick, 7) % 100) / 100.0 - 0.5) * 10.0 if i < segs else 0.0
-			var pt := mid + perp * offset
-			_draw_pixel_beam(prev, pt, Color(1.0, 0.98, 0.4, 0.9), 2.0)
-			_draw_pixel_beam(prev, pt, Color(1.0, 1.0, 0.7, 0.32), 4.5)
-			prev = pt
-	elif style == "fire" or style == "beam":
-		draw_rect(Rect2(pos - Vector2(5, 5), Vector2(10, 10)), Color(1.0, 0.28, 0.04, 0.42 * pulse))
-		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), Color(1.0, 0.45, 0.08, 0.88))
-		draw_rect(Rect2(pos - Vector2(1.5, 1.5), Vector2(3, 3)), Color(1.0, 0.88, 0.35, 1.0))
-	elif style == "ice":
-		draw_rect(Rect2(pos - Vector2(4, 4), Vector2(8, 8)), Color(0.38, 0.72, 1.0, 0.35 * pulse))
-		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), Color(0.62, 0.9, 1.0, 0.9))
-		draw_rect(Rect2(pos - Vector2(3, 1), Vector2(6, 2)), Color(0.88, 0.98, 1.0, 0.95))
-		draw_rect(Rect2(pos - Vector2(1, 3), Vector2(2, 6)), Color(0.88, 0.98, 1.0, 0.95))
-	elif style == "shotgun":
-		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), Color(1.0, 0.55, 0.08, 0.42 * pulse))
-		draw_rect(Rect2(pos - Vector2(2, 2), Vector2(4, 4)), Color(1.0, 0.72, 0.28, 0.92))
-		draw_rect(Rect2(pos - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 0.92, 0.72, 1.0))
-	elif style == "arc":
-		draw_rect(Rect2(pos - Vector2(4, 4), Vector2(8, 8)), Color(col.r, col.g, col.b, 0.28 * pulse))
-		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), col)
-		draw_rect(Rect2(pos - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 0.88, 0.55, 0.92))
-	elif style == "bullet":
-		var dir: Vector2 = (target - start).normalized()
-		_draw_pixel_beam(pos, pos - dir * 7.0, Color(col.r, col.g, col.b, 0.35), 2.0)
-		draw_rect(Rect2(pos - Vector2(2.5, 2.5), Vector2(5, 5)), col)
-		draw_rect(Rect2(pos - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 0.96, 0.82, 0.95))
-	elif style == "bolt":
-		_draw_pixel_beam(start, target, Color(col.r, col.g, col.b, 0.28), 4.0)
-		_draw_pixel_beam(start, target, col, 1.5)
+	var dir: Vector2 = (target - start)
+	if dir.length_squared() > 0.001:
+		dir = dir.normalized()
 	else:
-		draw_rect(Rect2(pos - Vector2(3, 3), Vector2(6, 6)), col)
-		draw_rect(Rect2(pos - Vector2(1, 1), Vector2(2, 2)), Color(1.0, 1.0, 1.0, 0.8))
+		dir = Vector2(1.0, 0.0)
+
+	match style:
+		"sniper":
+			# Instant beam: 3-layer glow + crosshair at impact
+			_draw_pixel_beam(start, target, Color(1.0, 0.04, 0.04, 0.12), 8.0)
+			_draw_pixel_beam(start, target, Color(1.0, 0.18, 0.18, 0.50), 3.0)
+			_draw_pixel_beam(start, target, Color(1.0, 0.88, 0.88, 0.90), 1.0)
+			draw_rect(Rect2(target - Vector2(5.0, 1.0), Vector2(10.0, 2.0)),
+				Color(1.0, 0.9, 0.9, 0.85))
+			draw_rect(Rect2(target - Vector2(1.0, 5.0), Vector2(2.0, 10.0)),
+				Color(1.0, 0.9, 0.9, 0.85))
+			draw_rect(Rect2(target - Vector2(2.0, 2.0), Vector2(4.0, 4.0)),
+				Color(1.0, 1.0, 1.0, 1.0))
+		"lightning":
+			# Multi-segment zigzag with glow + one branch
+			var segs: int = 7
+			var prev := start
+			for i in range(1, segs + 1):
+				var ft: float = float(i) / float(segs)
+				var mid: Vector2 = start.lerp(target, ft)
+				var perp := Vector2(-dir.y, dir.x)
+				var offset: float = 0.0
+				if i < segs:
+					offset = (float(_pixel_hash(i, anim_tick, 7) % 100) / 100.0 - 0.5) * 14.0
+				var pt := mid + perp * offset
+				_draw_pixel_beam(prev, pt, Color(0.7, 0.7, 1.0, 0.22), 6.0)
+				_draw_pixel_beam(prev, pt, Color(0.9, 0.9, 1.0, 0.65), 2.5)
+				_draw_pixel_beam(prev, pt, Color(1.0, 1.0, 0.55, 1.0), 1.0)
+				if i == 3:
+					var perp2 := Vector2(-dir.y, dir.x)
+					_draw_pixel_beam(pt, pt + perp2 * 8.0 + dir * 5.0,
+						Color(1.0, 1.0, 0.45, 0.5), 1.0)
+				prev = pt
+		"fire", "beam":
+			# Layered flame blob with trailing sparks
+			draw_rect(Rect2(pos - Vector2(8.0, 8.0), Vector2(16.0, 16.0)),
+				Color(1.0, 0.15, 0.0, 0.18 * pulse))
+			draw_rect(Rect2(pos - Vector2(5.0, 5.0), Vector2(10.0, 10.0)),
+				Color(1.0, 0.30, 0.02, 0.55 * pulse))
+			draw_rect(Rect2(pos - Vector2(3.0, 3.0), Vector2(6.0, 6.0)),
+				Color(1.0, 0.55, 0.08, 0.92))
+			draw_rect(Rect2(pos - Vector2(1.5, 1.5), Vector2(3.0, 3.0)),
+				Color(1.0, 0.95, 0.45, 1.0))
+			for i in range(3):
+				var tp := pos - dir * float(i + 1) * 5.0
+				draw_rect(Rect2(tp - Vector2(1.5, 1.5), Vector2(float(3 - i), float(3 - i))),
+					Color(1.0, 0.38, 0.05, 0.6 - float(i) * 0.18))
+		"ice":
+			# Snowflake cross + glow halo
+			draw_rect(Rect2(pos - Vector2(6.0, 6.0), Vector2(12.0, 12.0)),
+				Color(0.38, 0.72, 1.0, 0.22 * pulse))
+			draw_rect(Rect2(pos - Vector2(5.0, 1.0), Vector2(10.0, 2.0)),
+				Color(0.55, 0.88, 1.0, 0.75 * pulse))
+			draw_rect(Rect2(pos - Vector2(1.0, 5.0), Vector2(2.0, 10.0)),
+				Color(0.55, 0.88, 1.0, 0.75 * pulse))
+			draw_rect(Rect2(pos - Vector2(3.0, 3.0), Vector2(6.0, 6.0)),
+				Color(0.75, 0.94, 1.0, 0.85))
+			draw_rect(Rect2(pos - Vector2(1.5, 1.5), Vector2(3.0, 3.0)),
+				Color(0.95, 1.0, 1.0, 1.0))
+		"shotgun":
+			# Three-pellet spread along perpendicular axis
+			var perp := Vector2(-dir.y, dir.x)
+			for i in range(3):
+				var off: Vector2 = perp * float(i - 1) * 4.5
+				var pp: Vector2 = pos + off
+				draw_rect(Rect2(pp - Vector2(3.0, 3.0), Vector2(6.0, 6.0)),
+					Color(1.0, 0.62, 0.12, 0.38 * pulse))
+				draw_rect(Rect2(pp - Vector2(1.5, 1.5), Vector2(3.0, 3.0)),
+					Color(1.0, 0.75, 0.32, 0.92))
+				draw_rect(Rect2(pp - Vector2(0.5, 0.5), Vector2(1.0, 1.0)),
+					Color(1.0, 0.95, 0.75, 1.0))
+		"arc":
+			# Orb with orbiting sparkles
+			draw_rect(Rect2(pos - Vector2(6.0, 6.0), Vector2(12.0, 12.0)),
+				Color(col.r, col.g, col.b, 0.22 * pulse))
+			draw_rect(Rect2(pos - Vector2(4.0, 4.0), Vector2(8.0, 8.0)),
+				Color(col.r, col.g, col.b, 0.55))
+			draw_rect(Rect2(pos - Vector2(2.0, 2.0), Vector2(4.0, 4.0)), col)
+			draw_rect(Rect2(pos - Vector2(1.0, 1.0), Vector2(2.0, 2.0)),
+				Color(1.0, 0.95, 0.65, 0.95))
+			for i in range(3):
+				var angle: float = float(i) * TAU / 3.0 + float(anim_tick) * 0.22
+				var op: Vector2 = pos + Vector2(cos(angle), sin(angle)) * 7.0
+				draw_rect(Rect2(op - Vector2(1.0, 1.0), Vector2(2.0, 2.0)),
+					Color(col.r, col.g, col.b, 0.8))
+		"bullet":
+			# Elongated bullet + motion trail
+			for i in range(4):
+				var tp: Vector2 = pos - dir * float(i + 1) * 4.0
+				var sz: float = 3.0 - float(i) * 0.6
+				draw_rect(Rect2(tp - Vector2(sz * 0.5, sz * 0.5), Vector2(sz, sz)),
+					Color(col.r, col.g, col.b, 0.65 - float(i) * 0.14))
+			# Core: elongated rectangle along travel direction
+			var bp1: Vector2 = pos + dir * 3.5
+			var bp2: Vector2 = pos - dir * 3.5
+			_draw_pixel_beam(bp1, bp2, col, 3.0)
+			draw_rect(Rect2(pos - Vector2(1.0, 1.0), Vector2(2.0, 2.0)),
+				Color(1.0, 0.96, 0.82, 0.95))
+			draw_rect(Rect2(pos - Vector2(3.5, 3.5), Vector2(7.0, 7.0)),
+				Color(col.r, col.g, col.b, 0.22 * pulse))
+		"bolt":
+			_draw_pixel_beam(start, target, Color(col.r, col.g, col.b, 0.22), 6.0)
+			_draw_pixel_beam(start, target, Color(col.r, col.g, col.b, 0.60), 2.5)
+			_draw_pixel_beam(start, target, col, 1.0)
+		_:
+			draw_rect(Rect2(pos - Vector2(3.0, 3.0), Vector2(6.0, 6.0)), col)
+			draw_rect(Rect2(pos - Vector2(1.0, 1.0), Vector2(2.0, 2.0)),
+				Color(1.0, 1.0, 1.0, 0.8))
 
 
-# ─── Shared pixel helpers ──────────────────────────────────────────────────────
+# ─── Shared pixel helpers ─────────────────────────────────────────────────────
 
 func _pixel_hash(r: int, c: int, salt: int = 0) -> int:
 	var n: int = r * 92821 + c * 68917 + salt * 1013
@@ -626,9 +779,15 @@ func _draw_pixel_cell(rect: Rect2, base: Color, r: int, c: int) -> void:
 		for xx in range(cols):
 			var h: int = _pixel_hash(r * 17 + yy, c * 23 + xx, 3) % 100
 			if h < 33:
-				draw_rect(Rect2(rect.position + Vector2(xx * step, yy * step), Vector2(step + 0.1, step + 0.1)), base.darkened(0.08))
+				draw_rect(
+					Rect2(rect.position + Vector2(xx * step, yy * step),
+					Vector2(step + 0.1, step + 0.1)),
+					base.darkened(0.08))
 			elif h > 88:
-				draw_rect(Rect2(rect.position + Vector2(xx * step, yy * step), Vector2(step + 0.1, step + 0.1)), base.lightened(0.08))
+				draw_rect(
+					Rect2(rect.position + Vector2(xx * step, yy * step),
+					Vector2(step + 0.1, step + 0.1)),
+					base.lightened(0.08))
 
 
 func _draw_pixel_pattern(rect: Rect2, pattern: PackedStringArray, palette: Dictionary) -> void:
@@ -646,7 +805,10 @@ func _draw_pixel_pattern(rect: Rect2, pattern: PackedStringArray, palette: Dicti
 			var ch: String = row.substr(x, 1)
 			if ch == "." or not palette.has(ch):
 				continue
-			draw_rect(Rect2(rect.position + Vector2(floor(px * x), floor(py * y)), Vector2(ceil(px), ceil(py))), palette[ch])
+			draw_rect(
+				Rect2(rect.position + Vector2(floor(px * x), floor(py * y)),
+				Vector2(ceil(px), ceil(py))),
+				palette[ch])
 
 
 func _draw_pixel_beam(a: Vector2, b: Vector2, col: Color, thickness: float) -> void:
@@ -657,35 +819,43 @@ func _draw_pixel_beam(a: Vector2, b: Vector2, col: Color, thickness: float) -> v
 	var step: float = 3.0
 	var n: int = int(ceil(len / step))
 	for i in range(n + 1):
-		var t: float = float(i) / maxf(1.0, float(n))
-		var p: Vector2 = a.lerp(b, t)
-		draw_rect(Rect2(Vector2(floor(p.x), floor(p.y)), Vector2(thickness, thickness)), col)
+		var ft: float = float(i) / maxf(1.0, float(n))
+		var p: Vector2 = a.lerp(b, ft)
+		draw_rect(Rect2(Vector2(floor(p.x), floor(p.y)),
+			Vector2(thickness, thickness)), col)
 
 
-# ─── Ground effects ────────────────────────────────────────────────────────────
+# ─── Ground effects ───────────────────────────────────────────────────────────
 
 func _draw_neon_asphalt_ground(map_rect: Rect2, cs: int, anim_tick: int) -> void:
 	var pulse: float = 0.28 + 0.08 * sin(float(anim_tick) * 0.45)
 	draw_rect(map_rect, Color(0.12, 0.12, 0.13, 0.35))
 	for i in range(0, int(map_rect.size.x), cs * 2):
 		var x := float(i + (i / max(1, cs)) % 7)
-		draw_line(Vector2(x, map_rect.position.y + 4), Vector2(x + 10, map_rect.position.y + map_rect.size.y - 4), Color(0.06, 0.06, 0.07, 0.35), 1.0)
+		draw_line(
+			Vector2(x, map_rect.position.y + 4),
+			Vector2(x + 10, map_rect.position.y + map_rect.size.y - 4),
+			Color(0.06, 0.06, 0.07, 0.35), 1.0)
 	for i in range(5):
 		var px: float = map_rect.position.x + (map_rect.size.x * (0.13 + 0.17 * i))
 		var py: float = map_rect.position.y + map_rect.size.y * (0.18 + 0.13 * (i % 3))
 		var puddle := Rect2(Vector2(px, py), Vector2(36 + i * 4, 14 + (i % 2) * 6))
 		draw_rect(puddle, Color(0.15, 0.22, 0.3, 0.18))
 		draw_rect(puddle.grow(-2), Color(0.18, 0.55, 0.8, pulse))
-		draw_rect(Rect2(puddle.position + Vector2(3, 2), Vector2(puddle.size.x * 0.45, 3)), Color(0.9, 0.35, 0.85, pulse * 0.85))
+		draw_rect(
+			Rect2(puddle.position + Vector2(3, 2),
+			Vector2(puddle.size.x * 0.45, 3)),
+			Color(0.9, 0.35, 0.85, pulse * 0.85))
 	for i in range(3):
 		var cx: float = map_rect.position.x + map_rect.size.x * (0.25 + 0.27 * i)
 		var cy: float = map_rect.position.y + map_rect.size.y * 0.72
 		draw_circle(Vector2(cx, cy), 9.0, Color(0.23, 0.23, 0.25, 0.7))
 		draw_circle(Vector2(cx, cy), 7.0, Color(0.3, 0.3, 0.34, 0.65))
-		draw_arc(Vector2(cx, cy), 5.0, 0.0, TAU, 14, Color(0.18, 0.18, 0.2, 0.5), 1.0)
+		draw_arc(Vector2(cx, cy), 5.0, 0.0, TAU, 14,
+			Color(0.18, 0.18, 0.2, 0.5), 1.0)
 
 
-# ─── Input / coordinate mapping ───────────────────────────────────────────────
+# ─── Input / coordinate mapping ──────────────────────────────────────────────
 
 func _fill_rect(img: Image, rect: Rect2i, c: Color) -> void:
 	for y in range(rect.position.y, rect.position.y + rect.size.y):
