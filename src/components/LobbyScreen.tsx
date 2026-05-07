@@ -11,6 +11,7 @@ import { TowerLoadoutSelection } from './TowerLoadoutSelection';
 import { useLanguage } from '../i18n/useTranslation';
 import { updateStudentStatusAfterGame } from '../services/studentService';
 import { isGoogleAuthDisabled } from '../config/authMode';
+import { mergeIntoLocalEncountered } from '../config/localEncounteredEnemies';
 import { getAllQuestions, getQuestionsBySet } from '../services/questionService';
 
 interface StudentStatus {
@@ -136,16 +137,18 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     setActiveView('lobby');
     setSelectedMode(null);
     
-    if (gameResult && user && !isGoogleAuthDisabled()) {
+    if (!gameResult || !user) return;
+
+    if (!isGoogleAuthDisabled()) {
       try {
         await updateStudentStatusAfterGame(user.uid, gameResult);
-        await onStatusUpdate();
       } catch (error) {
         console.error('Error updating student status:', error);
       }
-    } else if (gameResult) {
-      await onStatusUpdate();
+    } else {
+      mergeIntoLocalEncountered(gameResult.encounteredEnemies || []);
     }
+    await onStatusUpdate();
   };
 
   if (showGame && selectedMode) {

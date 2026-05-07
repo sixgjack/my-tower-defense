@@ -75,6 +75,7 @@ export class GameEngine {
   }
 
   startNewGame() {
+    this.encounteredEnemyNames.clear();
     this.wave = 1;
     this.money = isDeveloperMode() ? DEV_STARTING_MONEY : 500;
     this.lives = 20;
@@ -287,6 +288,15 @@ export class GameEngine {
       return multipliers;
   }
   
+  /**
+   * Track catalog name for enemy dictionary (boss waves, regular spawn, etc.).
+   */
+  recordEnemyEncounter(name?: string) {
+    if (name && !this.encounteredEnemyNames.has(name)) {
+      this.encounteredEnemyNames.add(name);
+    }
+  }
+
   spawnBossEnemy(isBigBoss: boolean, _isMiniBoss: boolean) {
       if (!this.path.length) return;
       
@@ -365,6 +375,7 @@ export class GameEngine {
           name: stats.name,
           isBoss: true,
       });
+      this.recordEnemyEncounter(stats.name);
   }
 
   // --- MAP & PATH ---
@@ -534,11 +545,7 @@ export class GameEngine {
         isBoss: Boolean(stats.isBoss),
     };
     this.enemies.push(enemy);
-    
-    // Track enemy encounter for dictionary
-    if (stats.name && !this.encounteredEnemyNames.has(stats.name)) {
-      this.encounteredEnemyNames.add(stats.name);
-    }
+    this.recordEnemyEncounter(stats.name);
   }
 
   updateEnemies() {

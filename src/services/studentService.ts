@@ -50,8 +50,12 @@ export async function updateStudentStatusAfterGame(
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];
     
     // Merge encountered enemies with previously encountered ones
-    const currentEncountered = currentStatus.encounteredEnemies || [];
-    const newEncountered = gameResult.encounteredEnemies || [];
+    const currentEncountered = Array.isArray(currentStatus.encounteredEnemies)
+      ? currentStatus.encounteredEnemies
+      : [];
+    const newEncountered = Array.isArray(gameResult.encounteredEnemies)
+      ? gameResult.encounteredEnemies
+      : [];
     const allEncountered = [...new Set([...currentEncountered, ...newEncountered])];
     
     // Credits based on waves achieved: 5 credits per wave (wave-based, not money-based)

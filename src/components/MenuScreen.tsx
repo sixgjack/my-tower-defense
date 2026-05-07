@@ -8,6 +8,7 @@ import {
   isGoogleAuthDisabled,
   isGoogleAuthDisabledByEnv,
 } from '../config/authMode';
+import { readLocalEncountered } from '../config/localEncounteredEnemies';
 
 /** Same-origin Godot HTML5 export (Vite serves `public/godot/`). */
 const viteBase = import.meta.env.BASE_URL.endsWith('/')
@@ -23,6 +24,7 @@ interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies?: string[];
   lastPlayed: any;
 }
 
@@ -37,23 +39,26 @@ const DEMO_GOOGLE_USER: GoogleUser = {
   displayName: 'Demo Player',
 };
 
-const DEMO_STUDENT_STATUS: StudentStatus = {
-  totalGames: 0,
-  totalWaves: 0,
-  totalEnemiesKilled: 0,
-  totalMoneyEarned: 0,
-  highestWave: 0,
-  credits: 9999,
-  unlockedTowers: [...BASIC_TOWER_KEYS],
-  lastPlayed: new Date().toISOString(),
-};
+function buildDemoStudentStatus(): StudentStatus {
+  return {
+    totalGames: 0,
+    totalWaves: 0,
+    totalEnemiesKilled: 0,
+    totalMoneyEarned: 0,
+    highestWave: 0,
+    credits: 9999,
+    unlockedTowers: [...BASIC_TOWER_KEYS],
+    encounteredEnemies: readLocalEncountered(),
+    lastPlayed: new Date().toISOString(),
+  };
+}
 
 export const MenuScreen: React.FC = () => {
   const authOff = isGoogleAuthDisabled();
   const [user, setUser] = useState<GoogleUser | null>(() => (authOff ? DEMO_GOOGLE_USER : null));
   const [loading, setLoading] = useState(() => !authOff);
   const [studentStatus, setStudentStatus] = useState<StudentStatus | null>(() =>
-    authOff ? DEMO_STUDENT_STATUS : null
+    authOff ? buildDemoStudentStatus() : null
   );
   const [showLobby, setShowLobby] = useState(false);
 
@@ -74,6 +79,7 @@ export const MenuScreen: React.FC = () => {
           highestWave: 0,
           credits: 0,
           unlockedTowers: basicTowers,
+          encounteredEnemies: [],
           lastPlayed: new Date().toISOString()
         };
         await createStudentStatus(uid, newStatus);
@@ -94,7 +100,7 @@ export const MenuScreen: React.FC = () => {
     const unsubscribe = onAuthStateChanged(async (currentUser) => {
       if (isGoogleAuthDisabled()) {
         setUser(DEMO_GOOGLE_USER);
-        setStudentStatus(DEMO_STUDENT_STATUS);
+        setStudentStatus(buildDemoStudentStatus());
         setLoading(false);
         return;
       }
@@ -139,7 +145,13 @@ export const MenuScreen: React.FC = () => {
   };
 
   const handleStatusUpdate = async () => {
-    if (isGoogleAuthDisabled() || !user) {
+    if (!user) return;
+    if (isGoogleAuthDisabled()) {
+      setStudentStatus((prev) =>
+        prev
+          ? { ...prev, encounteredEnemies: readLocalEncountered() }
+          : buildDemoStudentStatus()
+      );
       return;
     }
     await loadStudentStatus(user.uid);

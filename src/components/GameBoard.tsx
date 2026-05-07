@@ -65,6 +65,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
   const themeIndex = Math.min(Math.floor((wave - 1) / 10), THEMES.length - 1);
   const currentTheme = THEMES[themeIndex];
 
+  // Fresh run when entering the board (singleton engine persists between lobby visits).
+  useEffect(() => {
+    game.startNewGame();
+  }, []);
+
   // --- AUDIO & ALARM EFFECT ---
   useEffect(() => {
     if (lives < 2 && lives > 0) {

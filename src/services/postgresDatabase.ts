@@ -432,8 +432,8 @@ export async function createStudentStatus(userId: string, initialData: Partial<S
     await database.query(
       `INSERT INTO students (
         user_id, total_games, total_waves, total_enemies_killed,
-        total_money_earned, highest_wave, credits, unlocked_towers
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        total_money_earned, highest_wave, credits, unlocked_towers, encountered_enemies
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (user_id) DO NOTHING`,
       [
         userId,
@@ -443,7 +443,8 @@ export async function createStudentStatus(userId: string, initialData: Partial<S
         initialData.totalMoneyEarned || 0,
         initialData.highestWave || 0,
         initialData.credits || 0,
-        JSON.stringify(initialData.unlockedTowers || [])
+        JSON.stringify(initialData.unlockedTowers || []),
+        JSON.stringify(initialData.encounteredEnemies || [])
       ]
     );
     return { success: true };
