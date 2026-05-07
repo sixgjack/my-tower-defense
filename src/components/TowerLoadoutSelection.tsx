@@ -25,6 +25,7 @@ export const TowerLoadoutSelection: React.FC<TowerLoadoutSelectionProps> = ({
 
   const isUnlocked = (key: string) => unlockedTowers.includes(key);
   const availableTowers = Object.keys(TOWERS).filter(isUnlocked);
+  const requiredTowers = Math.min(MAX_TOWERS, availableTowers.length);
 
   const toggleTower = (towerKey: string) => {
     if (selectedTowers.includes(towerKey)) {
@@ -32,13 +33,13 @@ export const TowerLoadoutSelection: React.FC<TowerLoadoutSelectionProps> = ({
       setSelectedTowers(selectedTowers.filter(k => k !== towerKey));
     } else {
       // Select (if under limit)
-      if (selectedTowers.length < MAX_TOWERS) {
+      if (selectedTowers.length < requiredTowers) {
         setSelectedTowers([...selectedTowers, towerKey]);
       }
     }
   };
 
-  const canConfirm = selectedTowers.length === MAX_TOWERS;
+  const canConfirm = selectedTowers.length === requiredTowers && requiredTowers > 0;
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 overflow-y-auto">
@@ -52,13 +53,13 @@ export const TowerLoadoutSelection: React.FC<TowerLoadoutSelectionProps> = ({
               </h1>
               <p className="text-slate-300 text-lg">
                 {language === 'zh-TW' 
-                  ? `選擇 ${MAX_TOWERS} 座防禦塔進入戰鬥` 
-                  : `Select ${MAX_TOWERS} towers for battle`}
+                  ? `選擇 ${requiredTowers} 座防禦塔進入戰鬥` 
+                  : `Select ${requiredTowers} towers for battle`}
               </p>
               <div className="mt-2 text-yellow-400 font-semibold">
                 {language === 'zh-TW' 
-                  ? `已選擇: ${selectedTowers.length}/${MAX_TOWERS}` 
-                  : `Selected: ${selectedTowers.length}/${MAX_TOWERS}`}
+                  ? `已選擇: ${selectedTowers.length}/${requiredTowers}` 
+                  : `Selected: ${selectedTowers.length}/${requiredTowers}`}
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -243,8 +244,8 @@ export const TowerLoadoutSelection: React.FC<TowerLoadoutSelectionProps> = ({
               {canConfirm
                 ? (language === 'zh-TW' ? '開始戰鬥 →' : 'Start Battle →')
                 : (language === 'zh-TW' 
-                    ? `請選擇 ${MAX_TOWERS} 座防禦塔` 
-                    : `Please select ${MAX_TOWERS} towers`)}
+                    ? `請選擇 ${requiredTowers} 座防禦塔` 
+                    : `Please select ${requiredTowers} towers`)}
             </button>
           </div>
         </div>

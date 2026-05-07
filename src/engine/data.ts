@@ -13,6 +13,8 @@ export interface EnemyType {
     description?: string; // Clash Royale-style description
     minWave?: number; // Minimum wave to spawn (for difficulty scaling)
     moneyBonus?: number; // Extra money bonus multiplier for bosses
+    movementType?: 'ground' | 'air';
+    immunities?: Array<'physical' | 'fire' | 'ice' | 'electric' | 'poison' | 'arcane' | 'explosive'>;
 }
 
 export const ENEMY_TYPES: EnemyType[] = [
@@ -20,11 +22,11 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Bug", hp: 30, speed: 1.0, reward: 10, color: "#f87171", icon: "🐛", description: "A mindless pest spawned from corrupt code. Weak alone, but travels in swarms that overwhelm unprepared defenses." },
     { name: "Spider", hp: 25, speed: 1.3, reward: 8, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'], description: "Spins invisible webs to mask its approach. Hard to spot until it has already slipped past your outer towers." },
     { name: "Mite", hp: 20, speed: 1.5, reward: 7, color: "#ef4444", icon: "🪲", description: "Microscopic and relentless. Its tiny frame lets it dart through gaps in coverage at unnerving speed." },
-    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'], description: "An airborne nuisance that bypasses ground-level defenses entirely. Fast and fragile — do not let it slip through." },
+    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🦋", abilities: ['fly'], movementType: 'air', description: "An airborne nuisance that bypasses ground-level defenses entirely. Fast and fragile — do not let it slip through." },
 
     // Balanced Enemies
     { name: "Glitch", hp: 80, speed: 0.7, reward: 16, color: "#c084fc", icon: "👾", description: "A fragment of corrupted data. Erratic movement patterns make it difficult to target reliably." },
-    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'], description: "An aerial reconnaissance unit that flies over terrain obstacles and scouts ahead of larger threats." },
+    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'], movementType: 'air', description: "An aerial reconnaissance unit that flies over terrain obstacles and scouts ahead of larger threats." },
     { name: "Hacker", hp: 85, speed: 0.65, reward: 18, color: "#9333ea", icon: "👤", abilities: ['deactivate_towers'], abilityCooldown: 300, description: "Infiltrates and disables your towers remotely. If left unchecked, it can neutralize entire sections of your defense grid." },
     { name: "Crawler", hp: 70, speed: 0.75, reward: 13, color: "#7c3aed", icon: "🕸️", description: "Methodically advances through any terrain. Manageable alone, but dangerous when part of a coordinated push." },
 
@@ -65,7 +67,7 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Phantom", hp: 140, speed: 0.9, reward: 27, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300, description: "A ghostly speedster that flickers between visibility and teleports through volleys. Nearly impossible to pin down." },
     { name: "Archmage", hp: 280, speed: 0.4, reward: 49, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350, description: "Combines tower-disabling magic with a deadly poison cloud. One of the most dangerous single targets you will ever face." },
     { name: "Golem", hp: 550, speed: 0.15, reward: 85, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'], moneyBonus: 3.0, description: "An ancient stone colossus with an impenetrable shield and total damage reflection. Only sustained magic fire can chip it down." },
-    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], moneyBonus: 3.0, description: "Soars above terrain, poisoning everything it passes and charging at full fury when wounded. A living, flying catastrophe." },
+    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], movementType: 'air', immunities: ['fire'], moneyBonus: 3.0, description: "Soars above terrain, poisoning everything it passes and charging at full fury when wounded. A living, flying catastrophe." },
     { name: "Kraken", hp: 650, speed: 0.22, reward: 98, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'], moneyBonus: 3.0, description: "A deep-sea titan that splits into smaller beasts and freezes every tower in its icy wake. Destroy all tentacles at once." },
     { name: "Hydra", hp: 580, speed: 0.26, reward: 88, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'], moneyBonus: 3.0, description: "Every time you cut it down, two heads grow back. Eliminate all fragments simultaneously or face an endless resurrection." },
     { name: "Colossus", hp: 800, speed: 0.12, reward: 117, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250, moneyBonus: 3.5, description: "The largest entity ever deployed. Shields itself, stuns attackers, and heals on the move. A true juggernaut of war." },
@@ -97,23 +99,47 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Sapper", hp: 180, speed: 0.4, reward: 29, color: "#f97316", icon: "🔨", abilities: ['attack_towers'], abilityCooldown: 200, minWave: 3, description: "Carries demolition charges that destroy tower structures directly. Leave it alone and your defenses will crumble from within." },
     { name: "Siege Engine", hp: 450, speed: 0.2, reward: 72, color: "#78716c", icon: "⚙️", abilities: ['attack_towers', 'shield'], abilityCooldown: 300, minWave: 8, description: "A massive armored war machine with a forward shield that systematically demolishes towers on contact. Built for one purpose." },
     { name: "Corruptor", hp: 220, speed: 0.5, reward: 36, color: "#7c3aed", icon: "💜", abilities: ['slow_towers', 'poison_aura'], abilityCooldown: 250, minWave: 5, description: "Infects towers with a digital plague that degrades their firing rate. Its poisonous signal lingers long after it passes." },
-    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], abilityCooldown: 350, minWave: 6, description: "An invisible ice specter that flash-freezes the ground it walks on, slowing every nearby tower's attack speed to nothing." },
+    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], immunities: ['ice'], abilityCooldown: 350, minWave: 6, description: "An invisible ice specter that flash-freezes the ground it walks on, slowing every nearby tower's attack speed to nothing." },
     { name: "Plague Bearer", hp: 160, speed: 0.7, reward: 26, color: "#14b8a6", icon: "🦠", abilities: ['poison_aura', 'spawn_minions'], abilityCooldown: 400, minWave: 4, description: "Oozes contagion that spawns additional enemies even as it marches. Two threats wrapped in one revolting package." },
     { name: "Shock Trooper", hp: 140, speed: 0.9, reward: 23, color: "#facc15", icon: "⚡", abilities: ['stun_attack', 'charge'], abilityCooldown: 280, minWave: 3, description: "Dashes forward then releases a burst of electricity that stuns nearby towers. Fast, aggressive, and electrifying." },
     { name: "Armored Crawler", hp: 380, speed: 0.25, reward: 62, color: "#475569", icon: "🦂", abilities: ['shield', 'damage_reflect'], minWave: 7, description: "Layered titanium plating shields it and reflects all incoming damage. Only sustained, heavy fire can wear it down." },
     { name: "Void Walker", hp: 200, speed: 0.55, reward: 33, color: "#1e293b", icon: "🌌", abilities: ['teleport', 'invisible'], abilityCooldown: 320, minWave: 5, description: "Slips between dimensions to teleport and vanish from tower lock-ons. Only area-of-effect fire has any chance of catching it." },
-    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], minWave: 9, description: "A crystalline titan whose facets regenerate, reflect damage, and project an energy shield. Magic fire is the only real answer." },
+    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], immunities: ['arcane'], minWave: 9, description: "A crystalline titan whose facets regenerate, reflect damage, and project an energy shield. Magic fire is the only real answer." },
     { name: "Shadow Assassin", hp: 120, speed: 1.0, reward: 20, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 380, minWave: 4, description: "Invisible by default, it teleports to dodge incoming shots and stuns towers on arrival. Do not let it reach the base." },
-    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], minWave: 10, description: "A walking volcano that poisons its surroundings, slowly rebuilds its own health, and erupts violently on death." },
+    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], immunities: ['fire'], minWave: 10, description: "A walking volcano that poisons its surroundings, slowly rebuilds its own health, and erupts violently on death." },
     { name: "Storm Caller", hp: 280, speed: 0.45, reward: 46, color: "#3b82f6", icon: "⛈️", abilities: ['stun_attack', 'deactivate_towers'], abilityCooldown: 300, minWave: 6, description: "Summons thunderbolts that stun your towers and cause cascading electrical failures across your entire defense grid." },
     { name: "Bone Collector", hp: 320, speed: 0.35, reward: 52, color: "#f3f4f6", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 450, minWave: 7, description: "Raises skeletal minions from fallen enemies and heals its growing army with necromantic energy. Shut it down fast." },
-    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], abilityCooldown: 350, minWave: 4, description: "Sprays a splitting pool of venom that divides into more threats when destroyed. One becomes many in a matter of seconds." },
+    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], immunities: ['poison'], abilityCooldown: 350, minWave: 4, description: "Sprays a splitting pool of venom that divides into more threats when destroyed. One becomes many in a matter of seconds." },
     { name: "Frost Giant", hp: 550, speed: 0.15, reward: 91, color: "#bfdbfe", icon: "🧊", isBoss: true, abilities: ['freeze_aura', 'shield', 'stun_attack'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0, description: "A colossal glacier in humanoid form. Freezes every tower in range, absorbs damage behind a shield, and stuns with each step." },
     { name: "Chaos Spawn", hp: 240, speed: 0.5, reward: 39, color: "#dc2626", icon: "🌀", abilities: ['teleport', 'split', 'berserk'], abilityCooldown: 400, minWave: 6, description: "Writhes with unstable energy — teleports randomly, shatters into fragments on death, and rages violently at low health." },
     { name: "Iron Maiden", hp: 400, speed: 0.18, reward: 65, color: "#64748b", icon: "⚔️", abilities: ['attack_towers', 'damage_reflect'], abilityCooldown: 250, minWave: 8, description: "Walks straight through tower structures, destroying them on contact and punishing every attack with lethal reflected damage." },
     { name: "Necrotic Plague", hp: 180, speed: 0.65, reward: 29, color: "#7c2d12", icon: "🦠", abilities: ['poison_aura', 'regenerate', 'spawn_minions'], abilityCooldown: 500, minWave: 5, description: "An undead pestilence that regenerates endlessly, spawns new units from the rot it leaves behind, and poisons the path ahead." },
     { name: "Void Reaper", hp: 350, speed: 0.3, reward: 57, color: "#000000", icon: "🌑", abilities: ['invisible', 'teleport', 'damage_reflect'], abilityCooldown: 360, minWave: 8, description: "Appears from nowhere, reflects all incoming damage back at your towers, then vanishes before they can reacquire it." },
     { name: "Titanium Behemoth", hp: 650, speed: 0.08, reward: 107, color: "#94a3b8", icon: "🗿", isBoss: true, abilities: ['attack_towers', 'shield', 'damage_reflect', 'regenerate'], abilityCooldown: 200, minWave: 15, moneyBonus: 4.0, description: "The most durable threat ever deployed. Destroys towers on contact, shields all damage, reflects every hit, and endlessly regenerates. Good luck." },
+
+    // ==========================================
+    // NEW ENEMIES WITH SPECIAL ABILITIES (v2)
+    // ==========================================
+    // CC Immune enemies - cannot be slowed, frozen, or stunned
+    { name: "Juggernaut", hp: 480, speed: 0.35, reward: 78, color: "#374151", icon: "🦾", abilities: ['cc_immune', 'charge'], minWave: 10, description: 'Immune to crowd control effects. Charges through slow fields and stun attacks without pause.' },
+    { name: "Unstoppable Force", hp: 600, speed: 0.28, reward: 98, color: "#1f2937", icon: "💪", isBoss: true, abilities: ['cc_immune', 'berserk', 'regenerate'], minWave: 15, moneyBonus: 3.5, description: 'Cannot be slowed or stunned. Regenerates and rages harder as it takes damage.' },
+    { name: "Phase Shifter", hp: 200, speed: 0.8, reward: 33, color: "#8b5cf6", icon: "🔮", abilities: ['cc_immune', 'teleport', 'invisible'], abilityCooldown: 300, minWave: 8, description: 'Phases through all effects. Teleports and turns invisible, immune to all crowd control.' },
+
+    // Area Disable enemies - disable towers in 2x2 area
+    { name: "EMP Drone", hp: 150, speed: 0.6, reward: 25, color: "#3b82f6", icon: "📡", abilities: ['area_disable', 'fly'], movementType: 'air', immunities: ['electric'], abilityCooldown: 400, minWave: 6, description: 'Broadcasts a disabling pulse that shuts down all towers in a wide radius. Cannot be harmed by electricity.' },
+    { name: "Pulse Bomber", hp: 280, speed: 0.4, reward: 46, color: "#6366f1", icon: "💫", abilities: ['area_disable', 'explode'], abilityCooldown: 500, minWave: 9, description: 'Creates an EMP pulse that disables nearby towers, then detonates in a final catastrophic explosion.' },
+
+    // Speed Aura enemies - speed up nearby allies
+    { name: "War Drummer", hp: 180, speed: 0.5, reward: 29, color: "#f59e0b", icon: "🥁", abilities: ['speed_aura', 'berserk'], abilityCooldown: 200, minWave: 5, description: 'Beats a war rhythm that speeds up all nearby allies. Enrages itself when threatened.' },
+    { name: "Rally Banner", hp: 220, speed: 0.35, reward: 36, color: "#fbbf24", icon: "🚩", abilities: ['speed_aura', 'heal_allies'], abilityCooldown: 250, minWave: 7, description: 'Carries a banner that inspires allies to march faster and recover their wounds mid-battle.' },
+
+    // Shield Allies enemies - give shield to nearby allies
+    { name: "Guardian Angel", hp: 200, speed: 0.45, reward: 33, color: "#60a5fa", icon: "👼", abilities: ['shield_allies', 'fly', 'heal_allies'], abilityCooldown: 350, minWave: 6, description: 'Flies above allies, projecting protective shields and healing the most wounded nearby.' },
+    { name: "Fortress", hp: 400, speed: 0.2, reward: 65, color: "#475569", icon: "🏰", abilities: ['shield_allies', 'shield', 'damage_reflect'], abilityCooldown: 400, minWave: 10, description: 'A mobile bulwark that shields nearby allies, protects itself, and reflects all incoming damage.' },
+
+    // Combined special abilities
+    { name: "Warlord Commander", hp: 350, speed: 0.38, reward: 57, color: "#dc2626", icon: "👑", isBoss: true, abilities: ['speed_aura', 'shield_allies', 'deactivate_towers'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0, description: 'A supreme commander that accelerates its army, shields allies, and remotely disables your defense grid.' },
+    { name: "Nexus Lord", hp: 700, speed: 0.15, reward: 115, color: "#4c1d95", icon: "🌟", isBoss: true, abilities: ['cc_immune', 'area_disable', 'shield_allies', 'teleport'], abilityCooldown: 350, minWave: 20, moneyBonus: 5.0, description: 'The master of control immunity. Teleports freely, disables towers, and shields its entire army from harm.' },
 ];
 
 export interface Theme {
@@ -438,6 +464,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_RIFLE': {
     name: 'Auto-Rifle', cost: 50, damage: 8, range: 2.5, cooldown: 50,
     type: 'projectile', color: '#fbbf24', icon: '🔫',
+    targetMode: 'ground', element: 'physical',
     description: 'Basic rapid-fire turret. Reliable single-target damage with moderate range. Perfect for early game defense.',
     projectileStyle: 'bullet',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.95, projectileSpeed: 1.05 }
@@ -445,6 +472,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_CANNON': {
     name: 'Mortar', cost: 120, damage: 35, range: 3.5, cooldown: 120,
     type: 'area', color: '#1e293b', icon: '💣',
+    targetMode: 'ground', element: 'explosive',
     description: 'Explosive area damage. Shells arc over obstacles, dealing splash damage to groups. Slow but devastating.',
     areaRadius: 1.8,
     projectileStyle: 'arc',
@@ -453,6 +481,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_SNIPER': {
     name: 'Sniper Rifle', cost: 180, damage: 120, range: 5.0, cooldown: 180,
     type: 'projectile', color: '#ef4444', icon: '🎯',
+    targetMode: 'both', element: 'physical',
     description: 'Long-range precision shots. Extreme single-target damage but very slow reload. Pierces through enemies.',
     projectileStyle: 'sniper',
     upgradeStats: { damage: 1.3, range: 1.12, cooldown: 0.88, penetration: 1.2 }
@@ -460,6 +489,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_SHOTGUN': {
     name: 'Shotgun', cost: 150, damage: 25, range: 2.0, cooldown: 90,
     type: 'spread', color: '#d97706', icon: '💥',
+    targetMode: 'ground', element: 'physical',
     description: 'Fires 5 pellets in a wide spread. Hits multiple enemies at close range. High burst damage.',
     multiTarget: 5,
     projectileStyle: 'shotgun',
@@ -468,6 +498,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_FREEZE': {
     name: 'Cryo Turret', cost: 200, damage: 15, range: 3.0, cooldown: 80,
     type: 'projectile', color: '#60a5fa', icon: '❄️',
+    targetMode: 'both', element: 'ice',
     description: 'Freezing projectiles slow enemies by 50%. No damage over time, pure crowd control.',
     slowFactor: 0.5,
     projectileStyle: 'ice',
@@ -475,16 +506,17 @@ export const TOWERS: Record<string, TowerStats> = {
     upgradeStats: { damage: 1.15, range: 1.1, cooldown: 0.92, slowFactor: 1.1 }
   },
   'BASIC_BURN': {
-    name: 'Flamethrower', cost: 250, damage: 5, range: 3.5, cooldown: 8,
-    type: 'beam', color: '#ef4444', icon: '🌋',
-    description: 'Continuous flame beam in arc shape. Damage ramps up over time. Burns enemies in a wide cone.',
-    beamRamp: 0.5,
-    burnDamage: 8,
-    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.15, burnDamage: 1.2 }
+    name: 'Flamethrower', cost: 250, damage: 4, range: 1.5, cooldown: 40,
+    type: 'aura', color: '#ef4444', icon: '🌋',
+    targetMode: 'ground', element: 'fire',
+    description: 'Passive 3x3 flame zone. Enemies passing through suffer burning damage over time.',
+    burnDamage: 4,
+    upgradeStats: { damage: 1.08, range: 1.04, cooldown: 0.96, burnDamage: 1.08 }
   },
   'BASIC_STUN': {
     name: 'Stun Cannon', cost: 220, damage: 40, range: 2.8, cooldown: 100,
     type: 'projectile', color: '#facc15', icon: '⚡',
+    targetMode: 'both', element: 'electric',
     description: 'Electric projectiles stun enemies for 1.5 seconds. Stops enemy movement and abilities.',
     stunDuration: 90,
     projectileStyle: 'lightning',
@@ -506,6 +538,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'CHAIN_LIGHTNING': {
     name: 'Chain Lightning', cost: 400, damage: 45, range: 3.5, cooldown: 70,
     type: 'projectile', color: '#fcd34d', icon: '⚡',
+    targetMode: 'both', element: 'electric',
     description: 'Lightning chains between 3-5 enemies. Each chain deals full damage. Excellent against groups.',
     projectileStyle: 'lightning',
     multiTarget: 4,
@@ -514,6 +547,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'PENETRATOR': {
     name: 'Railgun', cost: 600, damage: 150, range: 4.5, cooldown: 120,
     type: 'projectile', color: '#020617', icon: '⚫',
+    targetMode: 'both', element: 'physical',
     description: 'Piercing projectile travels through ALL enemies in a line. Damage decreases by 20% per enemy hit.',
     projectileStyle: 'bolt',
     upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, penetration: 1.2 }
@@ -549,10 +583,11 @@ export const TOWERS: Record<string, TowerStats> = {
   'LASER_BEAM': {
     name: 'Laser Cannon', cost: 550, damage: 12, range: 4.0, cooldown: 5,
     type: 'beam', color: '#ff5722', icon: '🔴',
+    targetMode: 'both', element: 'fire',
     description: 'Continuous laser beam. Damage ramps up 0.8x per second. Burns enemies in a straight line.',
     beamRamp: 0.8,
-    burnDamage: 5,
-    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.15 }
+    burnDamage: 2,
+    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.06 }
   },
   'INFERNO': {
     name: 'Inferno Tower', cost: 700, damage: 3, range: 3.0, cooldown: 3,
@@ -566,6 +601,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'POISON_TOWER': {
     name: 'Toxin Launcher', cost: 320, damage: 20, range: 3.0, cooldown: 60,
     type: 'projectile', color: '#14b8a6', icon: '🐍',
+    targetMode: 'ground', element: 'poison',
     description: 'Poison projectiles deal 15 damage per second for 3 seconds. Stacks up to 3 times.',
     burnDamage: 15,
     projectileStyle: 'acid',

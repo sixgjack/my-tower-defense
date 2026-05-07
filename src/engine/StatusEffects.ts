@@ -27,8 +27,10 @@ export interface StatusEffect {
     };
     
     // Damage over time / healing over time
-    tickDamage?: number; // Damage per tick
+    tickDamage?: number; // Damage per tick (see damageTickInterval)
     tickHeal?: number; // Healing per tick
+    /** If set and >1, tickDamage only applies every N world ticks (enemy update steps). Healing still every tick unless extended later. */
+    damageTickInterval?: number;
     
     // Special properties
     canStackWith?: string[]; // Effect IDs that can stack with this
@@ -94,12 +96,13 @@ export const ENEMY_STATUS_EFFECTS: Record<string, StatusEffect> = {
         id: 'burning',
         name: 'Burning',
         type: 'damage',
-        duration: 180, // 3 seconds
-        stackCount: 3, // Can stack 3 times
+        duration: 200,
+        stackCount: 2,
         priority: 5,
         visualAura: '#ef4444', // Red
         soundEffect: 'burn',
-        tickDamage: 3, // 3 damage per tick per stack
+        tickDamage: 1,
+        damageTickInterval: 12,
     },
     
     // Poisoned - DOT effect with slow

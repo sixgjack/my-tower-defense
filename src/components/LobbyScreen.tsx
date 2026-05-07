@@ -1,6 +1,6 @@
 // src/components/LobbyScreen.tsx
 // Redesigned lobby with modern UI/UX principles and bilingual support
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { GoogleUser } from '../services/googleAuth';
 import { GameBoard } from './GameBoard';
 import { LuckyDraw } from './LuckyDraw';
@@ -10,6 +10,9 @@ import { ModeSelection, type GameMode } from './ModeSelection';
 import { TowerLoadoutSelection } from './TowerLoadoutSelection';
 import { useLanguage } from '../i18n/useTranslation';
 import { updateStudentStatusAfterGame } from '../services/studentService';
+import { isGoogleAuthDisabled } from '../config/authMode';
+import { mergeIntoLocalEncountered } from '../config/localEncounteredEnemies';
+import { getAllQuestions, getQuestionsBySet } from '../services/questionService';
 
 interface StudentStatus {
   totalGames: number;
@@ -36,6 +39,84 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
+  const unlockedCount = Array.from(new Set((studentStatus?.unlockedTowers || []).filter(Boolean))).length;
+  const godotQuestionCacheRef = useRef<Record<string, { correct: string }>>({});
+
+  useEffect(() => {
+    const onMessage = async (evt: MessageEvent) => {
+      if (evt.origin !== window.location.origin) return;
+      const data = evt.data as { type?: string; payload?: any };
+      if (!data?.type || !data.payload || !user) return;
+
+      if (data.type === 'godot.runResult') {
+        const result = data.payload;
+        try {
+          await updateStudentStatusAfterGame(user.uid, {
+            wave: Number(result.wave || 1),
+            enemiesKilled: Number(result.enemiesKilled || 0),
+            moneyEarned: Number(result.moneyEarned || 0),
+            towersBuilt: Number(result.towersBuilt || 0),
+          });
+          await onStatusUpdate();
+        } catch (error) {
+          console.error('Error syncing Godot result:', error);
+        }
+        return;
+      }
+
+      if (data.type === 'godot.questionRequest') {
+        const requestId = String(data.payload.requestId || '');
+        const questionSetId = String(data.payload.questionSetId || 'mixed');
+        if (!requestId) return;
+        try {
+          let questions = questionSetId === 'mixed'
+            ? await getAllQuestions()
+            : await getQuestionsBySet(questionSetId);
+          if (!questions || questions.length === 0) {
+            questions = await getAllQuestions();
+          }
+          if (!questions || questions.length === 0) return;
+          const q = questions[Math.floor(Math.random() * questions.length)];
+          const payload = {
+            type: 'godot.questionPayload',
+            payload: {
+              requestId,
+              questionId: String(q.id ?? q.question ?? requestId),
+              prompt: String(q.question ?? 'Question'),
+              choices: Array.isArray(q.options) ? q.options : [],
+            },
+          };
+          godotQuestionCacheRef.current[requestId] = { correct: String(q.correct ?? '') };
+          window.postMessage(payload, window.location.origin);
+        } catch (error) {
+          console.error('Error serving Godot question:', error);
+        }
+        return;
+      }
+
+      if (data.type === 'godot.questionAnswer') {
+        const requestId = String(data.payload.requestId || '');
+        if (!requestId) return;
+        const selected = String(data.payload.selected ?? '');
+        const entry = godotQuestionCacheRef.current[requestId];
+        const allow = !!entry && selected === entry.correct;
+        window.postMessage({
+          type: 'godot.questionJudgement',
+          payload: { requestId, allow, correctAnswer: entry?.correct ?? '' },
+        }, window.location.origin);
+        delete godotQuestionCacheRef.current[requestId];
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [onStatusUpdate, user]);
+
+  const handleOpenGodotWeb = () => {
+    const url = new URL(`${window.location.origin}${import.meta.env.BASE_URL}godot/index.html`);
+    url.searchParams.set('uid', user.uid);
+    url.searchParams.set('qs', 'mixed');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  };
 
   const handleStartCombat = () => {
     setActiveView('mode-selection');
@@ -52,23 +133,24 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
     setActiveView('game');
   };
 
-  const handleGameEnd = async (gameResult?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number }) => {
+  const handleGameEnd = async (gameResult?: { wave: number; enemiesKilled: number; moneyEarned: number; towersBuilt: number; encounteredEnemies?: string[] }) => {
     setShowGame(false);
     setActiveView('lobby');
     setSelectedMode(null);
     
-    // Update student status after game
-    if (gameResult && user) {
-      try {
-        await updateStudentStatusAfterGame(user.uid, gameResult);
-        await onStatusUpdate();
-      } catch (error) {
-        console.error('Error updating student status:', error);
+    if (!gameResult || !user) return;
+
+    try {
+      // Save through project backend DB for both Google and demo/local users.
+      await updateStudentStatusAfterGame(user.uid, gameResult);
+    } catch (error) {
+      console.error('Error updating student status:', error);
+      // Fallback cache for demo mode if DB path is unavailable.
+      if (isGoogleAuthDisabled()) {
+        mergeIntoLocalEncountered(gameResult.encounteredEnemies || []);
       }
     }
-    if (gameResult) {
-      await onStatusUpdate();
-    }
+    await onStatusUpdate();
   };
 
   if (showGame && selectedMode) {
@@ -90,7 +172,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   }
 
   if (activeView === 'lucky-draw') {
-    return <LuckyDraw user={user} credits={studentStatus?.credits || 0} onBack={() => setActiveView('lobby')} onStatusUpdate={onStatusUpdate} />;
+    return (
+      <LuckyDraw
+        user={user}
+        credits={studentStatus?.credits || 0}
+        unlockedTowers={studentStatus?.unlockedTowers || []}
+        onBack={() => setActiveView('lobby')}
+        onStatusUpdate={onStatusUpdate}
+      />
+    );
   }
 
   if (activeView === 'towers') {
@@ -143,6 +233,12 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 font-semibold text-sm"
                 >
                   {language === 'en' ? '中文' : 'EN'}
+                </button>
+                <button
+                  onClick={handleOpenGodotWeb}
+                  className="px-5 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 backdrop-blur-md text-cyan-100 rounded-xl transition-all border border-cyan-500/40 font-semibold"
+                >
+                  Godot Web (Beta)
                 </button>
                 <button
                   onClick={onSignOut}
@@ -228,8 +324,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               
               <div className="relative z-10">
                 <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300 animate-spin-slow">🎰</div>
-                <h2 className="text-2xl font-bold text-white mb-2">{t('lobby.luckyDraw')}</h2>
-                <p className="text-yellow-100 text-sm mb-3">{language === 'zh-TW' ? '使用積分抽取強大的防禦塔' : 'Draw powerful towers with credits'}</p>
+                <h2 className="text-2xl font-bold text-white mb-2">{language === 'zh-TW' ? '商店 / 抽獎' : 'Shop / Lucky Draw'}</h2>
+                <p className="text-yellow-100 text-sm mb-3">{language === 'zh-TW' ? '使用積分抽取強大的防禦塔（商店功能）' : 'Use credits to roll new towers (shop system)'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-yellow-200 bg-yellow-500/20 px-3 py-1 rounded-full border border-yellow-500/30">
                     {language === 'zh-TW' ? '100 積分' : '100 credits'}
@@ -253,7 +349,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
                 <p className="text-blue-100 text-sm mb-3">{language === 'zh-TW' ? '查看所有可用的防禦塔' : 'View all available towers'}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-200 bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">
-                    {studentStatus?.unlockedTowers.length || 0} {language === 'zh-TW' ? '已解鎖' : 'unlocked'}
+                    {unlockedCount} {language === 'zh-TW' ? '已解鎖' : 'unlocked'}
                   </span>
                   <span className="text-blue-300 text-2xl">→</span>
                 </div>

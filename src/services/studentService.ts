@@ -20,6 +20,7 @@ export interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies: string[];
   lastPlayed: string;
 }
 
@@ -34,19 +35,48 @@ export async function updateStudentStatusAfterGame(
     // Get current status
     const currentStatusResult = await db.getStudentStatus(userId);
     if (!currentStatusResult.success || !currentStatusResult.data) {
-      console.error('Student status does not exist');
+      const starterTowers = [
+        'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
+        'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
+      ];
+      const initialEncountered = Array.isArray(gameResult.encounteredEnemies)
+        ? [...new Set(gameResult.encounteredEnemies)]
+        : [];
+      const creditsEarned = gameResult.wave * 5;
+      // Self-heal missing profile so first completed run is still persisted.
+      await db.createStudentStatus(userId, {
+        userId,
+        totalGames: 1,
+        totalWaves: gameResult.wave,
+        totalEnemiesKilled: gameResult.enemiesKilled,
+        totalMoneyEarned: gameResult.moneyEarned,
+        highestWave: gameResult.wave,
+        credits: creditsEarned,
+        unlockedTowers: starterTowers,
+        encounteredEnemies: initialEncountered,
+        lastPlayed: new Date().toISOString(),
+      });
       return;
     }
 
     const currentStatus = currentStatusResult.data;
     
-    // Ensure 8 basic towers are unlocked (for existing players who might not have them)
+    // Ensure starter towers are unlocked (include starter healer)
     const basicTowers = [
       'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
       'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
     ];
     const currentUnlocked = currentStatus.unlockedTowers || [];
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];
+    
+    // Merge encountered enemies with previously encountered ones
+    const currentEncountered = Array.isArray(currentStatus.encounteredEnemies)
+      ? currentStatus.encounteredEnemies
+      : [];
+    const newEncountered = Array.isArray(gameResult.encounteredEnemies)
+      ? gameResult.encounteredEnemies
+      : [];
+    const allEncountered = [...new Set([...currentEncountered, ...newEncountered])];
     
     // Credits based on waves achieved: 5 credits per wave (wave-based, not money-based)
     const creditsEarned = gameResult.wave * 5;
@@ -61,7 +91,8 @@ export async function updateStudentStatusAfterGame(
         credits: creditsEarned,
         highestWave: isNewHighWave ? gameResult.wave : 0
       },
-      unlockedTowers: allUnlocked // Ensure basic towers are always unlocked
+      unlockedTowers: allUnlocked, // Ensure basic towers are always unlocked
+      encounteredEnemies: allEncountered // Save all encountered enemies
     });
   } catch (error) {
     console.error('Error updating student status:', error);

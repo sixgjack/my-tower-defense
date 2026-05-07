@@ -2,7 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { signInWithGoogle, signOut, onAuthStateChanged, type GoogleUser } from '../services/googleAuth';
 import { getStudentStatus, createStudentStatus } from '../services/studentService';
+import * as db from '../services/postgresDatabase';
 import { LobbyScreen } from './LobbyScreen';
+import {
+  DEMO_LOCAL_USER_ID,
+  isGoogleAuthDisabled,
+  isGoogleAuthDisabledByEnv,
+} from '../config/authMode';
+import { readLocalEncountered } from '../config/localEncounteredEnemies';
+
+/** Same-origin Godot HTML5 export (Vite serves `public/godot/`). */
+const viteBase = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const GODOT_WEB_HREF = `${viteBase}godot/index.html`;
 
 interface StudentStatus {
   totalGames: number;
@@ -12,35 +25,82 @@ interface StudentStatus {
   highestWave: number;
   credits: number;
   unlockedTowers: string[];
+  encounteredEnemies?: string[];
   lastPlayed: any;
 }
 
+const BASIC_TOWER_KEYS = [
+  'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
+  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL',
+] as const;
+
+const DEMO_GOOGLE_USER: GoogleUser = {
+  uid: DEMO_LOCAL_USER_ID,
+  email: 'demo@local.play',
+  displayName: 'Demo Player',
+};
+const DEV_CREDIT_EMAILS = new Set(['ttn@cpss.edu.hk']);
+const DEV_CREDIT_BALANCE = 99_999;
+
+function buildDemoStudentStatus(): StudentStatus {
+  return {
+    totalGames: 0,
+    totalWaves: 0,
+    totalEnemiesKilled: 0,
+    totalMoneyEarned: 0,
+    highestWave: 0,
+    credits: 9999,
+    unlockedTowers: [...BASIC_TOWER_KEYS],
+    encounteredEnemies: readLocalEncountered(),
+    lastPlayed: new Date().toISOString(),
+  };
+}
+
 export const MenuScreen: React.FC = () => {
-  const [user, setUser] = useState<GoogleUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [studentStatus, setStudentStatus] = useState<StudentStatus | null>(null);
+  const authOff = isGoogleAuthDisabled();
+  const [user, setUser] = useState<GoogleUser | null>(() => (authOff ? DEMO_GOOGLE_USER : null));
+  const [loading, setLoading] = useState(() => !authOff);
+  const [studentStatus, setStudentStatus] = useState<StudentStatus | null>(() =>
+    authOff ? buildDemoStudentStatus() : null
+  );
   const [showLobby, setShowLobby] = useState(false);
 
-  const loadStudentStatus = async (uid: string) => {
+  const loadStudentStatus = async (uid: string, email?: string | null) => {
     try {
       const status = await getStudentStatus(uid);
+      const isDevUser = Boolean(email && DEV_CREDIT_EMAILS.has(email.toLowerCase()));
       
       if (status) {
-        setStudentStatus(status);
+        if (isDevUser && (status.credits || 0) < DEV_CREDIT_BALANCE) {
+          await db.updateStudentStatus(uid, { credits: DEV_CREDIT_BALANCE });
+          const refreshed = await getStudentStatus(uid);
+          if (refreshed) {
+            const mergedUnlocked = [...new Set([...(refreshed.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+            setStudentStatus({
+              ...refreshed,
+              unlockedTowers: mergedUnlocked,
+            });
+            return;
+          }
+        }
+        const mergedUnlocked = [...new Set([...(status.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+        setStudentStatus({
+          ...status,
+          credits: isDevUser ? Math.max(status.credits || 0, DEV_CREDIT_BALANCE) : status.credits,
+          unlockedTowers: mergedUnlocked,
+        });
       } else {
         // Create new student status with 8 basic towers unlocked
-        const basicTowers = [
-          'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-          'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
-        ];
+        const basicTowers = [...BASIC_TOWER_KEYS];
         const newStatus: StudentStatus = {
           totalGames: 0,
           totalWaves: 0,
           totalEnemiesKilled: 0,
           totalMoneyEarned: 0,
           highestWave: 0,
-          credits: 0,
+          credits: isDevUser ? DEV_CREDIT_BALANCE : 0,
           unlockedTowers: basicTowers,
+          encounteredEnemies: [],
           lastPlayed: new Date().toISOString()
         };
         await createStudentStatus(uid, newStatus);
@@ -52,13 +112,25 @@ export const MenuScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    if (isGoogleAuthDisabled()) {
+      localStorage.removeItem('google_user');
+      localStorage.removeItem('google_access_token');
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(async (currentUser) => {
+      if (isGoogleAuthDisabled()) {
+        setUser(DEMO_GOOGLE_USER);
+        setStudentStatus(buildDemoStudentStatus());
+        setLoading(false);
+        return;
+      }
+
       setUser(currentUser);
       setLoading(false);
-      
+
       if (currentUser) {
-        // Load or create student status
-        await loadStudentStatus(currentUser.uid);
+        await loadStudentStatus(currentUser.uid, currentUser.email);
       } else {
         setStudentStatus(null);
       }
@@ -78,6 +150,9 @@ export const MenuScreen: React.FC = () => {
   };
 
   const handleSignOut = async () => {
+    if (isGoogleAuthDisabledByEnv()) {
+      return;
+    }
     try {
       await signOut();
       setStudentStatus(null);
@@ -91,9 +166,8 @@ export const MenuScreen: React.FC = () => {
   };
 
   const handleStatusUpdate = async () => {
-    if (user) {
-      await loadStudentStatus(user.uid);
-    }
+    if (!user) return;
+    await loadStudentStatus(user.uid, user.email);
   };
 
   if (showLobby && user) {
@@ -132,6 +206,18 @@ export const MenuScreen: React.FC = () => {
       }}></div>
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+        {isGoogleAuthDisabled() && (
+          <div className="mb-4 max-w-md rounded border border-amber-600/80 bg-amber-950/90 px-4 py-2 text-center text-xs font-mono text-amber-200">
+            {isGoogleAuthDisabledByEnv() ? (
+              <>
+                Demo mode: Google SSO off (<code className="text-amber-400">VITE_DISABLE_GOOGLE_AUTH=true</code>
+                ). Progress is saved to local backend profile (<code className="text-amber-400">{DEMO_LOCAL_USER_ID}</code>).
+              </>
+            ) : (
+              <>Playing without Google — progress is saved to local backend profile. Use Sign out to sign in with Google later.</>
+            )}
+          </div>
+        )}
         {/* Retro Game Title */}
         <div className="text-center mb-12">
           <h1 className="text-7xl md:text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 mb-4 drop-shadow-2xl" style={{
@@ -185,6 +271,19 @@ export const MenuScreen: React.FC = () => {
                   </svg>
                   <span className="text-lg">CONTINUE WITH GOOGLE</span>
                 </button>
+
+                <a
+                  href={GODOT_WEB_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex w-full items-center justify-center border-2 border-cyan-500/60 bg-cyan-950/40 px-4 py-3 text-sm font-mono font-bold text-cyan-300 transition hover:border-cyan-400 hover:bg-cyan-900/50"
+                >
+                  🕹️ GODOT WEB (PIXEL) — same site
+                </a>
+                <p className="mt-2 text-center text-xs text-slate-500 font-mono">
+                  Export Godot → Web to <code className="text-slate-400">public/godot/</code> first.
+                </p>
+
               </div>
             ) : (
               /* User Menu Section */
@@ -236,13 +335,26 @@ export const MenuScreen: React.FC = () => {
                   >
                     ⚡ ENTER LOBBY
                   </button>
-                  
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded border-2 border-slate-600 hover:border-slate-500 transition-all duration-200 font-mono"
+
+                  <a
+                    href={GODOT_WEB_HREF}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center border-2 border-cyan-500/70 bg-cyan-950/50 py-3 px-6 rounded font-bold text-cyan-200 font-mono transition hover:border-cyan-400 hover:bg-cyan-900/60"
                   >
-                    SIGN OUT
-                  </button>
+                    🕹️ GODOT WEB (PIXEL)
+                  </a>
+
+                  {!isGoogleAuthDisabledByEnv() ? (
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded border-2 border-slate-600 hover:border-slate-500 transition-all duration-200 font-mono"
+                    >
+                      SIGN OUT
+                    </button>
+                  ) : (
+                    <p className="text-center text-xs text-slate-500 font-mono">Sign-in disabled in demo mode.</p>
+                  )}
                 </div>
               </div>
             )}
