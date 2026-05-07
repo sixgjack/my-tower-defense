@@ -617,12 +617,67 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
             </svg>
           )}
 
+          {/* Active Flamethrower (BASIC_BURN) 3×3 burn tiles */}
+          {game.collectFlameThrowerAuraCells().map(({ r, c }) => {
+            const flicker = 0.1 + Math.sin((tick + r * 5 + c * 11) * 0.1) * 0.055;
+            return (
+              <div
+                key={`flame-zone-${r}-${c}`}
+                className="absolute pointer-events-none z-[6] pixel-tile transition-opacity duration-100"
+                style={{
+                  left: c * TILE_SIZE,
+                  top: r * TILE_SIZE,
+                  width: TILE_SIZE,
+                  height: TILE_SIZE,
+                  opacity: 0.85 + flicker,
+                  mixBlendMode: 'screen',
+                  background: `
+                    radial-gradient(circle at 50% 80%, rgba(255,237,170,${0.2 + flicker}) 0%, transparent 62%),
+                    linear-gradient(
+                      180deg,
+                      rgba(251,146,60,${0.18 + flicker * 0.5}) 0%,
+                      rgba(239,68,68,${0.13 + flicker * 0.45}) 45%,
+                      rgba(153,27,27,${0.1 + flicker * 0.35}) 100%
+                    )`,
+                  boxShadow: 'inset 0 0 14px rgba(251,191,36,0.42)',
+                  border: '1px solid rgba(251,113,133,0.35)',
+                }}
+              />
+            );
+          })}
+
+          {/* Placing BASIC_BURN: preview the exact 3×3 hazard */}
+          {ghost && draggingKey === 'BASIC_BURN' && hoverPos &&
+            [-1, 0, 1].flatMap(dr => [-1, 0, 1].map(dc => ({ dr, dc }))).map(({ dr, dc }) => {
+              const r = hoverPos.r + dr;
+              const c = hoverPos.c + dc;
+              if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+              const ring = Math.sin((tick + dr * dc) * 0.08) * 0.03;
+              return (
+                <div
+                  key={`burn-ghost-${r}-${c}`}
+                  className="absolute pointer-events-none z-[38] pixel-tile"
+                  style={{
+                    left: c * TILE_SIZE,
+                    top: r * TILE_SIZE,
+                    width: TILE_SIZE,
+                    height: TILE_SIZE,
+                    background: ghost.isValid ? `rgba(249,115,22,${0.16 + ring})` : `rgba(239,68,68,${0.1 + ring})`,
+                    border: ghost.isValid ? '2px solid rgba(251,191,36,0.6)' : '2px dashed rgba(248,113,113,0.45)',
+                    boxShadow: 'inset 0 0 10px rgba(251,146,60,0.35)',
+                  }}
+                />
+              );
+            })}
+
           {/* 2. Ghost */}
           {ghost && (
              <div className="absolute pointer-events-none z-40 transition-all duration-75" 
                   style={{ left: hoverPos!.c * TILE_SIZE, top: hoverPos!.r * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE }}>
+                {draggingKey !== 'BASIC_BURN' && (
                 <div className={`absolute rounded-full border-2 opacity-40 transition-colors ${ghost.isValid ? 'bg-emerald-500/30 border-emerald-400' : 'bg-rose-500/30 border-rose-400'}`}
                      style={{ width: ghost.rangePx * 2, height: ghost.rangePx * 2, top: TILE_SIZE/2 - ghost.rangePx, left: TILE_SIZE/2 - ghost.rangePx }} />
+                )}
                 <div className="w-full h-full flex items-center justify-center text-2xl opacity-80 overflow-hidden">
                   {getTowerGifAsset(draggingKey || '') ? (
                     <img
@@ -641,6 +696,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
           {/* 3. Towers */}
           {game.towers.map(t => {
              const stats = TOWERS[t.key];
+             const targetMode = (stats as any).targetMode || 'ground';
+             const element = (stats as any).element || 'physical';
              const isSelected = selectedTowerId === t.id;
              let invest = stats.cost; for(let i=1; i<t.level; i++) invest += Math.floor(stats.cost * 1.5 * i);
              const sellPrice = Math.floor(invest * Math.max(0.5, 0.85 - (t.level * 0.05)));
@@ -773,7 +830,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-500 p-2 rounded shadow-2xl z-50 flex flex-col gap-1 w-40 animate-in fade-in zoom-in duration-100">
                              <div className="text-xs font-bold text-slate-100 mb-1 border-b border-slate-600 pb-1 text-center">{getTowerName(t.key)}</div>
                              <div className="text-[10px] text-slate-400 mb-1 text-center leading-tight">{getTowerDescription(t.key)}</div>
-                             <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
+                            <div className="text-[10px] text-center text-slate-300 mb-1 border-b border-slate-600 pb-1">{i18n.t('tower.range')}: {Math.floor(t.range)} | {i18n.t('tower.damage')}: {t.damage}</div>
+                            <div className="text-[10px] text-center text-cyan-300 mb-1 border-b border-slate-600 pb-1">
+                              {targetMode === 'ground' ? '對地 / Ground' : targetMode === 'air' ? '對空 / Air' : '對地空 / Ground+Air'} · {String(element).toUpperCase()}
+                            </div>
                              <button onClick={() => { game.requestUpgradeTower(t.id); setSelectedTowerId(null); }} className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] py-1 rounded font-bold">{i18n.t('game.upgrade')} (${upgradeCost})</button>
                              <button onClick={() => { game.sellTower(t.id); setSelectedTowerId(null); }} className="bg-red-900/80 hover:bg-red-800 text-red-100 text-[10px] py-1 rounded border border-red-800">{i18n.t('game.sell')} (+${sellPrice})</button>
                          </div>

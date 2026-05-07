@@ -237,7 +237,7 @@ export class EffectManager {
     /**
      * Update status effects for an enemy (called each tick)
      */
-    updateEnemyEffects(enemy: Enemy): void {
+    updateEnemyEffects(enemy: Enemy, worldTick: number = 0): void {
         if (!enemy.statusEffects || enemy.statusEffects.length === 0) return;
 
         // Process effects in priority order (highest first)
@@ -261,10 +261,13 @@ export class EffectManager {
                 }
             }
 
-            // Apply tick damage/healing
+            // Apply tick damage (optional stride so burn DoT is not per-frame)
             if (effect.tickDamage && effect.tickDamage > 0) {
-                const damage = effect.tickDamage * activeEffect.stacks;
-                enemy.hp -= damage;
+                const stride = Math.max(1, Math.floor(effect.damageTickInterval ?? 1));
+                if (worldTick % stride === 0) {
+                    const damage = effect.tickDamage * activeEffect.stacks;
+                    enemy.hp -= damage;
+                }
             }
 
             if (effect.tickHeal && effect.tickHeal > 0) {

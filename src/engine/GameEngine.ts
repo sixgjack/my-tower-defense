@@ -4,7 +4,7 @@ import { TOWERS, ENEMY_TYPES, THEMES } from './data';
 import { soundSystem } from './SoundSystem';
 import { effectManager } from './EffectManager';
 import { applyDamageToEnemy } from './BossAbilities';
-import type { Particle, Projectile, Tower } from './types';
+import type { ElementType, Particle, Projectile, TargetMode, Tower } from './types';
 import { isDeveloperMode, DEV_STARTING_MONEY } from '../config/developerMode';
 
 type ActionType = { type: 'BUILD', r: number, c: number, towerKey: string } 
@@ -287,6 +287,48 @@ export class GameEngine {
       
       return multipliers;
   }
+
+  private getEnemyMovementType(enemy: any): 'ground' | 'air' {
+      if (enemy?.movementType === 'air') return 'air';
+      if (enemy?.isFlying) return 'air';
+      if (Array.isArray(enemy?.abilities) && enemy.abilities.includes('fly')) return 'air';
+      return 'ground';
+  }
+
+  private getTowerTargetMode(stats: any): TargetMode {
+      return (stats?.targetMode as TargetMode) || 'ground';
+  }
+
+  private canTowerTargetEnemy(stats: any, enemy: any): boolean {
+      const targetMode = this.getTowerTargetMode(stats);
+      const movement = this.getEnemyMovementType(enemy);
+      if (targetMode === 'both') return true;
+      return targetMode === movement;
+  }
+
+  private enemyImmuneToElement(enemy: any, element?: ElementType): boolean {
+      if (!element) return false;
+      const imm = Array.isArray(enemy?.immunities) ? enemy.immunities : [];
+      return imm.includes(element);
+  }
+
+  private applyTowerDamage(enemy: any, damage: number, stats: any): boolean {
+      const element = (stats?.element as ElementType) || 'physical';
+      if (this.enemyImmuneToElement(enemy, element)) {
+          if (Math.random() > 0.65) this.addTextParticle(enemy.c, enemy.r, 'IMMUNE', '#94a3b8');
+          return false;
+      }
+      applyDamageToEnemy(enemy, damage);
+      return true;
+  }
+
+  private projectileCanHitEnemy(p: Projectile, enemy: any): boolean {
+      const movement = this.getEnemyMovementType(enemy);
+      const projMode: TargetMode = p.targetMode || 'both';
+      if (projMode !== 'both' && projMode !== movement) return false;
+      if (this.enemyImmuneToElement(enemy, p.element)) return false;
+      return true;
+  }
   
   /**
    * Track catalog name for enemy dictionary (boss waves, regular spawn, etc.).
@@ -295,6 +337,27 @@ export class GameEngine {
     if (name && !this.encounteredEnemyNames.has(name)) {
       this.encounteredEnemyNames.add(name);
     }
+  }
+
+  /** Map cells covered by Flamethrower (BASIC_BURN) 3×3 ground hazard — used for flame overlay rendering. */
+  collectFlameThrowerAuraCells(): { r: number; c: number }[] {
+    const seen = new Set<string>();
+    const out: { r: number; c: number }[] = [];
+    for (const tower of this.towers) {
+      if (tower.key !== 'BASIC_BURN') continue;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = tower.r + dr;
+          const c = tower.c + dc;
+          if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+          const key = `${r},${c}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push({ r, c });
+        }
+      }
+    }
+    return out;
   }
 
   spawnBossEnemy(isBigBoss: boolean, _isMiniBoss: boolean) {
@@ -374,6 +437,8 @@ export class GameEngine {
           statusEffects: [],
           name: stats.name,
           isBoss: true,
+          movementType: (stats as any).movementType || (bossAbilities.includes('fly') ? 'air' : 'ground'),
+          immunities: Array.isArray((stats as any).immunities) ? [...(stats as any).immunities] : [],
       });
       this.recordEnemyEncounter(stats.name);
   }
@@ -543,6 +608,8 @@ export class GameEngine {
         statusEffects: [],
         name: stats.name, // Track enemy name for dictionary
         isBoss: Boolean(stats.isBoss),
+        movementType: (stats as any).movementType || ((stats.abilities && stats.abilities.includes('fly')) ? 'air' : 'ground'),
+        immunities: Array.isArray((stats as any).immunities) ? [...(stats as any).immunities] : [],
     };
     this.enemies.push(enemy);
     this.recordEnemyEncounter(stats.name);
@@ -554,7 +621,7 @@ export class GameEngine {
           enemy.isInvisible = false;
         }
         // Update status effects (decrease duration, apply tick damage/healing)
-        effectManager.updateEnemyEffects(enemy);
+        effectManager.updateEnemyEffects(enemy, this.tickCount);
         
         // Execute enemy abilities (teleport, heal, etc.)
         this.executeEnemyAbilities(enemy);
@@ -605,6 +672,7 @@ export class GameEngine {
         
         // Check for mine hits
         this.mines.forEach((mine, mineIndex) => {
+            if (this.getEnemyMovementType(enemy) === 'air') return;
             const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - mine.c)**2 + (enemy.r + (enemy.yOffset || 0) - mine.r)**2);
             if (dist < 0.3) { // Hit mine
                 applyDamageToEnemy(enemy, mine.damage);
@@ -696,6 +764,7 @@ export class GameEngine {
         let target = null;
         let minD = Infinity;
         for (const e of this.enemies) {
+            if (!this.canTowerTargetEnemy(stats, e)) continue;
             const dist = Math.sqrt((e.r - tower.r)**2 + (e.c - tower.c)**2);
             if (dist <= tower.range) {
                  if (dist < minD) { minD = dist; target = e; }
@@ -722,12 +791,13 @@ export class GameEngine {
             if (tower.cooldown <= 0) {
                 tower.cooldown = effectiveCooldown;
                 this.enemies.forEach(enemy => {
+                    if (!this.canTowerTargetEnemy(stats, enemy)) return;
                     const ex = enemy.c + (enemy.xOffset || 0);
                     const ey = enemy.r + (enemy.yOffset || 0);
                     const inAuraSquare = Math.abs(ex - tower.c) <= 1 && Math.abs(ey - tower.r) <= 1;
                     if (!inAuraSquare) return;
 
-                    applyDamageToEnemy(enemy, tower.damage);
+                    if (!this.applyTowerDamage(enemy, tower.damage, stats)) return;
                     effectManager.applyEffectToEnemy(enemy, 'burning');
                     if (Math.random() < 0.45) {
                         this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
@@ -889,12 +959,13 @@ export class GameEngine {
                 } else {
                     tower.damageCharge = 0; // Reset on target change
                     tower.beamDuration = 0;
+                    tower.lastFireBeamBurnTick = 0;
                 }
                 tower.lastTargetId = target.id;
                 
                 const rampMultiplier = 1 + tower.damageCharge;
                 const damage = tower.damage * 0.08 * rampMultiplier; // Reduced base multiplier from 0.1 to 0.08
-                applyDamageToEnemy(target, damage);
+                this.applyTowerDamage(target, damage, stats);
                 
                 // Apply status effects based on beam type
                 if (stats.projectileStyle === 'ice') {
@@ -906,10 +977,19 @@ export class GameEngine {
                         effectManager.applyEffectToEnemy(target, 'stunned');
                     }
                     this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'electric', '#facc15');
-                } else if (stats.burnDamage && stats.burnDamage > 0) {
-                    // Fire beam applies burn
-                    effectManager.applyEffectToEnemy(target, 'burning');
-                    this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'flame', '#ef4444');
+                } else if (
+                    stats.element === 'fire' &&
+                    stats.burnDamage &&
+                    stats.burnDamage > 0
+                ) {
+                    const lastBurn = tower.lastFireBeamBurnTick || 0;
+                    if (!lastBurn || this.tickCount - lastBurn >= 22) {
+                        tower.lastFireBeamBurnTick = this.tickCount;
+                        effectManager.applyEffectToEnemy(target, 'burning');
+                        if (Math.random() < 0.35) {
+                            this.addParticle(target.c * 60 + 30, target.r * 60 + 30, 'flame', '#ef4444');
+                        }
+                    }
                 }
                 
                 if (target.hp <= 0) this.killEnemy(target);
@@ -920,7 +1000,7 @@ export class GameEngine {
                 // Instant hit for sniper/lightning projectiles
                 if (stats.projectileStyle === 'sniper' || stats.projectileStyle === 'lightning') {
                     // Instant Hit (Lightning/Sniper)
-                    applyDamageToEnemy(target, tower.damage);
+                    this.applyTowerDamage(target, tower.damage, stats);
                     if (stats.projectileStyle === 'lightning') {
                         this.addParticle(target.c*60+30, target.r*60+30, 'electric', stats.color);
 
@@ -935,11 +1015,13 @@ export class GameEngine {
                                 let minD = 3.5;
                                 for (const e of this.enemies) {
                                     if (hitIds.has(e.id)) continue;
+                                    if (!this.canTowerTargetEnemy(stats, e)) continue;
                                     const d = Math.sqrt((e.r - lastHit.r)**2 + (e.c - lastHit.c)**2);
                                     if (d < minD) { minD = d; next = e; }
                                 }
                                 if (!next) break;
-                                applyDamageToEnemy(next, chainDmg);
+                                if (!this.canTowerTargetEnemy(stats, next)) continue;
+                                this.applyTowerDamage(next, chainDmg, stats);
                                 hitIds.add(next.id);
                                 this.projectiles.push({
                                     id: Math.random(),
@@ -950,7 +1032,9 @@ export class GameEngine {
                                     targetId: next.id, color: '#fcd34d',
                                     life: 8, maxLife: 8,
                                     style: 'lightning', damage: 0, speed: 0, progress: 0,
-                                    type: 'arrow'
+                                    type: 'arrow',
+                                    targetMode: this.getTowerTargetMode(stats),
+                                    element: (stats.element as ElementType) || 'physical',
                                 });
                                 this.addParticle(next.c * 60 + 30, next.r * 60 + 30, 'electric', '#fcd34d');
                                 if (next.hp <= 0) this.killEnemy(next);
@@ -966,7 +1050,9 @@ export class GameEngine {
                         startX: tower.c, startY: tower.r,
                         targetId: target.id, color: stats.color, life: 10, maxLife: 10,
                         style: stats.projectileStyle || 'dot', damage: 0, speed: 0, progress: 0,
-                        type: 'arrow'
+                        type: 'arrow',
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: (stats.element as ElementType) || 'physical',
                     });
 
                     if(target.hp <= 0) this.killEnemy(target);
@@ -1018,7 +1104,9 @@ export class GameEngine {
                             speed: stats.projectileSpeed || 0.15, // Slightly faster for visibility
                             splash: 0, // No splash for individual pellets
                             progress: 0,
-                            type: 'arrow'
+                            type: 'arrow',
+                            targetMode: this.getTowerTargetMode(stats),
+                            element: (stats.element as ElementType) || 'physical',
                         });
                     }
                     soundSystem.play('shoot');
@@ -1044,7 +1132,9 @@ export class GameEngine {
                         returnToTower: true,
                         returnProgress: 0,
                         hitTargets: [], // Track hit enemies
-                        firingTowerId: tower.id
+                        firingTowerId: tower.id,
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: (stats.element as ElementType) || 'physical',
                     });
                     soundSystem.play('shoot');
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
@@ -1057,6 +1147,7 @@ export class GameEngine {
                     const nx = dx / len, ny = dy / len;
                     const lineEnemies = this.enemies
                         .filter(e => {
+                            if (!this.canTowerTargetEnemy(stats, e)) return false;
                             const ex = (e.c + (e.xOffset || 0)) - tower.c;
                             const ey = (e.r + (e.yOffset || 0)) - tower.r;
                             const proj = ex * nx + ey * ny;
@@ -1070,7 +1161,8 @@ export class GameEngine {
                         });
                     let damMult = 1.0;
                     lineEnemies.forEach(e => {
-                        applyDamageToEnemy(e, tower.damage * damMult);
+                        if (!this.canTowerTargetEnemy(stats, e)) return;
+                        this.applyTowerDamage(e, tower.damage * damMult, stats);
                         this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'electric', stats.color);
                         if (e.hp <= 0) this.killEnemy(e);
                         damMult *= 0.8;
@@ -1084,7 +1176,9 @@ export class GameEngine {
                         tx: endX, ty: endY,
                         targetId: target.id, color: stats.color,
                         life: 12, maxLife: 12,
-                        style: 'bolt', damage: 0, speed: 0, progress: 0, type: 'arrow'
+                        style: 'bolt', damage: 0, speed: 0, progress: 0, type: 'arrow',
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: (stats.element as ElementType) || 'physical',
                     });
                     soundSystem.play('shoot');
                     this.addParticle(tower.c * 60 + 30, tower.r * 60 + 30, 'muzzle', stats.color);
@@ -1111,7 +1205,9 @@ export class GameEngine {
                         speed: stats.projectileSpeed || 0.12,
                         splash: stats.areaRadius,
                         progress: 0,
-                        type: 'arrow'
+                        type: 'arrow',
+                        targetMode: this.getTowerTargetMode(stats),
+                        element: (stats.element as ElementType) || 'physical',
                     });
                     soundSystem.play('shoot');
                     const muzzleColor = stats.cooldown < 15 ? stats.color : '#fff';
@@ -1167,7 +1263,7 @@ export class GameEngine {
                             if (e.id === target.id) continue;
                             const dist = Math.sqrt((e.r - target.r)**2 + (e.c - target.c)**2);
                             if (dist <= stats.areaRadius) {
-                                applyDamageToEnemy(e, tower.damage * 0.5); // 50% splash damage
+                                this.applyTowerDamage(e, tower.damage * 0.5, stats); // 50% splash damage
                                 if (e.hp <= 0) this.killEnemy(e);
                             }
                         }
@@ -1175,8 +1271,8 @@ export class GameEngine {
                     }
                 }
                 
-                // Apply burn damage for fire towers
-                if (stats.burnDamage && stats.burnDamage > 0) {
+                // Apply burn stacks from fire-aligned tower stats only (avoid poison towers reusing burnDamage)
+                if (stats.element === 'fire' && stats.burnDamage && stats.burnDamage > 0) {
                     effectManager.applyEffectToEnemy(target, 'burning');
                 }
                 
@@ -1235,6 +1331,7 @@ export class GameEngine {
                         if (p.hitTargets && p.hitTargets.includes(enemy.id)) return; // Already hit
                         const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - p.x)**2 + (enemy.r + (enemy.yOffset || 0) - p.y)**2);
                         if (dist < 0.3) { // Hit radius
+                            if (!this.projectileCanHitEnemy(p, enemy)) return;
                             applyDamageToEnemy(enemy, p.damage);
                             if (!p.hitTargets) p.hitTargets = [];
                             p.hitTargets.push(enemy.id);
@@ -1276,6 +1373,7 @@ export class GameEngine {
                             if (p.hitTargets && p.hitTargets.includes(enemy.id)) return; // Already hit
                             const dist = Math.sqrt((enemy.c + (enemy.xOffset || 0) - p.x)**2 + (enemy.r + (enemy.yOffset || 0) - p.y)**2);
                             if (dist < 0.3) { // Hit radius
+                                if (!this.projectileCanHitEnemy(p, enemy)) return;
                                 applyDamageToEnemy(enemy, p.damage);
                                 if (!p.hitTargets) p.hitTargets = [];
                                 p.hitTargets.push(enemy.id);
@@ -1313,6 +1411,7 @@ export class GameEngine {
                     const enemyY = enemy.r + (enemy.yOffset || 0);
                     const dist = Math.sqrt((enemyX - p.x)**2 + (enemyY - p.y)**2);
                     if (dist < 0.3 && p.progress > 0.1) { // Hit radius, must have traveled some distance
+                        if (!this.projectileCanHitEnemy(p, enemy)) return;
                         // Hit enemy
                         applyDamageToEnemy(enemy, p.damage);
                         if (enemy.hp <= 0) this.killEnemy(enemy);
@@ -1389,7 +1488,7 @@ export class GameEngine {
               const ex = e.c + (e.xOffset || 0);
               const ey = e.r + (e.yOffset || 0);
               const dist = Math.sqrt((ex - p.x)**2 + (ey - p.y)**2);
-              if (dist <= p.splash!) {
+              if (dist <= p.splash! && this.projectileCanHitEnemy(p, e)) {
                   applyDamageToEnemy(e, p.damage);
                   if (e.hp <= 0) this.killEnemy(e);
               }
@@ -1397,7 +1496,7 @@ export class GameEngine {
       } else {
           // Single Target
           const e = this.enemies.find(en => en.id === p.targetId);
-          if (e) {
+          if (e && this.projectileCanHitEnemy(p, e)) {
               applyDamageToEnemy(e, p.damage);
               if (e.hp <= 0) this.killEnemy(e);
           }
@@ -1551,7 +1650,9 @@ export class GameEngine {
                 money: Math.floor(enemy.reward * 0.3),
                 damage: 0,
                 statusEffects: [],
-                name: enemy.name
+                name: enemy.name,
+                movementType: enemy.movementType || this.getEnemyMovementType(enemy),
+                immunities: Array.isArray(enemy.immunities) ? [...enemy.immunities] : [],
               });
             }
             enemy.hp = 0; // Remove original

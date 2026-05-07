@@ -13,6 +13,8 @@ export interface EnemyType {
     description?: string; // Clash Royale-style description
     minWave?: number; // Minimum wave to spawn (for difficulty scaling)
     moneyBonus?: number; // Extra money bonus multiplier for bosses
+    movementType?: 'ground' | 'air';
+    immunities?: Array<'physical' | 'fire' | 'ice' | 'electric' | 'poison' | 'arcane' | 'explosive'>;
 }
 
 export const ENEMY_TYPES: EnemyType[] = [
@@ -20,11 +22,11 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Bug", hp: 30, speed: 1.0, reward: 10, color: "#f87171", icon: "🐛" },
     { name: "Spider", hp: 25, speed: 1.3, reward: 8, color: "#dc2626", icon: "🕷️", abilities: ['camouflage'] },
     { name: "Mite", hp: 20, speed: 1.5, reward: 7, color: "#ef4444", icon: "🪲" },
-    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'] },
+    { name: "Fly", hp: 15, speed: 1.8, reward: 5, color: "#f97316", icon: "🪰", abilities: ['fly'], movementType: 'air' },
     
     // Balanced Enemies
     { name: "Glitch", hp: 80, speed: 0.7, reward: 16, color: "#c084fc", icon: "👾" },
-    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'] },
+    { name: "Drone", hp: 75, speed: 0.8, reward: 14, color: "#a855f7", icon: "🤖", abilities: ['fly'], movementType: 'air' },
     { name: "Hacker", hp: 85, speed: 0.65, reward: 18, color: "#9333ea", icon: "👤", abilities: ['deactivate_towers'], abilityCooldown: 300 },
     { name: "Crawler", hp: 70, speed: 0.75, reward: 13, color: "#7c3aed", icon: "🕸️" },
     
@@ -65,7 +67,7 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Phantom", hp: 140, speed: 0.9, reward: 27, color: "#1e293b", icon: "👻", abilities: ['invisible', 'teleport'], abilityCooldown: 300 },
     { name: "Archmage", hp: 280, speed: 0.4, reward: 49, color: "#3b82f6", icon: "🧙", abilities: ['deactivate_towers', 'poison_aura'], abilityCooldown: 350 },
     { name: "Golem", hp: 550, speed: 0.15, reward: 85, color: "#78716c", icon: "🗿", isBoss: true, abilities: ['shield', 'damage_reflect'], moneyBonus: 3.0 },
-    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], moneyBonus: 3.0 },
+    { name: "Dragon", hp: 700, speed: 0.18, reward: 104, color: "#dc2626", icon: "🐉", isBoss: true, abilities: ['fly', 'poison_aura', 'charge'], movementType: 'air', immunities: ['fire'], moneyBonus: 3.0 },
     { name: "Kraken", hp: 650, speed: 0.22, reward: 98, color: "#0ea5e9", icon: "🐙", isBoss: true, abilities: ['split', 'freeze_aura'], moneyBonus: 3.0 },
     { name: "Hydra", hp: 580, speed: 0.26, reward: 88, color: "#10b981", icon: "🐲", isBoss: true, abilities: ['split', 'regenerate'], moneyBonus: 3.0 },
     { name: "Colossus", hp: 800, speed: 0.12, reward: 117, color: "#475569", icon: "🗽", isBoss: true, abilities: ['shield', 'stun_attack', 'heal_allies'], abilityCooldown: 250, moneyBonus: 3.5 },
@@ -97,17 +99,17 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Sapper", hp: 180, speed: 0.4, reward: 29, color: "#f97316", icon: "🔨", abilities: ['attack_towers'], abilityCooldown: 200, minWave: 3 },
     { name: "Siege Engine", hp: 450, speed: 0.2, reward: 72, color: "#78716c", icon: "⚙️", abilities: ['attack_towers', 'shield'], abilityCooldown: 300, minWave: 8 },
     { name: "Corruptor", hp: 220, speed: 0.5, reward: 36, color: "#7c3aed", icon: "💜", abilities: ['slow_towers', 'poison_aura'], abilityCooldown: 250, minWave: 5 },
-    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], abilityCooldown: 350, minWave: 6 },
+    { name: "Frost Wraith", hp: 190, speed: 0.6, reward: 31, color: "#06b6d4", icon: "🧊", abilities: ['freeze_aura', 'invisible'], immunities: ['ice'], abilityCooldown: 350, minWave: 6 },
     { name: "Plague Bearer", hp: 160, speed: 0.7, reward: 26, color: "#14b8a6", icon: "🦠", abilities: ['poison_aura', 'spawn_minions'], abilityCooldown: 400, minWave: 4 },
     { name: "Shock Trooper", hp: 140, speed: 0.9, reward: 23, color: "#facc15", icon: "⚡", abilities: ['stun_attack', 'charge'], abilityCooldown: 280, minWave: 3 },
     { name: "Armored Crawler", hp: 380, speed: 0.25, reward: 62, color: "#475569", icon: "🦂", abilities: ['shield', 'damage_reflect'], minWave: 7 },
     { name: "Void Walker", hp: 200, speed: 0.55, reward: 33, color: "#1e293b", icon: "🌌", abilities: ['teleport', 'invisible'], abilityCooldown: 320, minWave: 5 },
-    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], minWave: 9 },
+    { name: "Crystal Golem", hp: 420, speed: 0.22, reward: 68, color: "#a78bfa", icon: "💎", abilities: ['shield', 'damage_reflect', 'regenerate'], immunities: ['arcane'], minWave: 9 },
     { name: "Shadow Assassin", hp: 120, speed: 1.0, reward: 20, color: "#111827", icon: "🗡️", abilities: ['invisible', 'teleport', 'stun_attack'], abilityCooldown: 380, minWave: 4 },
-    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], minWave: 10 },
+    { name: "Molten Core", hp: 500, speed: 0.18, reward: 81, color: "#ea580c", icon: "🌋", abilities: ['explode', 'poison_aura', 'regenerate'], immunities: ['fire'], minWave: 10 },
     { name: "Storm Caller", hp: 280, speed: 0.45, reward: 46, color: "#3b82f6", icon: "⛈️", abilities: ['stun_attack', 'deactivate_towers'], abilityCooldown: 300, minWave: 6 },
     { name: "Bone Collector", hp: 320, speed: 0.35, reward: 52, color: "#f3f4f6", icon: "💀", abilities: ['spawn_minions', 'heal_allies'], abilityCooldown: 450, minWave: 7 },
-    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], abilityCooldown: 350, minWave: 4 },
+    { name: "Toxic Spitter", hp: 150, speed: 0.8, reward: 25, color: "#10b981", icon: "🐍", abilities: ['poison_aura', 'split'], immunities: ['poison'], abilityCooldown: 350, minWave: 4 },
     { name: "Frost Giant", hp: 550, speed: 0.15, reward: 91, color: "#bfdbfe", icon: "🧊", isBoss: true, abilities: ['freeze_aura', 'shield', 'stun_attack'], abilityCooldown: 280, minWave: 12, moneyBonus: 3.0 },
     { name: "Chaos Spawn", hp: 240, speed: 0.5, reward: 39, color: "#dc2626", icon: "🌀", abilities: ['teleport', 'split', 'berserk'], abilityCooldown: 400, minWave: 6 },
     { name: "Iron Maiden", hp: 400, speed: 0.18, reward: 65, color: "#64748b", icon: "⚔️", abilities: ['attack_towers', 'damage_reflect'], abilityCooldown: 250, minWave: 8 }, // Slower
@@ -124,7 +126,7 @@ export const ENEMY_TYPES: EnemyType[] = [
     { name: "Phase Shifter", hp: 200, speed: 0.8, reward: 33, color: "#8b5cf6", icon: "🔮", abilities: ['cc_immune', 'teleport', 'invisible'], abilityCooldown: 300, minWave: 8, description: 'Phases through all effects' },
     
     // Area Disable enemies - disable towers in 2x2 area
-    { name: "EMP Drone", hp: 150, speed: 0.6, reward: 25, color: "#3b82f6", icon: "📡", abilities: ['area_disable', 'fly'], abilityCooldown: 400, minWave: 6, description: 'Disables all towers in 2x2 area' },
+    { name: "EMP Drone", hp: 150, speed: 0.6, reward: 25, color: "#3b82f6", icon: "📡", abilities: ['area_disable', 'fly'], movementType: 'air', immunities: ['electric'], abilityCooldown: 400, minWave: 6, description: 'Disables all towers in 2x2 area' },
     { name: "Pulse Bomber", hp: 280, speed: 0.4, reward: 46, color: "#6366f1", icon: "💫", abilities: ['area_disable', 'explode'], abilityCooldown: 500, minWave: 9, description: 'Creates EMP pulse disabling nearby towers' },
     
     // Speed Aura enemies - speed up nearby allies
@@ -462,6 +464,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_RIFLE': {
     name: 'Auto-Rifle', cost: 50, damage: 8, range: 2.5, cooldown: 50,
     type: 'projectile', color: '#fbbf24', icon: '🔫',
+    targetMode: 'ground', element: 'physical',
     description: 'Basic rapid-fire turret. Reliable single-target damage with moderate range. Perfect for early game defense.',
     projectileStyle: 'bullet',
     upgradeStats: { damage: 1.2, range: 1.1, cooldown: 0.95, projectileSpeed: 1.05 }
@@ -469,6 +472,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_CANNON': {
     name: 'Mortar', cost: 120, damage: 35, range: 3.5, cooldown: 120,
     type: 'area', color: '#1e293b', icon: '💣',
+    targetMode: 'ground', element: 'explosive',
     description: 'Explosive area damage. Shells arc over obstacles, dealing splash damage to groups. Slow but devastating.',
     areaRadius: 1.8,
     projectileStyle: 'arc',
@@ -477,6 +481,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_SNIPER': {
     name: 'Sniper Rifle', cost: 180, damage: 120, range: 5.0, cooldown: 180,
     type: 'projectile', color: '#ef4444', icon: '🎯',
+    targetMode: 'both', element: 'physical',
     description: 'Long-range precision shots. Extreme single-target damage but very slow reload. Pierces through enemies.',
     projectileStyle: 'sniper',
     upgradeStats: { damage: 1.3, range: 1.12, cooldown: 0.88, penetration: 1.2 }
@@ -484,6 +489,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_SHOTGUN': {
     name: 'Shotgun', cost: 150, damage: 25, range: 2.0, cooldown: 90,
     type: 'spread', color: '#d97706', icon: '💥',
+    targetMode: 'ground', element: 'physical',
     description: 'Fires 5 pellets in a wide spread. Hits multiple enemies at close range. High burst damage.',
     multiTarget: 5,
     projectileStyle: 'shotgun',
@@ -492,6 +498,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'BASIC_FREEZE': {
     name: 'Cryo Turret', cost: 200, damage: 15, range: 3.0, cooldown: 80,
     type: 'projectile', color: '#60a5fa', icon: '❄️',
+    targetMode: 'both', element: 'ice',
     description: 'Freezing projectiles slow enemies by 50%. No damage over time, pure crowd control.',
     slowFactor: 0.5,
     projectileStyle: 'ice',
@@ -499,15 +506,17 @@ export const TOWERS: Record<string, TowerStats> = {
     upgradeStats: { damage: 1.15, range: 1.1, cooldown: 0.92, slowFactor: 1.1 }
   },
   'BASIC_BURN': {
-    name: 'Flamethrower', cost: 250, damage: 10, range: 1.5, cooldown: 18,
+    name: 'Flamethrower', cost: 250, damage: 4, range: 1.5, cooldown: 40,
     type: 'aura', color: '#ef4444', icon: '🌋',
+    targetMode: 'ground', element: 'fire',
     description: 'Passive 3x3 flame zone. Enemies passing through suffer burning damage over time.',
-    burnDamage: 8,
-    upgradeStats: { damage: 1.15, range: 1.05, cooldown: 0.94, burnDamage: 1.25 }
+    burnDamage: 4,
+    upgradeStats: { damage: 1.08, range: 1.04, cooldown: 0.96, burnDamage: 1.08 }
   },
   'BASIC_STUN': {
     name: 'Stun Cannon', cost: 220, damage: 40, range: 2.8, cooldown: 100,
     type: 'projectile', color: '#facc15', icon: '⚡',
+    targetMode: 'both', element: 'electric',
     description: 'Electric projectiles stun enemies for 1.5 seconds. Stops enemy movement and abilities.',
     stunDuration: 90,
     projectileStyle: 'lightning',
@@ -529,6 +538,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'CHAIN_LIGHTNING': {
     name: 'Chain Lightning', cost: 400, damage: 45, range: 3.5, cooldown: 70,
     type: 'projectile', color: '#fcd34d', icon: '⚡',
+    targetMode: 'both', element: 'electric',
     description: 'Lightning chains between 3-5 enemies. Each chain deals full damage. Excellent against groups.',
     projectileStyle: 'lightning',
     multiTarget: 4,
@@ -537,6 +547,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'PENETRATOR': {
     name: 'Railgun', cost: 600, damage: 150, range: 4.5, cooldown: 120,
     type: 'projectile', color: '#020617', icon: '⚫',
+    targetMode: 'both', element: 'physical',
     description: 'Piercing projectile travels through ALL enemies in a line. Damage decreases by 20% per enemy hit.',
     projectileStyle: 'bolt',
     upgradeStats: { damage: 1.25, range: 1.1, cooldown: 0.9, penetration: 1.2 }
@@ -572,10 +583,11 @@ export const TOWERS: Record<string, TowerStats> = {
   'LASER_BEAM': {
     name: 'Laser Cannon', cost: 550, damage: 12, range: 4.0, cooldown: 5,
     type: 'beam', color: '#ff5722', icon: '🔴',
+    targetMode: 'both', element: 'fire',
     description: 'Continuous laser beam. Damage ramps up 0.8x per second. Burns enemies in a straight line.',
     beamRamp: 0.8,
-    burnDamage: 5,
-    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.15 }
+    burnDamage: 2,
+    upgradeStats: { damage: 1.1, range: 1.08, cooldown: 0.95, beamRamp: 1.1, burnDamage: 1.06 }
   },
   'INFERNO': {
     name: 'Inferno Tower', cost: 700, damage: 3, range: 3.0, cooldown: 3,
@@ -589,6 +601,7 @@ export const TOWERS: Record<string, TowerStats> = {
   'POISON_TOWER': {
     name: 'Toxin Launcher', cost: 320, damage: 20, range: 3.0, cooldown: 60,
     type: 'projectile', color: '#14b8a6', icon: '🐍',
+    targetMode: 'ground', element: 'poison',
     description: 'Poison projectiles deal 15 damage per second for 3 seconds. Stacks up to 3 times.',
     burnDamage: 15,
     projectileStyle: 'acid',
