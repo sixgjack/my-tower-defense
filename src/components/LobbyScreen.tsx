@@ -13,6 +13,8 @@ import { updateStudentStatusAfterGame } from '../services/studentService';
 import { isGoogleAuthDisabled } from '../config/authMode';
 import { mergeIntoLocalEncountered } from '../config/localEncounteredEnemies';
 import { getAllQuestions, getQuestionsBySet } from '../services/questionService';
+import { Leaderboard } from './Leaderboard';
+import { updateStudentDisplayName } from '../services/postgresDatabase';
 
 interface StudentStatus {
   totalGames: number;
@@ -34,13 +36,20 @@ interface LobbyScreenProps {
 }
 
 export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, onSignOut, onStatusUpdate }) => {
-  const [activeView, setActiveView] = useState<'lobby' | 'game' | 'mode-selection' | 'tower-loadout' | 'lucky-draw' | 'towers' | 'enemies'>('lobby');
+  const [activeView, setActiveView] = useState<'lobby' | 'game' | 'mode-selection' | 'tower-loadout' | 'lucky-draw' | 'towers' | 'enemies' | 'leaderboard'>('lobby');
   const [showGame, setShowGame] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
   const [selectedTowers, setSelectedTowers] = useState<string[]>([]);
   const { language, setLanguage, t } = useLanguage();
   const unlockedCount = Array.from(new Set((studentStatus?.unlockedTowers || []).filter(Boolean))).length;
   const godotQuestionCacheRef = useRef<Record<string, { correct: string }>>({});
+
+  // Sync display name to DB on first load so leaderboard shows proper names
+  useEffect(() => {
+    if (user?.uid && user.displayName) {
+      updateStudentDisplayName(user.uid, user.displayName).catch(() => {});
+    }
+  }, [user?.uid, user?.displayName]);
 
   useEffect(() => {
     const onMessage = async (evt: MessageEvent) => {
@@ -188,10 +197,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
   }
 
   if (activeView === 'enemies') {
-    return <EnemyDictionary 
-      onBack={() => setActiveView('lobby')} 
+    return <EnemyDictionary
+      onBack={() => setActiveView('lobby')}
       encounteredEnemies={studentStatus?.encounteredEnemies || []}
     />;
+  }
+
+  if (activeView === 'leaderboard') {
+    return <Leaderboard user={user} onBack={() => setActiveView('lobby')} language={language} />;
   }
 
   return (
@@ -401,14 +414,26 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ user, studentStatus, o
               </div>
             </div>
 
-            {/* Leaderboard Card (Future) */}
-            <div className="group relative bg-gradient-to-br from-emerald-600/20 via-teal-600/20 to-emerald-700/20 backdrop-blur-xl rounded-3xl p-8 border-2 border-emerald-400/20 shadow-xl opacity-60 cursor-not-allowed">
+            {/* Leaderboard Card */}
+            <button
+              type="button"
+              onClick={() => setActiveView('leaderboard')}
+              className="group relative bg-gradient-to-br from-emerald-600/40 via-teal-600/40 to-emerald-700/40 backdrop-blur-xl rounded-3xl p-8 border-2 border-emerald-400/30 shadow-2xl hover:shadow-emerald-500/50 transition-all duration-500 hover:scale-[1.02] hover:border-emerald-300/50 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
               <div className="relative z-10">
-                <div className="text-6xl mb-4 opacity-50">🏆</div>
-                <h2 className="text-2xl font-bold text-white mb-2 opacity-70">{language === 'zh-TW' ? '排行榜' : 'Leaderboard'}</h2>
-                <p className="text-emerald-100 text-sm opacity-70">{language === 'zh-TW' ? '即將推出' : 'Coming Soon'}</p>
+                <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-300">🏆</div>
+                <h2 className="text-2xl font-bold text-white mb-2">{language === 'zh-TW' ? '排行榜' : 'Leaderboard'}</h2>
+                <p className="text-emerald-100 text-sm mb-3">{language === 'zh-TW' ? '查看最高分玩家排名' : 'See top player rankings'}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-emerald-200 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
+                    Wave {studentStatus?.highestWave || 0} {language === 'zh-TW' ? '最高波次' : 'best'}
+                  </span>
+                  <span className="text-emerald-300 text-2xl">→</span>
+                </div>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>

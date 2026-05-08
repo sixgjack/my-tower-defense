@@ -416,13 +416,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({ onGameEnd, questionSetId =
 
       <QuestionModal isOpen={isModalOpen} onSuccess={() => { game.confirmAction(); setIsModalOpen(false); }} onClose={() => { game.cancelAction(); setIsModalOpen(false); }} theme={currentTheme.name} questionSetId={questionSetId} />
       
-      <BuffSelectionModal 
+      <BuffSelectionModal
         isOpen={game.showBuffSelection || showBuffSelection}
         onSelect={(buff) => {
           game.applyBuff(buff);
           setShowBuffSelection(false);
         }}
         wave={wave}
+        gold={money}
+        onSpendGold={(amount) => { game.money = Math.max(0, game.money - amount); setMoney(game.money); }}
       />
       
       <GameOverModal 

@@ -16,6 +16,10 @@ export const i18n = {
   getLanguage: (): Language => {
     const saved = localStorage.getItem('gameLanguage');
     if (saved === 'zh' || saved === 'en') return saved as Language;
+    // Also read from the useTranslation system's key ('language' → 'zh-TW'/'en')
+    const saved2 = localStorage.getItem('language');
+    if (saved2 === 'zh-TW') return 'zh';
+    if (saved2 === 'en') return 'en';
     return 'zh'; // default to zh
   },
   

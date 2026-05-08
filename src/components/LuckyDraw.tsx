@@ -33,7 +33,7 @@ const TEN_COST = 900;
 // ★1=0 exp (base), ★2=3, ★3=6, ★4=10
 const STAR_EXP_THRESHOLDS = [0, 3, 6, 10];
 
-const RARITY_WEIGHTS: Record<Rarity, number> = { SSR: 3, SR: 12, R: 25, N: 60 };
+const RARITY_WEIGHTS: Record<Rarity, number> = { SSR: 1, SR: 5, R: 25, N: 69 };
 
 const RARITY_CONFIG: Record<Rarity, {
   labelZh: string; gradient: string; glow: string;

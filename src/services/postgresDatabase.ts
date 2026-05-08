@@ -79,6 +79,14 @@ async function initDatabase(): Promise<void> {
           END IF;
         END $$;
 
+        -- Add display_name column if it doesn't exist (for leaderboard)
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'students' AND column_name = 'display_name') THEN
+            ALTER TABLE students ADD COLUMN display_name TEXT DEFAULT '';
+          END IF;
+        END $$;
+
         CREATE TABLE IF NOT EXISTS question_sets (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
@@ -363,6 +371,7 @@ export async function bulkImportQuestions(
 
 export interface StudentStatus {
   userId: string;
+  displayName: string;
   totalGames: number;
   totalWaves: number;
   totalEnemiesKilled: number;
@@ -394,14 +403,15 @@ export async function getStudentStatus(userId: string): Promise<DatabaseResult<S
       success: true,
       data: {
         userId: row.user_id,
+        displayName: row.display_name || '',
         totalGames: row.total_games || 0,
         totalWaves: row.total_waves || 0,
         totalEnemiesKilled: row.total_enemies_killed || 0,
         totalMoneyEarned: row.total_money_earned || 0,
         highestWave: row.highest_wave || 0,
         credits: row.credits || 0,
-        unlockedTowers: typeof row.unlocked_towers === 'string' 
-          ? JSON.parse(row.unlocked_towers) 
+        unlockedTowers: typeof row.unlocked_towers === 'string'
+          ? JSON.parse(row.unlocked_towers)
           : (row.unlocked_towers || []),
         encounteredEnemies: typeof row.encountered_enemies === 'string'
           ? JSON.parse(row.encountered_enemies)
@@ -546,6 +556,46 @@ export async function updateStudentStatus(
       }
     }
 
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getAllStudentsForLeaderboard(): Promise<DatabaseResult<StudentStatus[]>> {
+  try {
+    const database = await getDb();
+    const result = await database.query(
+      'SELECT * FROM students ORDER BY highest_wave DESC, total_enemies_killed DESC LIMIT 50'
+    );
+    const rows = (result as any).rows || result || [];
+    if (!Array.isArray(rows)) return { success: true, data: [] };
+    return {
+      success: true,
+      data: rows.map((row: any) => ({
+        userId: row.user_id,
+        displayName: row.display_name || '',
+        totalGames: row.total_games || 0,
+        totalWaves: row.total_waves || 0,
+        totalEnemiesKilled: row.total_enemies_killed || 0,
+        totalMoneyEarned: row.total_money_earned || 0,
+        highestWave: row.highest_wave || 0,
+        credits: row.credits || 0,
+        unlockedTowers: typeof row.unlocked_towers === 'string' ? JSON.parse(row.unlocked_towers) : (row.unlocked_towers || []),
+        encounteredEnemies: typeof row.encountered_enemies === 'string' ? JSON.parse(row.encountered_enemies) : (row.encountered_enemies || []),
+        towerExp: typeof row.tower_exp === 'string' ? JSON.parse(row.tower_exp) : (row.tower_exp || {}),
+        lastPlayed: row.last_played,
+      })),
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateStudentDisplayName(userId: string, displayName: string): Promise<DatabaseResult<void>> {
+  try {
+    const database = await getDb();
+    await database.query('UPDATE students SET display_name = $1 WHERE user_id = $2', [displayName, userId]);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
