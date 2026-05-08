@@ -71,3 +71,21 @@ export default defineConfig([
   },
 ])
 ```
+
+## Server PostgreSQL Setup (Office + Home)
+
+Use the API server (`server/index.ts`) as the only component that connects to PostgreSQL.
+
+1. Configure `.env` on the office server:
+   - `DATABASE_URL=postgresql://<user>:<pass>@127.0.0.1:5433/tower_defense` (or your hosted DB)
+   - `API_HOST=0.0.0.0`
+   - `API_PORT=3001`
+   - `CORS_ORIGIN=http://tower.cpss.edu.hk,http://<home-vpn-ip>:5173`
+2. Start services:
+   - `npm run dev` for web on `5173`
+   - `npm run dev:api` for backend on `3001`
+3. From home, access the office server over VPN/Tailscale and open:
+   - Web: `http://<office-host>:5173`
+   - API is called via `/api` proxy or `VITE_API_BASE_URL=http://<office-host>:3001`
+
+Question sets, player status, and all game persistence are stored in the server PostgreSQL database.
