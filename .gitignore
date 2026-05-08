@@ -28,6 +28,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Binary executables
+*.exe
+
 # Godot auto-generated cache (never commit these)
 godot/.godot/
 godot_export_stdout.txt
