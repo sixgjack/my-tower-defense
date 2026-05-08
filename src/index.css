@@ -299,3 +299,22 @@
   background-size: 200% 100%;
   animation: gacha-ssr-shimmer 2s linear infinite;
 }
+
+/* === GALLERY CARD BACKGROUNDS === */
+.tower-card-bg {
+  background: linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.9) 100%);
+}
+.enemy-card-bg {
+  background: linear-gradient(145deg, rgba(20,8,8,0.95) 0%, rgba(40,15,15,0.90) 100%);
+}
+
+/* === STAT BAR FILL VARIANTS === */
+.stat-bar-atk  { background: linear-gradient(90deg, #ef4444, #f97316); }
+.stat-bar-rng  { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+.stat-bar-spd  { background: linear-gradient(90deg, #a855f7, #ec4899); }
+.stat-bar-cost { background: linear-gradient(90deg, #eab308, #f59e0b); }
+.stat-bar-hp   { background: linear-gradient(90deg, #ef4444, #f97316); }
+.stat-bar-gold { background: linear-gradient(90deg, #eab308, #f59e0b); }
+.stat-bar-boss { background: linear-gradient(90deg, #ef4444, #b91c1c); }
+.stat-bar-elite { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+.stat-bar-soldier { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
