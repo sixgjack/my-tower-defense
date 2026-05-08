@@ -10,6 +10,7 @@ import {
   isGoogleAuthDisabledByEnv,
 } from '../config/authMode';
 import { readLocalEncountered } from '../config/localEncounteredEnemies';
+import { STARTER_CORE_TOWERS } from '../config/starterTowers';
 
 /** Same-origin Godot HTML5 export (Vite serves `public/godot/`). */
 const viteBase = import.meta.env.BASE_URL.endsWith('/')
@@ -29,10 +30,7 @@ interface StudentStatus {
   lastPlayed: any;
 }
 
-const BASIC_TOWER_KEYS = [
-  'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-  'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL',
-] as const;
+const BASIC_TOWER_KEYS = STARTER_CORE_TOWERS;
 
 const DEMO_GOOGLE_USER: GoogleUser = {
   uid: DEMO_LOCAL_USER_ID,
@@ -76,6 +74,9 @@ export const MenuScreen: React.FC = () => {
           const refreshed = await getStudentStatus(uid);
           if (refreshed) {
             const mergedUnlocked = [...new Set([...(refreshed.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+            if (mergedUnlocked.length !== (refreshed.unlockedTowers || []).length) {
+              await db.updateStudentStatus(uid, { unlockedTowers: mergedUnlocked });
+            }
             setStudentStatus({
               ...refreshed,
               unlockedTowers: mergedUnlocked,
@@ -84,13 +85,16 @@ export const MenuScreen: React.FC = () => {
           }
         }
         const mergedUnlocked = [...new Set([...(status.unlockedTowers || []), ...BASIC_TOWER_KEYS])];
+        if (mergedUnlocked.length !== (status.unlockedTowers || []).length) {
+          await db.updateStudentStatus(uid, { unlockedTowers: mergedUnlocked });
+        }
         setStudentStatus({
           ...status,
           credits: isDevUser ? Math.max(status.credits || 0, DEV_CREDIT_BALANCE) : status.credits,
           unlockedTowers: mergedUnlocked,
         });
       } else {
-        // Create new student status with 8 basic towers unlocked
+        // Create new student status with 6 starter towers unlocked
         const basicTowers = [...BASIC_TOWER_KEYS];
         const newStatus: StudentStatus = {
           totalGames: 0,

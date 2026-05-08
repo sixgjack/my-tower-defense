@@ -2,6 +2,7 @@
 // Service to manage student data and game statistics
 
 import * as db from './postgresDatabase';
+import { STARTER_CORE_TOWERS } from '../config/starterTowers';
 
 export interface GameResult {
   wave: number;
@@ -35,10 +36,7 @@ export async function updateStudentStatusAfterGame(
     // Get current status
     const currentStatusResult = await db.getStudentStatus(userId);
     if (!currentStatusResult.success || !currentStatusResult.data) {
-      const starterTowers = [
-        'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-        'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
-      ];
+      const starterTowers = [...STARTER_CORE_TOWERS];
       const initialEncountered = Array.isArray(gameResult.encounteredEnemies)
         ? [...new Set(gameResult.encounteredEnemies)]
         : [];
@@ -61,11 +59,8 @@ export async function updateStudentStatusAfterGame(
 
     const currentStatus = currentStatusResult.data;
     
-    // Ensure starter towers are unlocked (include starter healer)
-    const basicTowers = [
-      'BASIC_RIFLE', 'BASIC_CANNON', 'BASIC_SNIPER', 'BASIC_SHOTGUN',
-      'BASIC_FREEZE', 'BASIC_BURN', 'BASIC_STUN', 'BASIC_HEAL'
-    ];
+    // Ensure starter towers are unlocked for every player
+    const basicTowers = [...STARTER_CORE_TOWERS];
     const currentUnlocked = currentStatus.unlockedTowers || [];
     const allUnlocked = [...new Set([...basicTowers, ...currentUnlocked])];
     

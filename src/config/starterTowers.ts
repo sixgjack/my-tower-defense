@@ -1,0 +1,10 @@
+export const STARTER_CORE_TOWERS = [
+  'BASIC_RIFLE',
+  'BASIC_CANNON',
+  'BASIC_SNIPER',
+  'BASIC_SHOTGUN',
+  'BASIC_FREEZE',
+  'BASIC_BURN',
+] as const;
+
+export const STARTER_CORE_TOWER_SET = new Set<string>(STARTER_CORE_TOWERS);
