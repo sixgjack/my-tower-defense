@@ -50,8 +50,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, showSignOut = fa
         const allQuestions = await getAllQuestions();
         setQuestions(allQuestions);
       } else {
-        const setQuestions = await getQuestionsBySet(selectedSet);
-        setQuestions(setQuestions);
+        const qs = await getQuestionsBySet(selectedSet);
+        setQuestions(qs);
       }
     } catch (error) {
       console.error('Error loading questions:', error);

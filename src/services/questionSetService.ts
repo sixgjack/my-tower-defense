@@ -6,8 +6,8 @@ import type { GameMode } from '../components/ModeSelection';
 // Re-export for convenience
 export type { GameMode };
 
-export interface QuestionSet extends GameMode {
-  id: string | number;
+export interface QuestionSet extends Omit<GameMode, 'id'> {
+  id?: string | number;
   createdBy: string; // Teacher UID
   createdAt?: string;
   updatedAt?: string;
@@ -116,7 +116,7 @@ export const createQuestionSet = async (questionSet: Omit<QuestionSet, 'id' | 'c
 /**
  * Update a question set
  */
-export const updateQuestionSet = async (id: string, updates: Partial<QuestionSet>): Promise<void> => {
+export const updateQuestionSet = async (id: string | number, updates: Partial<QuestionSet>): Promise<void> => {
   try {
     const setId = typeof id === 'string' ? parseInt(id, 10) : id;
     if (isNaN(setId)) {
@@ -143,7 +143,7 @@ export const updateQuestionSet = async (id: string, updates: Partial<QuestionSet
 /**
  * Delete a question set
  */
-export const deleteQuestionSet = async (id: string): Promise<void> => {
+export const deleteQuestionSet = async (id: string | number): Promise<void> => {
   try {
     const setId = typeof id === 'string' ? parseInt(id, 10) : id;
     if (isNaN(setId)) {

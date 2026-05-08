@@ -871,7 +871,6 @@ export class GameEngine {
                 tower.cooldown = effectiveCooldown;
 
                 // Zone damage — any enemy stepping into the 3×3 flame field takes DoT
-                let auraHit = false;
                 this.enemies.forEach(enemy => {
                     if (!this.canTowerTargetEnemy(stats, enemy)) return;
                     const ex = enemy.c + (enemy.xOffset || 0);
@@ -884,7 +883,6 @@ export class GameEngine {
                         this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
                     }
                     if (enemy.hp <= 0) this.killEnemy(enemy);
-                    auraHit = true;
                 });
 
                 // Active fire-stream: shoot a fire projectile at the nearest enemy in range
@@ -1189,10 +1187,6 @@ export class GameEngine {
                     const baseAngle = Math.atan2(
                         (target.r + (target.yOffset || 0)) - tower.r,
                         (target.c + (target.xOffset || 0)) - tower.c
-                    );
-                    const distance = Math.sqrt(
-                        Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
-                        Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
                     );
 
                     for (let i = 0; i < pelletCount; i++) {

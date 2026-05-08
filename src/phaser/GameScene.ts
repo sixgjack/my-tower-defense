@@ -46,7 +46,7 @@ export class GameScene extends Phaser.Scene {
     this.resizeCamera(this.scale.gameSize);
   }
 
-  update(time: number, delta: number) {
+  update(_time: number, _delta: number) {
     // 1. Game Logic
     const speed = this.registry.get('speed') || 1;
     for(let i=0; i<Math.floor(speed); i++) game.tick();
@@ -86,8 +86,8 @@ export class GameScene extends Phaser.Scene {
   // --- 2. GHOST LOGIC ---
   createGhost() {
     this.ghostContainer = this.add.container(0, 0);
-    this.ghostRange = this.make.graphics({x:0, y:0, add: false});
-    this.ghostSprite = this.add.sprite(0, 0, 'tower_python'); 
+    this.ghostRange = new Phaser.GameObjects.Graphics(this);
+    this.ghostSprite = this.add.sprite(0, 0, 'tower_python');
     this.ghostSprite.setAlpha(0.6);
     this.ghostSprite.setDisplaySize(TILE * 0.8, TILE * 0.8);
     
@@ -144,8 +144,9 @@ export class GameScene extends Phaser.Scene {
     const activeIds = new Set(game.towers.map(t => t.id));
     
     // Remove dead
-    this.towerGroup.children.each((child: any) => {
-        if (!activeIds.has(child.getData('id'))) child.destroy();
+    this.towerGroup.children.each((child: Phaser.GameObjects.GameObject) => {
+      if (!activeIds.has(child.getData('id'))) child.destroy();
+      return true;
     });
 
     // Add new
@@ -194,13 +195,17 @@ export class GameScene extends Phaser.Scene {
         const ty = p.ty * TILE + TILE/2;
         const color = parseInt(p.color.replace('#', '0x'));
 
+        const maxLife = p.maxLife ?? 1;
+        const life = p.life ?? maxLife;
+        const alpha = maxLife ? life / maxLife : 0;
         if (p.style === 'laser') {
-            this.projectileGraphics.lineStyle(3, color, p.life/p.maxLife);
+            this.projectileGraphics.lineStyle(3, color, alpha);
             this.projectileGraphics.lineBetween(sx, sy, tx, ty);
         } else {
              // Bullet lerp
-             const x = sx + (tx-sx)*(1-p.life/p.maxLife);
-             const y = sy + (ty-sy)*(1-p.life/p.maxLife);
+             const t = maxLife ? (1 - life / maxLife) : 0;
+             const x = sx + (tx-sx) * t;
+             const y = sy + (ty-sy) * t;
              this.projectileGraphics.fillStyle(color, 1);
              this.projectileGraphics.fillCircle(x, y, 6);
         }
@@ -219,7 +224,7 @@ export class GameScene extends Phaser.Scene {
 
   // --- 4. SAFE ASSET GENERATION (No Bezier Crashes) ---
   createVectorAssets() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    const g = new Phaser.GameObjects.Graphics(this);
     const C = SPRITE_SIZE / 2; 
 
     const save = (key: string) => { 

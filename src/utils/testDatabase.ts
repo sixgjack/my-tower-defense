@@ -121,10 +121,15 @@ export async function testDatabase() {
     if (!exportResult.success || !exportResult.data) {
       throw new Error(`Failed to export: ${exportResult.error}`);
     }
+    const backup = exportResult.data as {
+      questions?: unknown[];
+      students?: unknown[];
+      questionSets?: unknown[];
+    };
     console.log('✅ Data exported:', {
-      questions: exportResult.data.questions?.length || 0,
-      students: exportResult.data.students?.length || 0,
-      questionSets: exportResult.data.questionSets?.length || 0
+      questions: backup.questions?.length || 0,
+      students: backup.students?.length || 0,
+      questionSets: backup.questionSets?.length || 0
     });
 
     // Cleanup: Delete test question

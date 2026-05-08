@@ -20,7 +20,7 @@ export const i18n = {
     const saved2 = localStorage.getItem('language');
     if (saved2 === 'zh-TW') return 'zh';
     if (saved2 === 'en') return 'en';
-    return 'zh'; // default to zh
+    return currentLanguage;
   },
   
   t: (key: string): string => {

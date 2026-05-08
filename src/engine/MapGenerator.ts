@@ -9,7 +9,7 @@ export type MapGrid = (0 | 1 | 'S' | 'B' | 'X')[][];
 // Map generation patterns
 type MapPattern = 'linear' | 'spiral' | 'square_ring' | 'zigzag' | 'u_turn' | 'maze';
 
-export function generateMap(level: number = 1, pathLengthMultiplier: number = 1.0): MapGrid {
+export function generateMap(level: number = 1, _pathLengthMultiplier: number = 1.0): MapGrid {
   // 1. Initialize empty board
   let map: MapGrid = Array(ROWS).fill(0).map(() => Array(COLS).fill(0));
 

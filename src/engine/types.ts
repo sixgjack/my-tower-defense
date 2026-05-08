@@ -109,7 +109,7 @@ export interface TowerStats {
     areaRadius?: number;   
     multiTarget?: number;
     specialAbility?: 'stun' | 'slow' | 'pull' | 'block' | 'aoe' | 'drag'; // Special abilities
-    projectileStyle?: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
+    projectileStyle?: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb' | 'drone';
     // Upgrade multipliers per level (e.g., 1.2 = +20% per level)
     upgradeStats?: {
         damage?: number;           // Damage multiplier per level
@@ -168,8 +168,8 @@ export interface Projectile {
     damage: number;
     color: string;
     progress: number; 
-    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook' | 'boomerang';
-    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
+    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook' | 'boomerang' | 'drone';
+    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb' | 'drone';
     targetId?: number;
     life?: number;
     maxLife?: number;

@@ -86,7 +86,7 @@ export const TeacherQuestionSetManager: React.FC<TeacherQuestionSetManagerProps>
   };
 
   const handleUpdate = async () => {
-    if (!editingSet) return;
+    if (!editingSet || editingSet.id === undefined || editingSet.id === '') return;
 
     try {
       await updateQuestionSet(editingSet.id, formData);
@@ -100,7 +100,8 @@ export const TeacherQuestionSetManager: React.FC<TeacherQuestionSetManagerProps>
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number | undefined) => {
+    if (id === undefined || id === '') return;
     if (!confirm('Are you sure you want to delete this question set?')) return;
 
     try {

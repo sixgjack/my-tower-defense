@@ -256,7 +256,7 @@ function GachaCard({ result, delay = 0 }: { result: DrawResult; delay?: number }
 // ═══════════════════════════════════════════
 
 export const LuckyDraw: React.FC<LuckyDrawProps> = ({
-  user, credits, unlockedTowers, onBack, onStatusUpdate
+  user, credits, unlockedTowers: _unlockedTowers, onBack, onStatusUpdate
 }) => {
   const [phase, setPhase]               = useState<AnimPhase>('idle');
   const [results, setResults]           = useState<DrawResult[]>([]);

@@ -5,7 +5,7 @@ import { getAllQuestionSets, initializeDefaultQuestionSets } from '../services/q
 import { useLanguage } from '../i18n/useTranslation';
 
 export interface GameMode {
-  id?: string;
+  id?: string | number;
   name: string;
   description: string;
   questionSetId: string;
