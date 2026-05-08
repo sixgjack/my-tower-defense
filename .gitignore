@@ -27,3 +27,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Godot auto-generated cache (never commit these)
+godot/.godot/
+godot_export_stdout.txt
+*.uid
