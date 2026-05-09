@@ -6,6 +6,7 @@ import { effectManager } from './EffectManager';
 import { applyDamageToEnemy } from './BossAbilities';
 import type { ElementType, Particle, Projectile, TargetMode, Tower } from './types';
 import { isDeveloperMode, DEV_STARTING_MONEY } from '../config/developerMode';
+import { COMMANDERS } from '../config/characters';
 
 type ActionType = { type: 'BUILD', r: number, c: number, towerKey: string } 
   | { type: 'UPGRADE', towerId: number, cost: number } 
@@ -49,13 +50,36 @@ export class GameEngine {
   
   // Buff Selection State
   showBuffSelection: boolean = false;
+
+  // Wave Shop State (every 10 waves)
+  showWaveShop: boolean = false;
+
+  // Incremented whenever map is regenerated so PixiJS knows to redraw tiles
+  mapVersion: number = 0;
   
   // Enemy Dictionary Tracking
   encounteredEnemyNames: Set<string> = new Set();
   
+  // Deploy Points (Arknights)
+  deployPoints: number = 10;
+  maxDeployPoints: number = 20;
+
   // Support Tower Limits
-  maxSupportTowers: number = 5; // Maximum number of support/healer towers
-  supportTowerCount: number = 0; // Current count of support towers
+  maxSupportTowers: number = 5;
+  supportTowerCount: number = 0;
+
+  // Commander System
+  activeCommanderId: string = 'GHOST';
+  commanderAbilityCooldownTicks: number = 0;
+  commanderAbilityActiveTicks: number = 0;
+  commanderMarkedEnemyId: number | null = null;
+
+  // Tower Card XP tracking (session)
+  sessionCardXp: Record<string, number> = {};
+  currentAttackingTowerKey: string | null = null;
+
+  // Card stat data (set before game start by UI layer)
+  activeCardData: Record<string, { level: number; stars: number; bondLevel: number }> = {};
   
   // Mine System
   mines: Array<{ id: number; r: number; c: number; damage: number; maxMines: number }> = [];
@@ -94,19 +118,128 @@ export class GameEngine {
     this.totalEnemiesKilled = 0;
     this.activeBuffs = [];
     this.showBuffSelection = false;
-    
+    this.showWaveShop = false;
+    this.commanderAbilityCooldownTicks = 0;
+    this.commanderAbilityActiveTicks = 0;
+    this.commanderMarkedEnemyId = null;
+    this.sessionCardXp = {};
+    this.currentAttackingTowerKey = null;
+    this.deployPoints = 10;
+
     // Initialize theme
     const themeIndex = Math.floor((this.wave - 1) / 10) % THEMES.length;
     this.currentTheme = THEMES[themeIndex];
     
     // Generate Initial Map
     this.map = generateMap(this.wave, 1.0);
-    this.recalculatePath(); 
+    this.recalculatePath();
+    this.mapVersion = 0;
+  }
+
+  // --- COMMANDER SYSTEM ---
+
+  setCommander(id: string) {
+    this.activeCommanderId = id;
+  }
+
+  getCommanderAbilityCooldownPct(): number {
+    const cd = COMMANDERS[this.activeCommanderId]?.active.cooldown || 1;
+    const maxTicks = cd * 60;
+    return Math.max(0, 1 - this.commanderAbilityCooldownTicks / maxTicks);
+  }
+
+  triggerCommanderAbility() {
+    if (this.commanderAbilityCooldownTicks > 0) return;
+    if (this.isGameOver) return;
+    const commander = COMMANDERS[this.activeCommanderId];
+    if (!commander) return;
+    const ability = commander.active;
+    this.commanderAbilityCooldownTicks = ability.cooldown * 60;
+
+    switch (ability.id) {
+      case 'phantom_mark': {
+        // Mark the frontmost enemy (highest pathIndex + progress)
+        const frontmost = this.enemies.reduce((best: any, e: any) => {
+          if (!best) return e;
+          return (e.pathIndex + e.progress) > (best.pathIndex + best.progress) ? e : best;
+        }, null as any);
+        if (frontmost) {
+          this.commanderMarkedEnemyId = frontmost.id;
+          this.commanderAbilityActiveTicks = 8 * 60;
+          this.addTextParticle(frontmost.c, frontmost.r, '[ PHANTOM MARK ]', '#00ff88');
+          this.showNotification('PHANTOM MARK', 'alert');
+        }
+        break;
+      }
+      case 'orbital_hammer': {
+        if (this.enemies.length === 0) break;
+        const target = this.enemies[Math.floor(Math.random() * this.enemies.length)];
+        const blastRadius = 3;
+        const blastDmg = 3000;
+        this.enemies.forEach((e: any) => {
+          const dist = Math.sqrt((e.c - target.c) ** 2 + (e.r - target.r) ** 2);
+          if (dist <= blastRadius) {
+            applyDamageToEnemy(e, blastDmg * (1 - dist / blastRadius * 0.4));
+            if (e.hp <= 0) this.killEnemy(e);
+          }
+        });
+        this.createExplosion(target.c * 60 + 30, target.r * 60 + 30, '#3b82f6', 3.5, 'cannonball');
+        this.showNotification('ORBITAL HAMMER', 'boss');
+        break;
+      }
+      case 'overclock': {
+        this.commanderAbilityActiveTicks = 8 * 60;
+        this.showNotification('SYSTEM OVERCLOCK', 'alert');
+        break;
+      }
+      case 'emp_cascade': {
+        const stunDur = 4 * 60;
+        this.enemies.forEach((e: any) => {
+          this.applyStunToEnemy(e, stunDur);
+          this.addParticle(e.c * 60 + 30, e.r * 60 + 30, 'electric', '#a855f7');
+        });
+        this.showNotification('EMP CASCADE', 'alert');
+        break;
+      }
+      case 'emergency_repair': {
+        this.towers.forEach((t: any) => {
+          t.hp = t.maxHp || 100;
+          t.statusEffects = [];
+        });
+        this.showNotification('EMERGENCY REPAIR', 'alert');
+        break;
+      }
+      case 'carpet_bomb': {
+        let delay = 0;
+        for (let i = 0; i < 5; i++) {
+          const strikeDelay = delay;
+          setTimeout(() => {
+            if (this.enemies.length === 0) return;
+            const tgt = this.enemies[Math.floor(Math.random() * this.enemies.length)];
+            this.enemies.forEach((e: any) => {
+              const d = Math.sqrt((e.c - tgt.c) ** 2 + (e.r - tgt.r) ** 2);
+              if (d <= 2) { applyDamageToEnemy(e, 1000); if (e.hp <= 0) this.killEnemy(e); }
+            });
+            this.createExplosion(tgt.c * 60 + 30, tgt.r * 60 + 30, '#ef4444', 2.5, 'arc');
+          }, strikeDelay);
+          delay += 350;
+        }
+        this.showNotification('CARPET BOMB', 'boss');
+        break;
+      }
+    }
   }
 
   // --- MAIN LOOP ---
   tick() {
     if (this.isTacticalMode) return; 
+
+    // Commander ability timers
+    if (this.commanderAbilityCooldownTicks > 0) this.commanderAbilityCooldownTicks--;
+    if (this.commanderAbilityActiveTicks > 0) {
+      this.commanderAbilityActiveTicks--;
+      if (this.commanderAbilityActiveTicks === 0) this.commanderMarkedEnemyId = null;
+    }
 
     // Handle Visual Timers
     if (this.notificationTimer > 0) {
@@ -133,6 +266,13 @@ export class GameEngine {
     if (this.pendingAction) return; // Pause logic if modal is open
 
     this.tickCount++;
+
+    // Passive DP gen (~1 DP every 4 seconds, boosted by vanguards)
+    if (this.tickCount % 1 === 0) {
+        const vanguardCount = this.towers.filter((t: any) => (TOWERS[t.key] as any)?.operatorClass === 'vanguard').length;
+        const dpRate = 0.008 + vanguardCount * 0.005;
+        this.deployPoints = Math.min(this.maxDeployPoints, this.deployPoints + dpRate);
+    }
 
     // 1. AUTO WAVE MANAGEMENT
     if (!this.waveInProgress) {
@@ -210,12 +350,19 @@ export class GameEngine {
   endWave() {
       this.waveInProgress = false;
       this.wave++;
-      this.waveCountdown = 240; // 4 seconds break between waves
-      
-      // Check for buff selection (every 3 waves, starting from wave 3)
-      if (this.wave > 1 && (this.wave - 1) % 3 === 0) {
+      this.waveCountdown = 600; // 10 second break when shop/buff appears, 4s otherwise
+
+      // Wave Shop every 10 waves (environment transition)
+      if (this.wave > 1 && (this.wave - 1) % 10 === 0) {
+          this.showWaveShop = true;
+          this.showNotification('ENVIRONMENT SHIFT', 'boss');
+      }
+      // Buff selection every 3 waves (skip if wave shop triggers)
+      else if (this.wave > 1 && (this.wave - 1) % 3 === 0) {
           this.showBuffSelection = true;
           this.showNotification('LEVEL BONUS READY', 'alert');
+      } else {
+          this.waveCountdown = 240; // 4 seconds for normal waves
       }
       
       // Clean up expired buffs
@@ -245,7 +392,85 @@ export class GameEngine {
       
       this.showBuffSelection = false;
   }
-  
+
+  closeWaveShop() {
+      this.showWaveShop = false;
+      // ── ROGUELIKE ENVIRONMENT TRANSITION ──────────────────────────────
+      // Advance theme
+      const newThemeIdx = Math.min(Math.floor((this.wave - 1) / 10), THEMES.length - 1);
+      this.currentTheme = THEMES[newThemeIdx];
+
+      // Regenerate map with a new layout for this wave block
+      this.map = generateMap(this.wave, 1.0);
+      this.recalculatePath();
+
+      // Refund towers that now sit on the new path or spawn/base cells
+      let refundTotal = 0;
+      this.towers = this.towers.filter(t => {
+          const cell = this.map[t.r]?.[t.c];
+          if (cell === 'S' || cell === 'B' || cell === 1) {
+              const stats = TOWERS[t.key];
+              let invest = stats?.cost ?? 0;
+              for (let i = 1; i < (t.level || 1); i++) invest += Math.floor((stats?.cost ?? 0) * 1.5 * i);
+              refundTotal += Math.floor(invest * 0.70);
+              return false;
+          }
+          return true;
+      });
+
+      if (refundTotal > 0) {
+          this.money += refundTotal;
+          this.showNotification(`REFUND +$${refundTotal}`, 'alert');
+      }
+
+      // Bump version so PixiGameBoard redraws tiles immediately
+      this.mapVersion++;
+      // Give players time to rebuild on the new map
+      this.waveCountdown = 420;
+      this.projectiles = [];
+      this.enemies = [];
+  }
+
+  purchaseWaveShopItem(itemId: string) {
+      switch (itemId) {
+          // Higher prices — gold is more plentiful by wave 10+
+          case 'life_3':
+              if (this.money >= 400) { this.money -= 400; this.lives = Math.min(this.lives + 3, 20); }
+              break;
+          case 'life_5':
+              if (this.money >= 700) { this.money -= 700; this.lives = Math.min(this.lives + 5, 20); }
+              break;
+          case 'life_restore_15':
+              if (this.money >= 1400) { this.money -= 1400; this.lives = Math.max(this.lives, 15); }
+              break;
+      }
+  }
+
+  retreatOperator(towerId: number) {
+      const idx = this.towers.findIndex(t => t.id === towerId);
+      if (idx === -1) return;
+      const tower = this.towers[idx];
+      const stats = TOWERS[tower.key];
+      // Refund 50% DP for path-deployed operators
+      const isPathOp = Boolean((stats as any).canDeployOnPath) && this.map[tower.r]?.[tower.c] === 1;
+      if (isPathOp) {
+          const dpCost = (stats as any).dpCost as number | undefined;
+          if (dpCost) {
+              this.deployPoints = Math.min(this.maxDeployPoints, this.deployPoints + Math.floor(dpCost * 0.5));
+          }
+      }
+      // Also refund some gold
+      let invest = stats.cost;
+      for (let i = 1; i < tower.level; i++) invest += Math.floor(stats.cost * 1.5 * i);
+      this.money += Math.floor(invest * 0.5);
+      // Unblock all enemies this tower was blocking
+      this.enemies.forEach((e: any) => {
+          if (e.blockedByTowerId === towerId) e.blockedByTowerId = undefined;
+      });
+      this.towers.splice(idx, 1);
+      soundSystem.play('sell');
+  }
+
   // Get active buff multipliers for towers
   getTowerBuffMultipliers() {
       const multipliers = {
@@ -324,11 +549,17 @@ export class GameEngine {
           if (Math.random() > 0.65) this.addTextParticle(enemy.c, enemy.r, 'IMMUNE', '#94a3b8');
           return false;
       }
-      applyDamageToEnemy(enemy, damage);
+      // Phantom Mark (GHOST active): 3x damage to marked enemy
+      let finalDamage = damage;
+      if (this.commanderMarkedEnemyId !== null && enemy.id === this.commanderMarkedEnemyId) {
+          finalDamage *= 3;
+          if (Math.random() > 0.75) this.addTextParticle(enemy.c, enemy.r, '3x MARK', '#00ff88');
+      }
+      applyDamageToEnemy(enemy, finalDamage);
       return true;
   }
 
-  private applyStunToEnemy(enemy: any, duration: number = 90): boolean {
+  applyStunToEnemy(enemy: any, duration: number = 90): boolean {
       if (!enemy) return false;
       const isBossEnemy = Boolean(enemy?.bossType || enemy?.isBoss);
       if (!isBossEnemy) {
@@ -612,8 +843,12 @@ export class GameEngine {
     // Apply active buff multipliers to enemy speed
     baseSpeed *= enemyBuffs.speed;
 
-    const enemy = { 
-        id: Date.now() + Math.random(), 
+    // Ghost Protocol (WRAITH passive): enemies spawn at reduced speed
+    const commanderMods = COMMANDERS[this.activeCommanderId]?.gameModifiers || {};
+    if (commanderMods.enemySpeedOnStart) baseSpeed *= commanderMods.enemySpeedOnStart;
+
+    const enemy = {
+        id: Date.now() + Math.random(),
         pathIndex: 0, progress: 0.0, 
         r: this.path[0].r, c: this.path[0].c, 
         hp, maxHp: hp, 
@@ -683,25 +918,70 @@ export class GameEngine {
         const enemyBuffs = this.getEnemyBuffMultipliers();
         currentSpeed *= enemyBuffs.speed;
         
+        // ── Arknights blocking ──────────────────────────────────────────────────
+        const blockedByTowerId: number | undefined = (enemy as any).blockedByTowerId;
+        if (blockedByTowerId != null) {
+            const blocker = this.towers.find((t: any) => t.id === blockedByTowerId);
+            if (!blocker || (blocker.hp ?? 1) <= 0) {
+                // Blocker died — unblock
+                (enemy as any).blockedByTowerId = undefined;
+                (enemy as any).atkTimer = undefined;
+            } else {
+                // Enemy attacks the blocking tower
+                (enemy as any).atkTimer = ((enemy as any).atkTimer ?? 0) - 1;
+                if (((enemy as any).atkTimer ?? 0) <= 0) {
+                    const rawAtk = enemy.maxHp * 0.006;
+                    const def = (blocker as any).def ?? 0;
+                    const dmg = Math.max(rawAtk * 0.1, rawAtk - def * 0.4);
+                    blocker.hp = Math.max(0, (blocker.hp ?? 100) - dmg);
+                    (enemy as any).atkTimer = 50;
+                    this.addTextParticle(blocker.c, blocker.r, `-${Math.round(dmg)}`, '#ff4444');
+                    soundSystem.play('hit');
+                }
+                return; // Skip movement entirely while blocked
+            }
+        }
+
         // Move along path
         enemy.progress += currentSpeed;
         if (enemy.progress >= 1.0) {
-            enemy.pathIndex++; 
-            enemy.progress = 0;
-            
+            const nextIdx = enemy.pathIndex + 1;
+
             // Check Base Hit
-            if (enemy.pathIndex >= this.path.length - 1) {
+            if (nextIdx >= this.path.length - 1) {
+                enemy.pathIndex = nextIdx;
+                enemy.progress = 0;
                 // Boss deals more damage based on boss type
                 const damage = enemy.bossType === 'big' ? 8 : (enemy.bossType === 'mini' ? 3 : 1);
                 this.lives -= damage;
                 this.baseHitEffect = 15; // Trigger Red Flash
-                enemy.hp = 0; 
-                enemy.escaped = true; 
+                enemy.hp = 0;
+                enemy.escaped = true;
                 soundSystem.play('hit_base'); // Assuming sound exists
             } else {
-                 const current = this.path[enemy.pathIndex];
-                 enemy.r = current.r; 
-                 enemy.c = current.c;
+                const nextR = this.path[nextIdx].r;
+                const nextC = this.path[nextIdx].c;
+                // Check for blocking operator on next tile (ground enemies only)
+                if (this.getEnemyMovementType(enemy) === 'ground') {
+                    const blocker = this.towers.find((t: any) => {
+                        if (t.r !== nextR || t.c !== nextC) return false;
+                        const bc = (TOWERS[t.key] as any)?.blockCount ?? 0;
+                        if (bc <= 0) return false;
+                        const nbBlocked = this.enemies.filter((e: any) => (e as any).blockedByTowerId === t.id).length;
+                        return nbBlocked < bc;
+                    });
+                    if (blocker) {
+                        (enemy as any).blockedByTowerId = blocker.id;
+                        (enemy as any).atkTimer = 30;
+                        enemy.progress = 0.88; // Stop just before blocker tile
+                        return; // Don't advance
+                    }
+                }
+                enemy.pathIndex = nextIdx;
+                enemy.progress = 0;
+                const current = this.path[enemy.pathIndex];
+                enemy.r = current.r;
+                enemy.c = current.c;
             }
         }
         
@@ -742,6 +1022,7 @@ export class GameEngine {
 
   updateTowers() {
     this.towers.forEach(tower => {
+        this.currentAttackingTowerKey = tower.key;
         const stats = TOWERS[tower.key];
         
         // Initialize base stats if not set (for existing towers)
@@ -795,14 +1076,39 @@ export class GameEngine {
             return;
         }
         
-        // 2. Target Finding (use effective range)
-        let target = null;
-        let minD = Infinity;
-        for (const e of this.enemies) {
-            if (!this.canTowerTargetEnemy(stats, e)) continue;
+        // 2. Target Finding (use effective range + targetPriority)
+        const inRange = this.enemies.filter(e => {
+            if (!this.canTowerTargetEnemy(stats, e)) return false;
             const dist = Math.sqrt((e.r - tower.r)**2 + (e.c - tower.c)**2);
-            if (dist <= tower.range) {
-                 if (dist < minD) { minD = dist; target = e; }
+            return dist <= tower.range;
+        });
+        let target = null;
+        const priority = tower.targetPriority || 'near';
+        if (inRange.length > 0) {
+            if (priority === 'first') {
+                // furthest along path = highest pathIndex + xOffset progress
+                target = inRange.reduce((best, e) => {
+                    const bScore = best.pathIndex + (best.xOffset || 0) * 0.01;
+                    const eScore = e.pathIndex + (e.xOffset || 0) * 0.01;
+                    return eScore > bScore ? e : best;
+                });
+            } else if (priority === 'last') {
+                target = inRange.reduce((best, e) => {
+                    const bScore = best.pathIndex + (best.xOffset || 0) * 0.01;
+                    const eScore = e.pathIndex + (e.xOffset || 0) * 0.01;
+                    return eScore < bScore ? e : best;
+                });
+            } else if (priority === 'strong') {
+                target = inRange.reduce((best, e) => e.hp > best.hp ? e : best);
+            } else if (priority === 'weak') {
+                target = inRange.reduce((best, e) => e.hp < best.hp ? e : best);
+            } else {
+                // 'near' — closest distance (default)
+                target = inRange.reduce((best, e) => {
+                    const bd = Math.sqrt((best.r - tower.r)**2 + (best.c - tower.c)**2);
+                    const ed = Math.sqrt((e.r - tower.r)**2 + (e.c - tower.c)**2);
+                    return ed < bd ? e : best;
+                });
             }
         }
 
@@ -817,8 +1123,13 @@ export class GameEngine {
         
         // Apply active buff multipliers (attack speed = inverse of cooldown)
         const buffMultipliers = this.getTowerBuffMultipliers();
-        effectiveCooldown /= buffMultipliers.attackSpeed; // Faster attack = lower cooldown
-        
+        effectiveCooldown /= buffMultipliers.attackSpeed;
+
+        // System Overclock (CIPHER active): fire rate +60%
+        if (this.commanderAbilityActiveTicks > 0 && COMMANDERS[this.activeCommanderId]?.active.id === 'overclock') {
+          effectiveCooldown /= 1.6;
+        }
+
         if (tower.cooldown > 0) tower.cooldown--;
         const towerIsStunned = Boolean(
           tower.statusEffects?.some((effect: { effectId: string }) => effect.effectId === 'stunned')
@@ -871,7 +1182,6 @@ export class GameEngine {
                 tower.cooldown = effectiveCooldown;
 
                 // Zone damage — any enemy stepping into the 3×3 flame field takes DoT
-                let auraHit = false;
                 this.enemies.forEach(enemy => {
                     if (!this.canTowerTargetEnemy(stats, enemy)) return;
                     const ex = enemy.c + (enemy.xOffset || 0);
@@ -884,7 +1194,6 @@ export class GameEngine {
                         this.addParticle(enemy.c * 60 + 30, enemy.r * 60 + 30, 'flame', '#ef4444');
                     }
                     if (enemy.hp <= 0) this.killEnemy(enemy);
-                    auraHit = true;
                 });
 
                 // Active fire-stream: shoot a fire projectile at the nearest enemy in range
@@ -1190,11 +1499,6 @@ export class GameEngine {
                         (target.r + (target.yOffset || 0)) - tower.r,
                         (target.c + (target.xOffset || 0)) - tower.c
                     );
-                    const distance = Math.sqrt(
-                        Math.pow((target.c + (target.xOffset || 0)) - tower.c, 2) +
-                        Math.pow((target.r + (target.yOffset || 0)) - tower.r, 2)
-                    );
-
                     for (let i = 0; i < pelletCount; i++) {
                         const angleOffset = (i / (pelletCount - 1) - 0.5) * spreadAngle * (Math.PI / 180);
                         const pelletAngle = baseAngle + angleOffset;
@@ -1934,8 +2238,15 @@ export class GameEngine {
 
   killEnemy(e: any) {
       if(e.dead) return;
-      e.dead = true; 
+      e.dead = true;
       e.hp = 0;
+
+      // Award XP to whatever tower triggered this kill
+      if (this.currentAttackingTowerKey) {
+        const xpGain = e.isBoss ? 20 : 1;
+        this.sessionCardXp[this.currentAttackingTowerKey] =
+          (this.sessionCardXp[this.currentAttackingTowerKey] || 0) + xpGain;
+      }
       let reward = e.reward || 10;
       
       // Apply theme money bonus
@@ -1964,10 +2275,23 @@ export class GameEngine {
         this.addTextParticle(c, r, "Blocked!", "#ef4444");
         return;
     }
+    const tStats = TOWERS[towerKey];
+    const canBlockPath = Boolean((tStats as any).canDeployOnPath);
+    if (cell === 1 && !canBlockPath) {
+        this.addTextParticle(c, r, "Off-path only!", "#f59e0b");
+        this.pendingAction = null;
+        return;
+    }
     const stats = TOWERS[towerKey];
-    if (!isDeveloperMode() && this.money < stats.cost) { 
-        this.addTextParticle(c, r, "Need Funds!", "#ef4444"); 
-        return; 
+    if (!isDeveloperMode() && this.money < stats.cost) {
+        this.addTextParticle(c, r, "Need Funds!", "#ef4444");
+        return;
+    }
+    // DP cost for path-deployable operators
+    const dpCost = (stats as any).dpCost as number | undefined;
+    if (dpCost && cell === 1 && !isDeveloperMode() && this.deployPoints < dpCost) {
+        this.addTextParticle(c, r, `Need ${dpCost} DP!`, "#a78bfa");
+        return;
     }
     this.pendingAction = { type: 'BUILD', r, c, towerKey };
   }
@@ -2006,35 +2330,74 @@ export class GameEngine {
             return;
         }
         
+        const cmdr = COMMANDERS[this.activeCommanderId];
+        const cmdrMods = cmdr?.gameModifiers || {};
+
+        // Apply build cost discount (CIPHER passive)
+        let buildCost = stats.cost;
+        if (cmdrMods.buildCostDiscount) buildCost = Math.floor(buildCost * (1 - cmdrMods.buildCostDiscount));
+
         if (!isDeveloperMode()) {
-          this.money -= stats.cost;
+          this.money -= buildCost;
+          // Deduct DP for path-deployed melee operators
+          const dpCost = (stats as any).dpCost as number | undefined;
+          if (dpCost && this.map[r]?.[c] === 1) {
+              this.deployPoints = Math.max(0, this.deployPoints - dpCost);
+          }
         }
-        const maxHp = stats.maxHp || 100;
-        const newTower: Tower = { 
-            id: Date.now(), 
-            r, 
-            c, 
-            key: towerKey, 
-            cooldown: 0, 
-            level: 1, 
-            damage: stats.damage, 
-            range: stats.range,
+
+        // Apply HP bonus (TITAN passive)
+        let maxHp = stats.maxHp || 100;
+        if (cmdrMods.allTowerHpBonus) maxHp = Math.round(maxHp * cmdrMods.allTowerHpBonus);
+
+        // Apply sniper range bonus (GHOST passive)
+        let buildRange = stats.range;
+        if (cmdrMods.sniperRangeBonus && (stats as any).projectileStyle === 'sniper') {
+          buildRange *= cmdrMods.sniperRangeBonus;
+        }
+
+        // Store AOE radius bonus on tower for splash use (NOVA passive)
+        const aoeBonus = cmdrMods.aoeRadiusBonus;
+
+        // Apply tower card stat bonuses
+        const cardData = this.activeCardData[towerKey];
+        if (cardData) {
+          const l = cardData.level - 1;
+          const bondBonus = cardData.bondLevel >= 10 ? 0.25 : cardData.bondLevel >= 8 ? 0.15 : cardData.bondLevel >= 6 ? 0.05 : 0;
+          buildRange = buildRange * (1 + l * 0.025 + bondBonus);
+          maxHp = Math.round(maxHp * (1 + l * 0.03 + bondBonus));
+        }
+
+        const cardDmgMult = cardData ? (1 + (cardData.level - 1) * 0.04) : 1;
+        const cardCdDiv = cardData ? (1 + (cardData.level - 1) * 0.02) : 1;
+
+        const newTower: Tower = {
+            id: Date.now(),
+            r,
+            c,
+            key: towerKey,
+            cooldown: 0,
+            level: 1,
+            damage: stats.damage * cardDmgMult,
+            range: buildRange,
             targetId: null,
             damageCharge: 0,
-            baseDamage: stats.damage,
-            baseRange: stats.range,
-            baseCooldown: stats.cooldown,
+            baseDamage: stats.damage * cardDmgMult,
+            baseRange: buildRange,
+            baseCooldown: stats.cooldown / cardCdDiv,
             hp: maxHp,
             maxHp: maxHp,
-            angle: 0
-        };
+            angle: 0,
+            ...(aoeBonus ? { commanderAoeBonus: aoeBonus } : {}),
+        } as Tower & { commanderAoeBonus?: number };
+        (newTower as any).def = (stats as any).def ?? 0;
         this.towers.push(newTower);
-        
+
         // Increment support tower count
         if (isSupportTower) {
             this.supportTowerCount++;
         }
-        
+
         soundSystem.play('build');
     } else if (this.pendingAction.type === 'UPGRADE') {
         const { towerId, cost } = this.pendingAction;
@@ -2102,6 +2465,11 @@ export class GameEngine {
         this.money += 200; soundSystem.play('sell');
     }
     this.pendingAction = null;
+  }
+
+  setTowerTargetPriority(towerId: number, priority: import('./types').TargetPriority) {
+    const tower = this.towers.find(t => t.id === towerId);
+    if (tower) tower.targetPriority = priority;
   }
 
   sellTower(towerId: number) {

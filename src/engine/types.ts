@@ -80,8 +80,10 @@ export interface Enemy {
 }
 
 // --- TOWERS ---
-export type TowerType = 
-  | 'projectile' | 'area' | 'line' | 'beam' | 'spread' 
+export type OperatorClass = 'vanguard' | 'guard' | 'defender' | 'sniper' | 'caster' | 'medic' | 'supporter' | 'specialist';
+
+export type TowerType =
+  | 'projectile' | 'area' | 'line' | 'beam' | 'spread'
   | 'aura' | 'pull' | 'farm' | 'summon';
 
 export interface TowerStats {
@@ -109,6 +111,10 @@ export interface TowerStats {
     areaRadius?: number;   
     multiTarget?: number;
     specialAbility?: 'stun' | 'slow' | 'pull' | 'block' | 'aoe' | 'drag'; // Special abilities
+    operatorClass?: OperatorClass;
+    blockCount?: number;    // 0=no block, 1-3=blocks N enemies simultaneously
+    def?: number;           // Physical defense, reduces enemy melee damage
+    canDeployOnPath?: boolean; // Can be placed on path tiles (cell===1)
     projectileStyle?: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
     // Upgrade multipliers per level (e.g., 1.2 = +20% per level)
     upgradeStats?: {
@@ -134,25 +140,30 @@ export interface TowerStats {
     };
 }
 
+export type TargetPriority = 'first' | 'last' | 'strong' | 'weak' | 'near';
+
 export interface Tower {
     id: number;
-    key: string; 
+    key: string;
     r: number;
     c: number;
     level: number;
     damage: number;
     range: number;
     cooldown: number;
-    frame?: number; // Added to fix animation/ramp logic
+    frame?: number;
     targetId: number | null;
     damageCharge: number;
-    statusEffects?: ActiveStatusEffect[]; // Status effects currently applied
-    baseDamage?: number; // Store base damage for effect calculations
-    baseRange?: number; // Store base range for effect calculations
-    baseCooldown?: number; // Store base cooldown for effect calculations
-    hp?: number; // Current health
-    maxHp?: number; // Maximum health
-    angle?: number; // Rotation angle in degrees (0 = right, 90 = down)
+    statusEffects?: ActiveStatusEffect[];
+    baseDamage?: number;
+    baseRange?: number;
+    baseCooldown?: number;
+    hp?: number;
+    maxHp?: number;
+    angle?: number;
+    targetPriority?: TargetPriority;
+    def?: number;
+    blockedEnemyIds?: number[];
 }
 
 // --- PROJECTILES ---
@@ -168,8 +179,8 @@ export interface Projectile {
     damage: number;
     color: string;
     progress: number; 
-    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook' | 'boomerang';
-    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb';
+    type: 'arrow' | 'cannon' | 'laser' | 'magic' | 'hook' | 'boomerang' | 'drone';
+    style: 'dot' | 'missile' | 'arc' | 'fire' | 'lightning' | 'arrow' | 'bullet' | 'energy' | 'plasma' | 'crystal' | 'poison' | 'ice' | 'acid' | 'laser' | 'sniper' | 'shotgun' | 'grenade' | 'cannonball' | 'rocket' | 'dart' | 'kunai' | 'shuriken' | 'boomerang' | 'bloomerang' | 'spear' | 'blade' | 'saw' | 'disc' | 'star' | 'bolt' | 'magic' | 'shadow' | 'void' | 'holy' | 'dark' | 'vortex' | 'arrow_classic' | 'needle' | 'spike' | 'orb' | 'drone';
     targetId?: number;
     life?: number;
     maxLife?: number;

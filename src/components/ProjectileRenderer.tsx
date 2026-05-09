@@ -46,8 +46,36 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
       </g>;
     
     case 'arc': {
-      const { cx, cy, arcHeight } = getArcPosition();
-      return <g transform={`translate(${cx}, ${cy}) rotate(${tick * 15})`}><ellipse cx={0} cy={arcHeight} rx={6 * (1-p.progress)} ry={3 * (1-p.progress)} fill="black" opacity="0.2" /><circle r={6} fill="#1e293b" stroke={p.color} strokeWidth="1.5" /><path d="M 2,-5 Q 4,-8 6,-4" stroke="#fff" strokeWidth="1" fill="none" /><circle cx={6} cy={-4} r={1.5} fill="orange" className="animate-pulse" /></g>;
+      const { cx, cy } = getArcPosition();
+      // Ground-level shadow position (no arc offset)
+      const shadowX = (p.startX! * TILE_SIZE + TILE_SIZE/2) + (p.tx - p.startX!) * TILE_SIZE * p.progress;
+      const shadowY = (p.startY! * TILE_SIZE + TILE_SIZE/2) + (p.ty - p.startY!) * TILE_SIZE * p.progress;
+      const shadowScale = 0.3 + p.progress * 0.7;
+      const explode = Math.max(0, (p.progress - 0.80) / 0.20);
+      return <g>
+        {/* Ground shadow */}
+        <ellipse cx={shadowX} cy={shadowY} rx={14 * shadowScale} ry={5 * shadowScale} fill="black" opacity={0.35 * shadowScale} />
+        {/* Impact warning ring */}
+        {p.progress > 0.80 && <>
+          <circle cx={tx} cy={ty} r={32 * explode} fill="none" stroke="#ef4444" strokeWidth="2" opacity={1 - explode * 0.65} />
+          <circle cx={tx} cy={ty} r={18 * explode} fill="#ef4444" opacity={0.12 * (1 - explode)} />
+        </>}
+        {/* Bomb body */}
+        <g transform={`translate(${cx}, ${cy})`}>
+          <circle r={9} fill="#0d1420" />
+          <circle r={9} fill="url(#grad-bomb)" opacity={0.95} />
+          <circle cx={-3} cy={-3} r={3.5} fill="white" opacity={0.12} />
+          <path d="M 0,-9 Q 5,-15 2,-21" stroke="#7c4a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <circle cx={2} cy={-21} r={2.8} fill="#ff6200">
+            <animate attributeName="opacity" values="1;0.15;1" dur="0.13s" repeatCount="indefinite" />
+            <animate attributeName="r" values="2.8;4;2.8" dur="0.13s" repeatCount="indefinite" />
+          </circle>
+          <circle cx={2} cy={-21} r={5} fill="#fbbf24" opacity={0.35}>
+            <animate attributeName="r" values="4;7;4" dur="0.13s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.35;0.08;0.35" dur="0.13s" repeatCount="indefinite" />
+          </circle>
+        </g>
+      </g>;
     }
     
     case 'missile':
@@ -102,12 +130,49 @@ const renderProjectile = (p: Projectile, TILE_SIZE: number, tick: number) => {
     
     case 'grenade': {
       const { cx, cy } = getArcPosition();
-      return <g transform={`translate(${cx}, ${cy})`}><circle r={5} fill={p.color} stroke="#1e293b" strokeWidth="1.5" /><circle r={2} fill="#fff" opacity="0.5" /></g>;
+      const gShadowX = (p.startX! * TILE_SIZE + TILE_SIZE/2) + (p.tx - p.startX!) * TILE_SIZE * p.progress;
+      const gShadowY = (p.startY! * TILE_SIZE + TILE_SIZE/2) + (p.ty - p.startY!) * TILE_SIZE * p.progress;
+      const gScale = 0.3 + p.progress * 0.7;
+      const gExplode = Math.max(0, (p.progress - 0.80) / 0.20);
+      const gSpin = tick * 12;
+      return <g>
+        <ellipse cx={gShadowX} cy={gShadowY} rx={12 * gScale} ry={4 * gScale} fill="black" opacity={0.3 * gScale} />
+        {p.progress > 0.80 && <>
+          <circle cx={tx} cy={ty} r={28 * gExplode} fill="none" stroke={p.color} strokeWidth="2" opacity={1 - gExplode * 0.6} />
+          <circle cx={tx} cy={ty} r={14 * gExplode} fill={p.color} opacity={0.12 * (1 - gExplode)} />
+        </>}
+        <g transform={`translate(${cx}, ${cy}) rotate(${gSpin})`}>
+          <ellipse rx={6} ry={8} fill={p.color} />
+          <ellipse rx={6} ry={8} fill="url(#grad-grenade)" opacity={0.55} />
+          <line x1={-6} y1={0} x2={6} y2={0} stroke="rgba(0,0,0,0.35)" strokeWidth="1.5" />
+          <rect x={-4} y={-11} width={8} height={4} fill="#475569" rx={1} />
+          <circle cy={-13} r={2.5} fill="none" stroke="#94a3b8" strokeWidth={1.5} />
+          <circle cy={-13} r={2} fill="#ff6200" opacity={0.9}>
+            <animate attributeName="opacity" values="0.9;0.2;0.9" dur="0.15s" repeatCount="indefinite" />
+          </circle>
+        </g>
+      </g>;
     }
-    
+
     case 'cannonball': {
       const { cx, cy } = getArcPosition();
-      return <g transform={`translate(${cx}, ${cy})`}><circle r={7} fill="#374151" stroke={p.color} strokeWidth="2" /><circle r={4} fill="#4b5563" /></g>;
+      const cbShadowX = (p.startX! * TILE_SIZE + TILE_SIZE/2) + (p.tx - p.startX!) * TILE_SIZE * p.progress;
+      const cbShadowY = (p.startY! * TILE_SIZE + TILE_SIZE/2) + (p.ty - p.startY!) * TILE_SIZE * p.progress;
+      const cbScale = 0.3 + p.progress * 0.7;
+      const cbExplode = Math.max(0, (p.progress - 0.80) / 0.20);
+      return <g>
+        <ellipse cx={cbShadowX} cy={cbShadowY} rx={16 * cbScale} ry={6 * cbScale} fill="black" opacity={0.38 * cbScale} />
+        {p.progress > 0.80 && <>
+          <circle cx={tx} cy={ty} r={38 * cbExplode} fill="none" stroke="#f59e0b" strokeWidth="2.5" opacity={1 - cbExplode * 0.65} />
+          <circle cx={tx} cy={ty} r={22 * cbExplode} fill="#f59e0b" opacity={0.1 * (1 - cbExplode)} />
+        </>}
+        <g transform={`translate(${cx}, ${cy})`}>
+          <circle r={10} fill="#111827" />
+          <circle r={10} fill="url(#grad-cannonball)" opacity={0.88} />
+          <circle cx={-3} cy={-4} r={4} fill="white" opacity={0.12} />
+          <circle cx={3} cy={3} r={2} fill="#1f2937" opacity={0.5} />
+        </g>
+      </g>;
     }
     
     case 'rocket':
